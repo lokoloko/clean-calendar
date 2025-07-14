@@ -26,6 +26,15 @@ import {
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { mockListings } from "@/data/mock-data";
 
 const chartConfig: ChartConfig = {
   bookings: {
@@ -75,10 +84,33 @@ export default function StatsPage() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-8">
-        <PageHeader title="Your Listing Stats" />
-        <p className="text-muted-foreground -mt-6">
-            Insights based on your Airbnb calendar data.
-        </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex-1">
+                <PageHeader title="Your Listing Stats" />
+                <p className="text-muted-foreground mt-2">
+                    Insights based on your Airbnb calendar data.
+                </p>
+            </div>
+            <div className="grid gap-2 w-full md:w-[300px]">
+                <Label htmlFor="listing-select">Select Listing</Label>
+                <Select defaultValue={mockListings.length > 0 ? mockListings[0].id : undefined}>
+                    <SelectTrigger id="listing-select" aria-label="Select listing">
+                        <SelectValue placeholder="Choose a listing..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {mockListings.map((listing) => (
+                            <SelectItem key={listing.id} value={listing.id}>
+                                {listing.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                Select the listing you’d like to view stats for. You can switch between any connected listings.
+                </p>
+            </div>
+        </div>
+        
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -216,5 +248,3 @@ export default function StatsPage() {
     </AppLayout>
   );
 }
-
-    
