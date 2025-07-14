@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { AppLayout } from '@/components/layout';
+import Link from 'next/link';
 
 // Page for managing the cleaner directory.
 export default function CleanersPage() {
@@ -74,10 +75,12 @@ export default function CleanersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* TODO: Implement edit functionality to open a modal. Link to CleanerProfilePage could also go here. */}
-                        <DropdownMenuItem>
-                          <FilePenLine className="mr-2 h-4 w-4" />
-                          Edit
+                        {/* Link to the edit page for this cleaner */}
+                        <DropdownMenuItem asChild>
+                          <Link href={`/cleaners/${cleaner.id}/edit`}>
+                            <FilePenLine className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
                         {/* TODO: Implement delete functionality */}
                         <DropdownMenuItem className="text-destructive">

@@ -31,6 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Link from 'next/link';
 
 // Define types for sync status to ensure consistency.
 type SyncStatus = 'synced' | 'error' | 'pending';
@@ -143,10 +144,12 @@ export default function ListingsPage() {
                                   </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                  {/* TODO: Implement edit functionality to open a modal */}
-                                  <DropdownMenuItem>
+                                  {/* Link to the edit page for this listing */}
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/listings/${listing.id}/edit`}>
                                       <FilePenLine className="mr-2 h-4 w-4" />
                                       Edit
+                                    </Link>
                                   </DropdownMenuItem>
                                   {/* TODO: Implement delete functionality */}
                                   <DropdownMenuItem className="text-destructive">
