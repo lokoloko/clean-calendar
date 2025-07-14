@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ import {
   LayoutDashboard,
   PanelLeft,
   UserCircle,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -41,6 +43,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/stats', label: 'Stats', icon: BarChart3 },
   { href: '/listings', label: 'Listings', icon: Home },
   { href: '/cleaners', label: 'Cleaners', icon: Users },
   { href: '/assignments', label: 'Assignments', icon: Link2 },
@@ -163,3 +166,5 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
