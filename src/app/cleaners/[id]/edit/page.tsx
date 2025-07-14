@@ -16,9 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 // UI-only page for editing an existing cleaner.
 export default function EditCleanerPage({ params }: { params: { id: string } }) {
-  const { id } = params;
   // TODO: Replace with real data fetch based on params.id
-  const cleaner = mockCleaners.find(c => c.id === id) || mockCleaners[0];
+  const cleaner = mockCleaners.find(c => c.id === params.id) || mockCleaners[0];
   const { toast } = useToast();
 
   // Handler for form submission.
