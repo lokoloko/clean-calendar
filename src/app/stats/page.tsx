@@ -120,10 +120,10 @@ export default function StatsPage() {
                 % of days booked this month
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center relative">
+            <CardContent className="flex items-center justify-center relative h-[150px]">
               <ChartContainer
                 config={{}}
-                className="mx-auto aspect-square h-[150px]"
+                className="mx-auto aspect-square h-full"
               >
                 <PieChart>
                   <ChartTooltip
