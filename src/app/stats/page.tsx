@@ -34,9 +34,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+// TODO: All data is currently mocked. It should be replaced with data parsed from the .ics feed.
 import { mockListings } from "@/data/mock-data";
 import { Progress } from "@/components/ui/progress";
 
+// Configuration for the charts on this page.
 const chartConfig: ChartConfig = {
   bookings: {
     label: "Bookings",
@@ -51,6 +53,7 @@ const chartConfig: ChartConfig = {
   }
 };
 
+// Mock data for the weekly booking trend chart.
 const weeklyBookingData = [
   { week: "Week 1", bookings: 3 },
   { week: "Week 2", bookings: 5 },
@@ -58,6 +61,7 @@ const weeklyBookingData = [
   { week: "Week 4", bookings: 6 },
 ];
 
+// Mock data for the most common checkout day chart.
 const checkoutDayData = [
     { day: "Sun", checkouts: 5 },
     { day: "Mon", checkouts: 3 },
@@ -68,6 +72,7 @@ const checkoutDayData = [
     { day: "Sat", checkouts: 7 },
 ];
 
+// Mock data for the booking detail breakdown table.
 const bookingDetails = [
   { id: 1, checkIn: "2025-07-01", checkOut: "2025-07-04", nights: 3, duration: "Standard", uid: "abcd@airbnb.com" },
   { id: 2, checkIn: "2025-07-04", checkOut: "2025-07-09", nights: 5, duration: "Back-to-back", uid: "efgh@airbnb.com" },
@@ -75,30 +80,37 @@ const bookingDetails = [
   { id: 4, checkIn: "2025-07-15", checkOut: "2025-07-20", nights: 5, duration: "Standard", uid: "mnop@airbnb.com" },
 ];
 
+// Mock data for the occupancy rate stat.
 const occupancyData = {
     booked: 75,
     vacant: 25,
 };
 
+// Page for displaying stats based on Airbnb calendar data.
 export default function StatsPage() {
 
   return (
     <AppLayout>
+      {/* Main layout for the stats page */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex-1">
+                {/* Page Header Component */}
                 <PageHeader title="Your Listing Stats" />
                 <p className="text-muted-foreground mt-2">
                     Insights based on your Airbnb calendar data.
                 </p>
             </div>
+            {/* Listing selector for filtering stats */}
             <div className="grid gap-2 w-full md:w-[300px]">
                 <Label htmlFor="listing-select">Select Listing</Label>
+                {/* Dropdown to switch between listings */}
                 <Select defaultValue={mockListings.length > 0 ? mockListings[0].id : undefined}>
                     <SelectTrigger id="listing-select" aria-label="Select listing">
                         <SelectValue placeholder="Choose a listing..." />
                     </SelectTrigger>
                     <SelectContent>
+                        {/* Render all connected listings as dropdown options */}
                         {mockListings.map((listing) => (
                             <SelectItem key={listing.id} value={listing.id}>
                                 {listing.name}
@@ -112,8 +124,9 @@ export default function StatsPage() {
             </div>
         </div>
         
-
+        {/* Key Metrics Section */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Reusable card for displaying occupancy rate */}
           <Card>
             <CardHeader>
               <CardTitle>Occupancy Rate</CardTitle>
@@ -128,6 +141,7 @@ export default function StatsPage() {
               </div>
             </CardContent>
           </Card>
+          {/* Reusable card for displaying average stay length */}
           <Card>
             <CardHeader>
               <CardTitle>Avg. Stay Length</CardTitle>
@@ -137,6 +151,7 @@ export default function StatsPage() {
               <p className="text-4xl font-bold">3.2 nights</p>
             </CardContent>
           </Card>
+          {/* Reusable card for displaying back-to-back turnovers */}
           <Card>
             <CardHeader>
               <CardTitle>Back-to-Back Turnovers</CardTitle>
@@ -146,12 +161,14 @@ export default function StatsPage() {
               <Badge variant="secondary" className="text-2xl font-bold p-3">12</Badge>
             </CardContent>
           </Card>
+          {/* Reusable card with a mini bar chart for checkout day */}
           <Card className="lg:col-span-1">
             <CardHeader>
                 <CardTitle>Most Common Checkout Day</CardTitle>
                 <CardDescription>Day of week guests most often check out</CardDescription>
             </CardHeader>
             <CardContent>
+                {/* MiniBarChart Component */}
                 <ChartContainer config={chartConfig} className="h-[150px] w-full">
                     <BarChart data={checkoutDayData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid vertical={false} />
@@ -165,12 +182,15 @@ export default function StatsPage() {
           </Card>
         </div>
 
+        {/* Trends Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Line chart for weekly booking trend */}
             <Card>
                 <CardHeader>
                     <CardTitle>Weekly Booking Trend</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    {/* LineChart Component */}
                     <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <LineChart data={weeklyBookingData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -182,23 +202,28 @@ export default function StatsPage() {
                     </ChartContainer>
                 </CardContent>
             </Card>
+            {/* Placeholder for Calendar Heatmap */}
             <Card>
                 <CardHeader>
                     <CardTitle>Calendar Heatmap</CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center">
+                    {/* CalendarHeatmap Component Placeholder */}
                     <div className="flex items-center justify-center h-[250px] w-full bg-muted rounded-xl">
+                        {/* TODO: Implement a real calendar heatmap component. */}
                         <p className="text-muted-foreground">Calendar Heatmap Placeholder</p>
                     </div>
                 </CardContent>
             </Card>
         </div>
 
+        {/* Booking Detail Breakdown Table */}
         <Card>
           <CardHeader>
             <CardTitle>Booking Detail Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* BookingTable Component */}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -210,6 +235,7 @@ export default function StatsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Loop to render booking details */}
                 {bookingDetails.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell>{booking.checkIn}</TableCell>

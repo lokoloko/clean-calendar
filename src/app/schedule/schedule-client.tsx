@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -26,25 +27,34 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { type ScheduleItem, type Cleaner, type OptimizedAssignment } from '@/types';
 import { optimizeScheduleAction } from './actions';
+// TODO: Toast is currently unused. It can be used for showing success/error messages for AI optimization.
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 
+// Props for the ScheduleClient component.
 type ScheduleClientProps = {
   initialSchedule: ScheduleItem[];
   cleaners: Cleaner[];
 };
 
+/**
+ * A client component for displaying and interacting with the schedule.
+ * This component handles state for AI optimization and user interactions.
+ * This component is intended to be used within a server component that fetches the initial data.
+ */
 export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [optimizedAssignments, setOptimizedAssignments] = useState<OptimizedAssignment[]>([]);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  // Handler for the AI optimization flow.
   const handleOptimize = () => {
     startTransition(async () => {
       const result = await optimizeScheduleAction();
       if (result.success && result.data) {
         setOptimizedAssignments(result.data);
+        // TODO: The toast is currently not displayed, this needs to be fixed.
         toast({
           title: "Schedule Optimized!",
           description: "AI has generated an optimized schedule.",
@@ -61,26 +71,32 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Page Header Component */}
       <PageHeader title="Generated Schedule">
+        {/* Button to trigger the AI schedule optimization */}
         <Button onClick={handleOptimize} disabled={isPending}>
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Optimize with AI
         </Button>
       </PageHeader>
       
+      {/* Tabs to switch between optimized and weekly schedule views */}
       <Tabs defaultValue="optimized">
         <div className="flex flex-wrap items-center gap-4">
             <TabsList>
                 <TabsTrigger value="optimized">Optimized Schedule</TabsTrigger>
                 <TabsTrigger value="weekly">Weekly View</TabsTrigger>
             </TabsList>
+            {/* Filter controls */}
             <div className="flex flex-wrap items-center gap-2 ml-auto">
+            {/* Cleaner filter dropdown */}
             <Select>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All Cleaners" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cleaners</SelectItem>
+                {/* Render all cleaners as dropdown options */}
                 {cleaners.map((cleaner) => (
                   <SelectItem key={cleaner.id} value={cleaner.id}>
                     {cleaner.name}
@@ -88,6 +104,7 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
                 ))}
               </SelectContent>
             </Select>
+            {/* Date picker */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -108,10 +125,12 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
           </div>
         </div>
 
+        {/* Content for the "Optimized Schedule" tab */}
         <TabsContent value="optimized" className="mt-4">
             <Card>
                 <CardContent className="p-0">
                   <div className="border-0 rounded-xl">
+                      {/* Table for displaying the AI-optimized schedule */}
                       <Table>
                       <TableHeader>
                           <TableRow>
@@ -123,6 +142,7 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
                       </TableHeader>
                       <TableBody>
                           {optimizedAssignments.length > 0 ? (
+                          // Render optimized assignments if available
                           optimizedAssignments.map((item, index) => (
                               <TableRow key={index}>
                                 <TableCell className="font-medium">{item.listingName}</TableCell>
@@ -132,6 +152,7 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
                               </TableRow>
                           ))
                           ) : (
+                          // Show a message if no schedule has been generated
                           <TableRow>
                               <TableCell colSpan={4} className="h-24 text-center">
                               No optimized schedule generated yet. Click "Optimize with AI" to begin.
@@ -145,10 +166,12 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
             </Card>
         </TabsContent>
 
+        {/* Content for the "Weekly View" tab */}
         <TabsContent value="weekly" className="mt-4">
             <Card>
                 <CardContent className="p-0">
                   <div className="border-0 rounded-xl">
+                      {/* Table for displaying the initial weekly schedule */}
                       <Table>
                       <TableHeader>
                           <TableRow>
@@ -159,6 +182,7 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
                           </TableRow>
                       </TableHeader>
                       <TableBody>
+                          {/* Render the initial schedule passed via props */}
                           {initialSchedule.map((item) => (
                           <TableRow key={item.id}>
                               <TableCell className="font-medium">{item.date}</TableCell>

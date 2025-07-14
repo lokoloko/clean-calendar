@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-
+// Navigation items for the sidebar.
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/stats', label: 'Stats', icon: BarChart3 },
@@ -51,10 +51,15 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
+/**
+ * Reusable Sidebar component for the application layout.
+ * It contains the main navigation links.
+ */
 function AppSidebar() {
   const pathname = usePathname();
   return (
     <Sidebar>
+      {/* Sidebar Header with logo and app name */}
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden rounded-full">
@@ -65,8 +70,10 @@ function AppSidebar() {
             </span>
         </Link>
       </SidebarHeader>
+      {/* Sidebar content with navigation menu */}
       <SidebarContent>
         <SidebarMenu>
+          {/* Render all navigation items from the navItems array */}
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -74,6 +81,7 @@ function AppSidebar() {
                 isActive={pathname === item.href}
                 tooltip={item.label}
               >
+                {/* Navigation link for each item */}
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
@@ -83,13 +91,18 @@ function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      {/* Sidebar footer */}
       <SidebarFooter className='group-data-[collapsible=icon]:hidden'>
-        {/* Footer content if needed */}
+        {/* Footer content can be added here if needed */}
       </SidebarFooter>
     </Sidebar>
   );
 }
 
+/**
+ * Reusable Header component for the application layout.
+ * Contains user info and a menu.
+ */
 function AppHeader() {
     const { toggleSidebar } = useSidebar();
     return (
@@ -97,6 +110,7 @@ function AppHeader() {
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">
+                        {/* Sidebar toggle button for mobile view */}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -107,12 +121,14 @@ function AppHeader() {
                             <span className="sr-only">Toggle Sidebar</span>
                         </Button>
                     </div>
+                    {/* User profile and menu */}
                     <div className="flex items-center gap-4">
                         <span className="hidden sm:block font-medium">Welcome, Admin</span>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                     <Avatar className="h-8 w-8">
+                                        {/* TODO: Replace with dynamic user avatar */}
                                         <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" data-ai-hint="user avatar" />
                                         <AvatarFallback>A</AvatarFallback>
                                     </Avatar>
@@ -121,6 +137,7 @@ function AppHeader() {
                             <DropdownMenuContent className="w-56" align="end" forceMount>
                                 <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
+                                    {/* TODO: Replace with dynamic user info */}
                                     <p className="text-sm font-medium leading-none">Admin</p>
                                     <p className="text-xs leading-none text-muted-foreground">
                                     admin@example.com
@@ -128,6 +145,7 @@ function AppHeader() {
                                 </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                {/* TODO: Implement links to profile, billing, settings, and logout */}
                                 <DropdownMenuItem>Profile</DropdownMenuItem>
                                 <DropdownMenuItem>Billing</DropdownMenuItem>
                                 <DropdownMenuItem>Settings</DropdownMenuItem>
@@ -142,8 +160,12 @@ function AppHeader() {
     );
 }
 
+/**
+ * Main application layout component.
+ * It wraps pages with the sidebar and header.
+ */
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  // Check for cookie on mount to set initial state
+  // Persist sidebar state using a cookie.
   const [defaultOpen, setDefaultOpen] = useState(true);
 
   React.useEffect(() => {
@@ -166,5 +188,3 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

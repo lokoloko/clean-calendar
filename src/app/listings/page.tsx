@@ -32,39 +32,49 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+// Define types for sync status to ensure consistency.
 type SyncStatus = 'synced' | 'error' | 'pending';
 
+// Map sync status to corresponding icons for visual representation.
 const statusIcons: Record<SyncStatus, React.ReactNode> = {
   synced: <CheckCircle2 className="h-4 w-4 text-green-500" />,
   error: <XCircle className="h-4 w-4 text-destructive" />,
   pending: <AlertCircle className="h-4 w-4 text-yellow-500" />,
 }
 
+// Map sync status to tooltip text for providing more context to the user.
 const statusTooltips: Record<SyncStatus, string> = {
   synced: 'Synced successfully',
   error: 'Sync failed',
   pending: 'Sync pending',
 }
 
-
+// Page for managing all connected listings.
 export default function ListingsPage() {
+  // TODO: Replace mockListings with data from a database.
+  // Add sync status and last sync time to the mock data for UI-only display.
   const [listings, setListings] = useState(mockListings.map(l => ({
     ...l,
-    syncStatus: 'synced' as SyncStatus,
-    lastSync: 'Jul 15, 10:31 AM',
+    syncStatus: 'synced' as SyncStatus, // TODO: Connect real .ics sync status when backend is ready
+    lastSync: 'Jul 15, 10:31 AM', // TODO: This should be a dynamic value.
   })));
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <AppLayout>
+      {/* Main layout for the listings page */}
       <div className="flex flex-col gap-8">
+        {/* Page Header Component */}
         <PageHeader title="Manage Listings">
+           {/* Button to trigger the 'Add New Listing' modal */}
           <Button onClick={() => setIsModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add New Listing
           </Button>
         </PageHeader>
         
+        {/* Table container */}
         <div className="border rounded-xl shadow-sm">
+          {/* Reusable Table component for displaying listings */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -77,16 +87,19 @@ export default function ListingsPage() {
             </TableHeader>
             <TableBody>
               <TooltipProvider>
+                {/* Loop through listings to render table rows */}
                 {listings.map((listing) => (
                   <TableRow key={listing.id}>
                     <TableCell className="font-medium">{listing.name}</TableCell>
                     <TableCell>
+                      {/* External link to the .ics calendar URL */}
                       <a href={listing.icsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
                         <span>Link</span>
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     </TableCell>
                     <TableCell>
+                      {/* Display assigned cleaners using badges */}
                       <div className="flex flex-wrap gap-1">
                         {listing.assignedCleaners.map(cleaner => (
                           <Badge key={cleaner} variant="secondary">{cleaner}</Badge>
@@ -94,6 +107,7 @@ export default function ListingsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      {/* Sync Health Indicator */}
                       <div className="flex items-center gap-2">
                         <Tooltip>
                           <TooltipTrigger>
@@ -108,8 +122,10 @@ export default function ListingsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                        <div className="flex items-center justify-end gap-2">
+                          {/* Manual Refresh Button */}
                           <Tooltip>
                               <TooltipTrigger asChild>
+                                  {/* TODO: Implement manual refresh functionality */}
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
                                       <RefreshCcw className="h-4 w-4" />
                                   </Button>
@@ -118,6 +134,7 @@ export default function ListingsPage() {
                                   <p>Manual Refresh</p>
                               </TooltipContent>
                           </Tooltip>
+                          {/* Actions dropdown for each listing */}
                           <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" className="h-8 w-8 p-0">
@@ -126,10 +143,12 @@ export default function ListingsPage() {
                                   </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                  {/* TODO: Implement edit functionality to open a modal */}
                                   <DropdownMenuItem>
                                       <FilePenLine className="mr-2 h-4 w-4" />
                                       Edit
                                   </DropdownMenuItem>
+                                  {/* TODO: Implement delete functionality */}
                                   <DropdownMenuItem className="text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" />
                                       Delete
@@ -145,6 +164,7 @@ export default function ListingsPage() {
           </Table>
         </div>
 
+        {/* 'Add New Listing' Modal Form */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -154,6 +174,7 @@ export default function ListingsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
+              {/* Field for Listing Name with helper text */}
               <div className="grid gap-2">
                 <Label htmlFor="name">
                   Listing Name
@@ -163,6 +184,7 @@ export default function ListingsPage() {
                   Give this listing a name you recognize. We suggest matching the internal name from your Airbnb calendar so it’s easy to track. This will appear in your cleaning schedule.
                 </p>
               </div>
+              {/* Field for Airbnb Calendar Link with helper text */}
               <div className="grid gap-2">
                 <Label htmlFor="icsUrl">
                   Airbnb Calendar Link (.ics)
@@ -175,6 +197,7 @@ export default function ListingsPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              {/* TODO: Implement form submission logic */}
               <Button type="submit">Save changes</Button>
             </DialogFooter>
           </DialogContent>

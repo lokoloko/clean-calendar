@@ -11,13 +11,17 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 
+// Page for configuring application settings.
 export default function SettingsPage() {
   return (
     <AppLayout>
+      {/* Main layout for the settings page */}
       <div className="flex flex-col gap-8">
+        {/* Page Header Component */}
         <PageHeader title="Settings" />
 
         <div className="grid gap-6">
+          {/* Card for Messaging Preferences */}
           <Card>
             <CardHeader>
               <CardTitle>Messaging Preferences</CardTitle>
@@ -26,10 +30,12 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Form for messaging settings */}
               <form className="grid gap-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="grid gap-2">
                     <Label htmlFor="sms-provider">SMS Provider</Label>
+                    {/* TODO: Connect this to a backend service like Twilio. */}
                     <Select defaultValue="twilio">
                       <SelectTrigger id="sms-provider" className="w-full md:w-[300px]">
                         <SelectValue placeholder="Select provider" />
@@ -44,7 +50,8 @@ export default function SettingsPage() {
                 </div>
 
                 <Separator />
-
+                
+                {/* Section for configuring what notifications to send */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="grid gap-4">
                     <Label className="font-semibold">What to Send Cleaners</Label>
@@ -57,6 +64,7 @@ export default function SettingsPage() {
                       <Label htmlFor="daily-reminders">Daily Reminders</Label>
                     </div>
                   </div>
+                  {/* Section for configuring when to send the weekly schedule */}
                   <div className="grid gap-4">
                     <Label className="font-semibold">When to Send Weekly Schedule</Label>
                     <RadioGroup defaultValue="sunday" className="flex gap-4">
@@ -72,6 +80,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
+                {/* Input for setting the daily reminder time */}
                 <div className="grid gap-2">
                   <Label htmlFor="send-time">Daily Reminder Time</Label>
                   <Input id="send-time" type="time" defaultValue="06:00" className="w-full md:w-[300px]" />
@@ -79,6 +88,7 @@ export default function SettingsPage() {
 
                 <Separator />
                 
+                {/* Section for requiring confirmation from cleaners */}
                 <div className="grid gap-4">
                     <Label className="font-semibold">Confirmation</Label>
                     <div className="flex items-center space-x-3">
@@ -87,12 +97,13 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-
+                {/* TODO: Implement save functionality */}
                 <Button className="w-fit">Save Preferences</Button>
               </form>
             </CardContent>
           </Card>
 
+          {/* Card for Authentication settings */}
           <Card>
             <CardHeader>
               <CardTitle>Authentication</CardTitle>
@@ -101,6 +112,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Displaying the OAuth provider, currently read-only */}
               <div className="grid gap-2">
                   <Label>OAuth Provider</Label>
                   <Input value="Google" readOnly disabled className="w-full md:w-[300px] bg-muted/50" />
