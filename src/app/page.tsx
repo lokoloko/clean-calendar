@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import {
   Accordion,
   AccordionContent,
@@ -8,8 +8,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Image from 'next/image';
-import { CheckCircle2, MessageSquareText, Users, CalendarPlus } from 'lucide-react';
+import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check } from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function LandingPage() {
   const benefits = [
@@ -146,62 +147,134 @@ export default function LandingPage() {
         </section>
 
         <section className="container py-12 md:py-24">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <Image
-                src="https://placehold.co/600x500.png"
-                width={600}
-                height={500}
-                alt="Illustration of benefits"
-                className="rounded-xl shadow-lg"
-                data-ai-hint="benefits checklist happy"
-              />
-            </div>
-            <div className="space-y-6">
-              <h2 className="text-3xl font-headline font-bold">Never Miss a Cleaning Again</h2>
-              <p className="text-muted-foreground">
-                Our platform provides immediate, real-world benefits that give you your time back.
-              </p>
-              <ul className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <CheckCircle2 className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                    <span className="text-lg">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-headline font-bold">Simple, fair pricing.</h2>
+            <p className="text-muted-foreground mt-2">Start free, upgrade anytime.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle>Free</CardTitle>
+                <CardDescription>
+                  <span className="text-4xl font-bold">$0</span>/month
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 1 listing</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Email notifications only</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Manual schedule viewing</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" asChild><Link href="/dashboard">Start Free</Link></Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="flex flex-col border-primary shadow-lg relative">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+              <CardHeader>
+                <CardTitle>Starter</CardTitle>
+                <CardDescription>
+                  <span className="text-4xl font-bold">$9</span>/month
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Up to 3 listings</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> SMS & email notifications</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Cleaner assignment</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Weekly schedule export</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" asChild><Link href="/dashboard">Get Started</Link></Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle>Pro</CardTitle>
+                <CardDescription>
+                  <span className="text-4xl font-bold">$29</span>/month
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 10+ listings</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> SMS, WhatsApp, and email</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Cleaner dashboard</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Smart auto-assignment</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Daily alerts & insights</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" asChild><Link href="/dashboard">Upgrade to Pro</Link></Button>
+              </CardFooter>
+            </Card>
+          </div>
+          <div className="mt-12 text-center text-sm text-muted-foreground">
+              <p><span className="font-bold">Optional Add-ons:</span> SMS pack: +$5/mo | WhatsApp support: included in Pro | Setup help: $99 one-time</p>
           </div>
         </section>
 
         <section className="bg-muted py-12 md:py-24">
           <div className="container">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-headline font-bold">Trusted by Hosts Like You</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="italic">
-                    "This saved me 5 hours a week — no more spreadsheets."
-                  </p>
-                  <p className="text-right font-semibold mt-4">— Sarah, Superhost</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="italic">
-                    "My cleaner actually said thanks. She gets her list every morning like clockwork."
-                  </p>
-                  <p className="text-right font-semibold mt-4">— James, Property Manager</p>
-                </CardContent>
-              </Card>
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                <Image
+                  src="https://placehold.co/600x500.png"
+                  width={600}
+                  height={500}
+                  alt="Illustration of benefits"
+                  className="rounded-xl shadow-lg"
+                  data-ai-hint="benefits checklist happy"
+                />
+              </div>
+              <div className="space-y-6">
+                <h2 className="text-3xl font-headline font-bold">Never Miss a Cleaning Again</h2>
+                <p className="text-muted-foreground">
+                  Our platform provides immediate, real-world benefits that give you your time back.
+                </p>
+                <ul className="space-y-4">
+                  {benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-lg">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="container py-12 md:py-24">
-          <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-headline font-bold">Trusted by Hosts Like You</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="italic">
+                  "This saved me 5 hours a week — no more spreadsheets."
+                </p>
+                <p className="text-right font-semibold mt-4">— Sarah, Superhost</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="italic">
+                  "My cleaner actually said thanks. She gets her list every morning like clockwork."
+                </p>
+                <p className="text-right font-semibold mt-4">— James, Property Manager</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="bg-muted py-12 md:py-24">
+          <div className="container max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-headline font-bold">Frequently Asked Questions</h2>
             </div>
