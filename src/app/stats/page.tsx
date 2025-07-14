@@ -120,7 +120,7 @@ export default function StatsPage() {
                 % of days booked this month
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center">
+            <CardContent className="flex items-center justify-center relative">
               <ChartContainer
                 config={{}}
                 className="mx-auto aspect-square h-[150px]"
@@ -136,6 +136,8 @@ export default function StatsPage() {
                     nameKey="name"
                     innerRadius={40}
                     strokeWidth={5}
+                    startAngle={90}
+                    endAngle={450}
                   >
                     {occupancyData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -143,6 +145,11 @@ export default function StatsPage() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold">
+                    {occupancyData.find(d => d.name === 'Booked')?.value}%
+                  </span>
+              </div>
             </CardContent>
           </Card>
           <Card>
