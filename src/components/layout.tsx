@@ -40,7 +40,7 @@ import { cn } from '@/lib/utils';
 
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/listings', label: 'Listings', icon: Home },
   { href: '/cleaners', label: 'Cleaners', icon: Users },
   { href: '/assignments', label: 'Assignments', icon: Link2 },
@@ -53,14 +53,14 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden rounded-full">
                 <Sparkles className="h-6 w-6 text-primary" />
             </Button>
             <span className="text-lg font-semibold font-headline group-data-[collapsible=icon]:hidden">
                 CleanSweep
             </span>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -110,7 +110,7 @@ function AppHeader() {
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" />
+                                        <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" data-ai-hint="user avatar" />
                                         <AvatarFallback>A</AvatarFallback>
                                     </Avatar>
                                 </Button>
