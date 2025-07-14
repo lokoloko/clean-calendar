@@ -1,3 +1,5 @@
+
+import { AppLayout } from "@/components/layout";
 import { mockCleaners, mockSchedule } from "@/data/mock-data";
 import { ScheduleClient } from "./schedule-client";
 
@@ -7,6 +9,8 @@ export default function SchedulePage() {
   const initialSchedule = mockSchedule;
 
   return (
-    <ScheduleClient initialSchedule={initialSchedule} cleaners={cleaners} />
+    <AppLayout>
+      <ScheduleClient initialSchedule={initialSchedule} cleaners={cleaners} />
+    </AppLayout>
   );
 }
