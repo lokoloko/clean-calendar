@@ -58,6 +58,12 @@ export default function EditListingPage({ params }: { params: { id: string } }) 
                 <Input id="icsUrl" defaultValue={listing.icsUrl} />
               </div>
 
+              {/* Field for Cleaning Fee */}
+              <div className="grid gap-2">
+                <Label htmlFor="cleaningFee">Cleaning Fee ($)</Label>
+                <Input id="cleaningFee" type="number" defaultValue={listing.cleaningFee} placeholder="e.g. 50" />
+              </div>
+
               {/* Field for Assigned Cleaner */}
               <div className="grid gap-2">
                 <Label htmlFor="cleaner">Assigned Cleaner</Label>

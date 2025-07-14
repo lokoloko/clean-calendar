@@ -3,6 +3,7 @@ export type Listing = {
   name: string;
   icsUrl: string;
   assignedCleaners: string[];
+  cleaningFee?: number;
 };
 
 export type Cleaner = {

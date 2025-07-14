@@ -7,10 +7,10 @@ export const mockCleaners: Cleaner[] = [
 ];
 
 export const mockListings: Listing[] = [
-  { id: '1', name: 'Monrovia A', icsUrl: 'https://example.com/calendar/monrovia_a.ics', assignedCleaners: ['Yolanda Vega'] },
-  { id: '2', name: 'Downtown Loft', icsUrl: 'https://example.com/calendar/downtown.ics', assignedCleaners: ['Yolanda Vega', 'John Smith'] },
-  { id: '3', name: 'Beachside Bungalow', icsUrl: 'https://example.com/calendar/beachside.ics', assignedCleaners: ['Maria Garcia'] },
-  { id: '4', name: 'Mountain Cabin', icsUrl: 'https://example.com/calendar/cabin.ics', assignedCleaners: ['Yolanda Vega', 'Maria Garcia'] },
+  { id: '1', name: 'Monrovia A', icsUrl: 'https://example.com/calendar/monrovia_a.ics', assignedCleaners: ['Yolanda Vega'], cleaningFee: 75 },
+  { id: '2', name: 'Downtown Loft', icsUrl: 'https://example.com/calendar/downtown.ics', assignedCleaners: ['Yolanda Vega', 'John Smith'], cleaningFee: 100 },
+  { id: '3', name: 'Beachside Bungalow', icsUrl: 'https://example.com/calendar/beachside.ics', assignedCleaners: ['Maria Garcia'], cleaningFee: 125 },
+  { id: '4', name: 'Mountain Cabin', icsUrl: 'https://example.com/calendar/cabin.ics', assignedCleaners: ['Yolanda Vega', 'Maria Garcia'], cleaningFee: 90 },
 ];
 
 export const mockAssignments: Assignment[] = [
