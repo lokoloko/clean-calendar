@@ -132,12 +132,12 @@ export default function LandingPage() {
                     <div className="bg-primary/10 p-3 rounded-full">
                       <MessageSquareText className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="font-headline">3. Get a Daily Text</CardTitle>
+                    <CardTitle className="font-headline">3. Get Weekly Schedule &amp; Reminders</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Cleaners receive automated daily reminders. You relax.
+                    Cleaners receive automated schedules and reminders. You relax.
                   </p>
                 </CardContent>
               </Card>
