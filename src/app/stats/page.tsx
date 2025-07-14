@@ -25,7 +25,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts";
 import {
   Select,
   SelectContent,
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { mockListings } from "@/data/mock-data";
+import { Progress } from "@/components/ui/progress";
 
 const chartConfig: ChartConfig = {
   bookings: {
@@ -74,10 +75,10 @@ const bookingDetails = [
   { id: 4, checkIn: "2025-07-15", checkOut: "2025-07-20", nights: 5, duration: "Standard", uid: "mnop@airbnb.com" },
 ];
 
-const occupancyData = [
-    { name: 'Booked', value: 75, fill: 'hsl(var(--chart-1))' },
-    { name: 'Vacant', value: 25, fill: 'hsl(var(--muted))' },
-]
+const occupancyData = {
+    booked: 75,
+    vacant: 25,
+};
 
 export default function StatsPage() {
 
@@ -120,35 +121,10 @@ export default function StatsPage() {
                 % of days booked this month
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center relative h-[150px]">
-              <ChartContainer
-                config={{}}
-                className="mx-auto aspect-square h-full"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={occupancyData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={40}
-                    strokeWidth={5}
-                    startAngle={90}
-                    endAngle={450}
-                  >
-                    {occupancyData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold">
-                    {occupancyData.find(d => d.name === 'Booked')?.value}%
-                  </span>
+            <CardContent>
+              <div className="flex flex-col gap-2">
+                <p className="text-4xl font-bold">{occupancyData.booked}%</p>
+                <Progress value={occupancyData.booked} aria-label={`${occupancyData.booked}% occupancy`} />
               </div>
             </CardContent>
           </Card>
