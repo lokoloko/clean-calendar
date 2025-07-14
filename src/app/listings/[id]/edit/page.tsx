@@ -15,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 
 // UI-only page for editing an existing listing.
 export default function EditListingPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   // TODO: Replace with real data fetch based on params.id
-  const listing = mockListings.find(l => l.id === params.id) || mockListings[0];
+  const listing = mockListings.find(l => l.id === id) || mockListings[0];
   const { toast } = useToast();
 
   // Handler for form submission.
