@@ -100,18 +100,21 @@ export default function ListingsPage() {
                 Enter the details for the new listing. Click save when you're done.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
+            <div className="grid gap-6 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">
                   Listing Name
                 </Label>
-                <Input id="name" placeholder="e.g. Monrovia A" className="col-span-3" />
+                <Input id="name" placeholder="e.g., Unit 2 – Hopper" />
+                <p className="text-sm text-muted-foreground">
+                  Give this listing a name you recognize. We suggest matching the internal name from your Airbnb calendar so it’s easy to track. This will appear in your cleaning schedule.
+                </p>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="icsUrl" className="text-right">
+              <div className="grid gap-2">
+                <Label htmlFor="icsUrl">
                   ICS URL
                 </Label>
-                <Input id="icsUrl" placeholder="https://example.com/calendar.ics" className="col-span-3" />
+                <Input id="icsUrl" placeholder="https://example.com/calendar.ics" />
               </div>
             </div>
             <DialogFooter>
