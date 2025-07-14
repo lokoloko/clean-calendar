@@ -13,10 +13,12 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useParams } from 'next/navigation';
 
 // UI-only page for editing an existing cleaner.
-export default function EditCleanerPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EditCleanerPage() {
+  const params = useParams();
+  const id = params.id as string;
   // TODO: Replace with real data fetch based on params.id
   const cleaner = mockCleaners.find(c => c.id === id) || mockCleaners[0];
   const { toast } = useToast();
