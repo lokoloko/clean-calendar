@@ -112,9 +112,12 @@ export default function ListingsPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="icsUrl">
-                  ICS URL
+                  Airbnb Calendar Link (.ics)
                 </Label>
-                <Input id="icsUrl" placeholder="https://example.com/calendar.ics" />
+                <Input id="icsUrl" placeholder="https://www.airbnb.com/calendar/ical/..." />
+                <p className="text-sm text-muted-foreground">
+                  Copy the .ics link from Airbnb by selecting ‘Connect another calendar’ and choosing ‘Other website.’ Paste the full URL here to sync your listing’s availability.
+                </p>
               </div>
             </div>
             <DialogFooter>
