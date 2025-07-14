@@ -23,9 +23,9 @@ export const mockAssignments: Assignment[] = [
 ];
 
 export const mockSchedule: ScheduleItem[] = [
-  { id: '1', date: 'June 17, 2024', property: 'Monrovia A', checkoutTime: '11:00 AM', notes: '-' },
-  { id: '2', date: 'June 17, 2024', property: 'Downtown Loft', checkoutTime: '10:00 AM', notes: 'Guest requested late checkout' },
-  { id: '3', date: 'June 18, 2024', property: 'Beachside Bungalow', checkoutTime: '11:00 AM', notes: '-' },
-  { id: '4', date: 'June 19, 2024', property: 'Mountain Cabin', checkoutTime: '12:00 PM', notes: 'Deep clean needed' },
-  { id: '5', date: 'June 20, 2024', property: 'Monrovia A', checkoutTime: '11:00 AM', notes: '-' },
+    { id: '1', date: 'June 17, 2024', property: 'Monrovia A', cleaner: 'Yolanda Vega', checkoutTime: '11:00 AM', notes: '-' },
+    { id: '2', date: 'June 17, 2024', property: 'Downtown Loft', cleaner: 'John Smith', checkoutTime: '10:00 AM', notes: 'Guest requested late checkout' },
+    { id: '3', date: 'June 18, 2024', property: 'Beachside Bungalow', cleaner: 'Maria Garcia', checkoutTime: '11:00 AM', notes: '-' },
+    { id: '4', date: 'June 19, 2024', property: 'Mountain Cabin', cleaner: 'Yolanda Vega', checkoutTime: '12:00 PM', notes: 'Deep clean needed' },
+    { id: '5', date: 'June 20, 2024', property: 'Monrovia A', cleaner: 'Yolanda Vega', checkoutTime: '11:00 AM', notes: '-' },
 ];

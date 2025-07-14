@@ -23,6 +23,7 @@ export type ScheduleItem = {
   id: string;
   date: string;
   property: string;
+  cleaner: string;
   checkoutTime: string;
   notes: string;
 };
