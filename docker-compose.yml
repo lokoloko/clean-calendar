@@ -1,0 +1,50 @@
+services:
+  app:
+    build: 
+      context: .
+      target: dev
+    ports:
+      - "9002:9002"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cleansweep
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:9002
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-local-dev
+      - SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-local-dev
+      - NEXTAUTH_URL=http://localhost:9002
+      - NEXTAUTH_SECRET=development-secret-key-change-in-production
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cleansweep
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cleansweep
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cleansweep
+
+networks:
+  cleansweep:
+    driver: bridge
+
+volumes:
+  postgres_data:

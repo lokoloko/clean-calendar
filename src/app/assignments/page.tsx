@@ -18,18 +18,131 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
-import { mockAssignments, mockListings, mockCleaners } from '@/data/mock-data';
 import { MoreHorizontal, Plus, Replace, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
+
+interface Assignment {
+  id: string;
+  listing_id: string;
+  cleaner_id: string;
+  listing_name?: string;
+  cleaner_name?: string;
+  created_at: string;
+}
+
+interface Listing {
+  id: string;
+  name: string;
+}
+
+interface Cleaner {
+  id: string;
+  name: string;
+}
 
 // Page for managing cleaner-to-listing assignments.
 export default function AssignmentsPage() {
-  // TODO: Replace mockAssignments with data from a database.
-  const [assignments, setAssignments] = useState(mockAssignments);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    listing_id: '',
+    cleaner_id: ''
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [assignmentsRes, listingsRes, cleanersRes] = await Promise.all([
+        fetch('/api/assignments'),
+        fetch('/api/listings'),
+        fetch('/api/cleaners')
+      ]);
+
+      if (!assignmentsRes.ok || !listingsRes.ok || !cleanersRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const [assignmentsData, listingsData, cleanersData] = await Promise.all([
+        assignmentsRes.json(),
+        listingsRes.json(),
+        cleanersRes.json()
+      ]);
+
+      setAssignments(assignmentsData);
+      setListings(listingsData);
+      setCleaners(cleanersData);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load data',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAssignment = async () => {
+    try {
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to create assignment');
+
+      toast({
+        title: 'Success',
+        description: 'Assignment created successfully',
+      });
+
+      setIsModalOpen(false);
+      setFormData({ listing_id: '', cleaner_id: '' });
+      fetchData(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create assignment',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteAssignment = async (id: string) => {
+    try {
+      const response = await fetch(`/api/assignments/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete assignment');
+
+      toast({
+        title: 'Success',
+        description: 'Assignment deleted successfully',
+      });
+
+      fetchData(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete assignment',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <AppLayout>
@@ -55,36 +168,44 @@ export default function AssignmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Loop through assignments to render table rows */}
-              {assignments.map((assignment) => (
-                <TableRow key={assignment.id}>
-                  <TableCell className="font-medium">{assignment.listingName}</TableCell>
-                  <TableCell>{assignment.cleanerName}</TableCell>
-                  <TableCell className="text-right">
-                    {/* Actions dropdown for each assignment */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {/* TODO: Implement change functionality */}
-                        <DropdownMenuItem>
-                          <Replace className="mr-2 h-4 w-4" />
-                          Change
-                        </DropdownMenuItem>
-                        {/* TODO: Implement delete functionality */}
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : assignments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    No assignments yet. Click "Assign Cleaner to Listing" to create one.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                assignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-medium">{assignment.listing_name || 'Unknown Listing'}</TableCell>
+                    <TableCell>{assignment.cleaner_name || 'Unknown Cleaner'}</TableCell>
+                    <TableCell className="text-right">
+                      {/* Actions dropdown for each assignment */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteAssignment(assignment.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -104,13 +225,12 @@ export default function AssignmentsPage() {
                 <Label htmlFor="listing" className="text-right">
                   Listing
                 </Label>
-                {/* TODO: Replace mockListings with dynamic data */}
-                <Select>
+                <Select value={formData.listing_id} onValueChange={(value) => setFormData({...formData, listing_id: value})}>
                   <SelectTrigger id="listing" className="col-span-3">
                     <SelectValue placeholder="Select a listing" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockListings.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                    {listings.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -119,21 +239,21 @@ export default function AssignmentsPage() {
                 <Label htmlFor="cleaner" className="text-right">
                   Cleaner
                 </Label>
-                {/* TODO: Replace mockCleaners with dynamic data */}
-                <Select>
+                <Select value={formData.cleaner_id} onValueChange={(value) => setFormData({...formData, cleaner_id: value})}>
                   <SelectTrigger id="cleaner" className="col-span-3">
                     <SelectValue placeholder="Select a cleaner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockCleaners.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    {cleaners.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              {/* TODO: Implement form submission logic */}
-              <Button type="submit">Save assignment</Button>
+              <Button type="button" onClick={handleCreateAssignment} disabled={!formData.listing_id || !formData.cleaner_id}>
+                Save assignment
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

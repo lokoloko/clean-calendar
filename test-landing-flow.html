@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Landing Flow</title>
+</head>
+<body>
+    <h1>Test Landing Page Flow</h1>
+    <p>This page will test the calendar URL flow:</p>
+    <ol>
+        <li>Enter your Airbnb calendar URL</li>
+        <li>Click "Generate My Schedule"</li>
+        <li>Should redirect to dashboard, then to listings with the URL pre-filled</li>
+    </ol>
+    
+    <form action="http://localhost:9002" method="GET">
+        <input type="text" id="calendarUrl" value="https://www.airbnb.com/calendar/ical/745840653702711751.ics?s=6e74debcb3780609c3027bf739606a4c" style="width: 600px; padding: 5px;">
+        <button type="button" onclick="testFlow()">Test Flow</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+    function testFlow() {
+        const url = document.getElementById('calendarUrl').value;
+        const resultDiv = document.getElementById('result');
+        
+        // Store in sessionStorage (same as the app does)
+        sessionStorage.setItem('pendingCalendarUrl', url);
+        
+        resultDiv.innerHTML = '<p>✓ Stored URL in sessionStorage</p>';
+        resultDiv.innerHTML += '<p>✓ Now visit <a href="http://localhost:9002">http://localhost:9002</a></p>';
+        resultDiv.innerHTML += '<p>✓ The URL should be: ' + url + '</p>';
+        
+        // Open the app
+        window.open('http://localhost:9002', '_blank');
+    }
+    </script>
+</body>
+</html>

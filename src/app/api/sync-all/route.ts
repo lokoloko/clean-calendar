@@ -1,0 +1,161 @@
+import { db } from '@/lib/db'
+import { NextResponse } from 'next/server'
+import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
+
+// Mock user ID for development
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+
+export async function POST(request: Request) {
+  try {
+    // Optional API key for cron job authentication
+    const authHeader = request.headers.get('authorization')
+    const apiKey = process.env.SYNC_API_KEY
+    
+    // If API key is set, require it for this endpoint
+    if (apiKey && authHeader !== `Bearer ${apiKey}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get all Airbnb listings (only sync those with ICS URLs)
+    const listingsResult = await db.query(
+      'SELECT * FROM public.listings WHERE user_id = $1 AND is_active_on_airbnb = true AND ics_url IS NOT NULL',
+      [DEV_USER_ID]
+    )
+
+    const listings = listingsResult.rows
+    const results = []
+
+    for (const listing of listings) {
+      try {
+        // Get assigned cleaners for this listing
+        const assignmentsResult = await db.query(
+          'SELECT cleaner_id FROM public.assignments WHERE listing_id = $1',
+          [listing.id]
+        )
+
+        const cleanerIds = assignmentsResult.rows.map(row => row.cleaner_id)
+        const defaultCleanerId = cleanerIds[0] || null
+
+        if (!defaultCleanerId) {
+          results.push({
+            listingId: listing.id,
+            listingName: listing.name,
+            status: 'skipped',
+            reason: 'No cleaner assigned'
+          })
+          continue
+        }
+
+        // Parse the ICS file
+        const bookings = await parseICSFromURL(listing.ics_url)
+        
+        // Get all future bookings UIDs from the ICS feed
+        const currentBookingUids = bookings.map(b => b.uid);
+        
+        // Mark future bookings that are no longer in the ICS feed as cancelled
+        await db.query(
+          `UPDATE public.schedule_items 
+           SET status = 'cancelled', 
+               notes = COALESCE(notes || ' | ', '') || 'Cancelled on ' || TO_CHAR(NOW(), 'YYYY-MM-DD'),
+               updated_at = NOW()
+           WHERE listing_id = $1 
+             AND check_out > NOW() 
+             AND status != 'cancelled'
+             AND booking_uid NOT IN (${currentBookingUids.map((_, i) => `$${i + 2}`).join(', ') || 'NULL'})`,
+          [listing.id, ...currentBookingUids]
+        )
+
+        // Create new schedule items
+        let insertedCount = 0
+        let updatedCount = 0
+        
+        for (const booking of bookings) {
+          // Use ON CONFLICT to update existing bookings if they've changed
+          const result = await db.query(
+            `INSERT INTO public.schedule_items 
+            (listing_id, cleaner_id, booking_uid, guest_name, check_in, check_out, checkout_time, notes, status) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (booking_uid) 
+            DO UPDATE SET 
+              guest_name = EXCLUDED.guest_name,
+              check_in = EXCLUDED.check_in,
+              check_out = EXCLUDED.check_out,
+              checkout_time = EXCLUDED.checkout_time,
+              notes = EXCLUDED.notes
+            WHERE public.schedule_items.check_out > NOW()`,
+            [
+              listing.id,
+              defaultCleanerId,
+              booking.uid,
+              booking.guestName || 'Guest',
+              booking.checkIn.toISOString(),
+              booking.checkOut.toISOString(),
+              getCheckoutTime(booking.checkOut),
+              booking.description || null,
+              'pending'
+            ]
+          )
+          if (result.rowCount > 0) {
+            if (result.command === 'INSERT') insertedCount++
+            else updatedCount++
+          }
+        }
+
+        // Update last sync time
+        await db.query(
+          'UPDATE public.listings SET last_sync = NOW() WHERE id = $1',
+          [listing.id]
+        )
+
+        results.push({
+          listingId: listing.id,
+          listingName: listing.name,
+          status: 'success',
+          itemsCreated: insertedCount,
+          itemsUpdated: updatedCount,
+          totalBookings: bookings.length
+        })
+      } catch (error) {
+        console.error(`Error syncing listing ${listing.name}:`, error)
+        results.push({
+          listingId: listing.id,
+          listingName: listing.name,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+      }
+    }
+
+    const successful = results.filter(r => r.status === 'success').length
+    const failed = results.filter(r => r.status === 'error').length
+    const skipped = results.filter(r => r.status === 'skipped').length
+
+    return NextResponse.json({
+      success: true,
+      summary: {
+        total: listings.length,
+        successful,
+        failed,
+        skipped
+      },
+      results,
+      syncedAt: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Error in sync-all:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to sync all calendars' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET endpoint for monitoring/health checks
+export async function GET() {
+  return NextResponse.json({
+    endpoint: '/api/sync-all',
+    method: 'POST',
+    description: 'Syncs all listing calendars',
+    authentication: 'Optional Bearer token via SYNC_API_KEY env var'
+  })
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Button Click</title>
+</head>
+<body>
+    <h1>Debug Landing Page Button</h1>
+    
+    <h2>Test 1: Check if button click works</h2>
+    <button onclick="alert('Button click works!')">Test Basic Click</button>
+    
+    <h2>Test 2: Check sessionStorage</h2>
+    <button onclick="testSessionStorage()">Test SessionStorage</button>
+    
+    <h2>Test 3: Full Flow Test</h2>
+    <input type="text" id="testUrl" value="https://www.airbnb.com/calendar/ical/745840653702711751.ics?s=6e74debcb3780609c3027bf739606a4c" style="width: 600px;">
+    <button onclick="testFullFlow()">Test Full Flow</button>
+    
+    <h2>Test 4: Direct Navigation</h2>
+    <button onclick="window.location.href='http://localhost:9002/dashboard'">Go to Dashboard (should redirect to home if not logged in)</button>
+    
+    <div id="results"></div>
+    
+    <script>
+    function testSessionStorage() {
+        try {
+            sessionStorage.setItem('test', 'works');
+            const value = sessionStorage.getItem('test');
+            document.getElementById('results').innerHTML = '<p>✓ SessionStorage works: ' + value + '</p>';
+        } catch (e) {
+            document.getElementById('results').innerHTML = '<p>✗ SessionStorage error: ' + e.message + '</p>';
+        }
+    }
+    
+    function testFullFlow() {
+        const url = document.getElementById('testUrl').value;
+        sessionStorage.setItem('pendingCalendarUrl', url);
+        document.getElementById('results').innerHTML = '<p>✓ Stored URL in sessionStorage</p>';
+        document.getElementById('results').innerHTML += '<p>✓ URL: ' + url + '</p>';
+        document.getElementById('results').innerHTML += '<p>Now opening landing page...</p>';
+        setTimeout(() => {
+            window.location.href = 'http://localhost:9002';
+        }, 1000);
+    }
+    </script>
+</body>
+</html>

@@ -1,4 +1,7 @@
 
+'use client';
+
+import React, { useState } from 'react';
 import PageHeader from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,9 +13,87 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { RefreshCw, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Page for configuring application settings.
 export default function SettingsPage() {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
+  const { toast } = useToast();
+
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    setSyncProgress({ current: 0, total: 0 });
+
+    try {
+      // Get all listings
+      const listingsRes = await fetch('/api/listings');
+      if (!listingsRes.ok) throw new Error('Failed to fetch listings');
+      
+      const listings = await listingsRes.json();
+      const airbnbListings = listings.filter((listing: any) => listing.is_active_on_airbnb && listing.ics_url);
+      
+      setSyncProgress({ current: 0, total: airbnbListings.length });
+      
+      if (airbnbListings.length === 0) {
+        toast({
+          title: 'No listings to sync',
+          description: 'No active Airbnb listings found with calendar URLs',
+        });
+        setIsSyncing(false);
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Sync each listing
+      for (let i = 0; i < airbnbListings.length; i++) {
+        const listing = airbnbListings[i];
+        setSyncProgress({ current: i + 1, total: airbnbListings.length });
+        
+        try {
+          const syncRes = await fetch(`/api/listings/${listing.id}/sync`, {
+            method: 'POST',
+          });
+          
+          if (syncRes.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Failed to sync ${listing.name}`);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error syncing ${listing.name}:`, error);
+        }
+      }
+
+      // Show results
+      if (errorCount === 0) {
+        toast({
+          title: 'Sync completed successfully',
+          description: `All ${successCount} listings have been synced`,
+        });
+      } else {
+        toast({
+          title: 'Sync completed with errors',
+          description: `${successCount} succeeded, ${errorCount} failed`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Sync failed',
+        description: 'Failed to sync listings. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
+      setSyncProgress({ current: 0, total: 0 });
+    }
+  };
   return (
     <AppLayout>
       {/* Main layout for the settings page */}
@@ -21,6 +102,72 @@ export default function SettingsPage() {
         <PageHeader title="Settings" />
 
         <div className="grid gap-6">
+          {/* Card for Calendar Sync */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Calendar Sync</CardTitle>
+              <CardDescription>
+                Sync all Airbnb calendars to get the latest bookings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Sync All Listings</p>
+                    <p className="text-sm text-muted-foreground">
+                      Sync all active Airbnb listings with their calendar URLs
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSyncAll} 
+                    disabled={isSyncing}
+                    className="gap-2"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Sync All
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {isSyncing && syncProgress.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{syncProgress.current} / {syncProgress.total}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Automatic Sync</p>
+                  <div className="flex items-center space-x-3">
+                    <Switch id="auto-sync" />
+                    <Label htmlFor="auto-sync" className="text-sm font-normal">
+                      Automatically sync all listings daily at 3:00 AM
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Card for Messaging Preferences */}
           <Card>
             <CardHeader>

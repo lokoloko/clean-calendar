@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context-dev';
 import {
   SidebarProvider,
   Sidebar,
@@ -27,6 +28,7 @@ import {
   PanelLeft,
   UserCircle,
   BarChart3,
+  CalendarClock,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -48,6 +50,7 @@ const navItems = [
   { href: '/cleaners', label: 'Cleaners', icon: Users },
   { href: '/assignments', label: 'Assignments', icon: Link2 },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -105,6 +108,7 @@ function AppSidebar() {
  */
 function AppHeader() {
     const { toggleSidebar } = useSidebar();
+    const { user, signOut } = useAuth();
     return (
         <header className="sticky top-0 z-10 w-full bg-background/50 backdrop-blur-sm">
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,34 +127,42 @@ function AppHeader() {
                     </div>
                     {/* User profile and menu */}
                     <div className="flex items-center gap-4">
-                        <span className="hidden sm:block font-medium">Welcome, Admin</span>
+                        <span className="hidden sm:block font-medium">
+                            Welcome, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
+                        </span>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                     <Avatar className="h-8 w-8">
-                                        {/* TODO: Replace with dynamic user avatar */}
-                                        <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" data-ai-hint="user avatar" />
-                                        <AvatarFallback>A</AvatarFallback>
+                                        <AvatarImage 
+                                            src={user?.user_metadata?.avatar_url || ''} 
+                                            alt="User Avatar" 
+                                        />
+                                        <AvatarFallback>
+                                            {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                        </AvatarFallback>
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end" forceMount>
                                 <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    {/* TODO: Replace with dynamic user info */}
-                                    <p className="text-sm font-medium leading-none">Admin</p>
+                                    <p className="text-sm font-medium leading-none">
+                                        {user?.user_metadata?.name || 'User'}
+                                    </p>
                                     <p className="text-xs leading-none text-muted-foreground">
-                                    admin@example.com
+                                        {user?.email || ''}
                                     </p>
                                 </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {/* TODO: Implement links to profile, billing, settings, and logout */}
-                                <DropdownMenuItem>Profile</DropdownMenuItem>
-                                <DropdownMenuItem>Billing</DropdownMenuItem>
-                                <DropdownMenuItem>Settings</DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings">Settings</Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem>Log out</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => signOut()}>
+                                    Log out
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>

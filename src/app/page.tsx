@@ -1,3 +1,5 @@
+'use client'
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -11,9 +13,39 @@ import Image from 'next/image';
 import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/auth-context-dev';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Landing page for attracting and converting new users.
 export default function LandingPage() {
+  const { user, signInWithGoogle } = useAuth();
+  const router = useRouter();
+  const [calendarUrl, setCalendarUrl] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  const handleGenerateSchedule = async () => {
+    console.log('Generate Schedule clicked');
+    console.log('Calendar URL:', calendarUrl);
+    
+    if (!calendarUrl) {
+      console.log('No calendar URL provided');
+      return;
+    }
+    
+    // Store the calendar URL in sessionStorage to use after login
+    sessionStorage.setItem('pendingCalendarUrl', calendarUrl);
+    console.log('Stored URL in sessionStorage');
+    
+    // Sign in the user (will redirect to dashboard)
+    console.log('Signing in...');
+    await signInWithGoogle();
+  };
   const benefits = [
     'Save hours every week',
     'Stop manually texting your cleaners',
@@ -46,12 +78,8 @@ export default function LandingPage() {
             <span className="font-headline text-lg font-semibold">CleanSweep</span>
           </Link>
           <div className="flex items-center gap-2">
-            {/* Navigation links to dashboard */}
-            <Button variant="ghost" asChild>
-              <Link href="/dashboard">Log In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/dashboard">Start Free</Link>
+            <Button onClick={signInWithGoogle}>
+              Sign in with Google
             </Button>
           </div>
         </div>
@@ -74,10 +102,11 @@ export default function LandingPage() {
                   type="text"
                   placeholder="Enter your Airbnb .ics calendar link"
                   className="max-w-lg flex-1"
+                  value={calendarUrl}
+                  onChange={(e) => setCalendarUrl(e.target.value)}
                 />
-                <Button size="lg" asChild>
-                  {/* Link to the dashboard/onboarding flow */}
-                  <Link href="/dashboard">Generate My Schedule</Link>
+                <Button size="lg" onClick={handleGenerateSchedule}>
+                  Generate My Schedule
                 </Button>
               </div>
             </div>
