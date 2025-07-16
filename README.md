@@ -15,6 +15,7 @@ A modern web application for managing cleaning schedules for short-term rental p
 - 🔄 **Manual Scheduling** - Support for non-Airbnb properties and recurring cleanings
 - 📤 **Export Functionality** - Text-based exports for easy communication
 - 🌍 **Timezone Support** - Handle properties in different timezones
+- 📱 **Mobile Cleaner Portal** - SMS-authenticated mobile interface for cleaners
 
 ## Tech Stack
 

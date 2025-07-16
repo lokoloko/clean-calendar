@@ -67,6 +67,7 @@ export default function ListingsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     ics_url: '',
@@ -196,6 +197,11 @@ export default function ListingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     try {
       // Create listing
       const listingResponse = await fetch('/api/listings', {
@@ -205,6 +211,8 @@ export default function ListingsPage() {
           name: formData.name,
           ics_url: formData.ics_url,
           cleaning_fee: parseFloat(formData.cleaning_fee) || 0,
+          timezone: formData.timezone,
+          is_active_on_airbnb: !!formData.ics_url // If there's an ICS URL, it's an Airbnb listing
         }),
       });
 
@@ -226,7 +234,7 @@ export default function ListingsPage() {
         });
         
         // Automatically sync the calendar after creating listing with cleaner (only for Airbnb listings)
-        if (formData.is_active_on_airbnb && formData.ics_url) {
+        if (formData.ics_url) {
           toast({
             title: 'Syncing calendar...',
             description: 'Fetching bookings from Airbnb',
@@ -265,7 +273,7 @@ export default function ListingsPage() {
       }
 
       setIsModalOpen(false);
-      setFormData({ name: '', ics_url: '', cleaning_fee: '', cleaner_id: '', timezone: 'America/New_York', is_active_on_airbnb: true });
+      setFormData({ name: '', ics_url: '', cleaning_fee: '', cleaner_id: '', timezone: 'America/New_York' });
       fetchData();
     } catch (error) {
       toast({
@@ -273,6 +281,8 @@ export default function ListingsPage() {
         description: 'Failed to create listing',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -457,13 +467,19 @@ export default function ListingsPage() {
           </Table>
         </div>
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+          setIsModalOpen(open);
+          // Reset submission state if modal is closed
+          if (!open) {
+            setIsSubmitting(false);
+          }
+        }}>
           <DialogContent>
             <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>Add New Listing</DialogTitle>
                 <DialogDescription>
-                  Connect your Airbnb calendar to start tracking cleaning schedules.
+                  Add a new property. Connect your Airbnb calendar for automatic sync or leave it empty for manual scheduling.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -478,20 +494,18 @@ export default function ListingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="ics_url">Calendar URL (.ics)</Label>
+                  <Label htmlFor="ics_url">Calendar URL (.ics) - Optional</Label>
                   <Input
                     id="ics_url"
                     type="url"
                     placeholder="https://www.airbnb.com/calendar/ical/..."
                     value={formData.ics_url}
                     onChange={(e) => setFormData({ ...formData, ics_url: e.target.value })}
-                    required
                   />
                   <p className="text-sm text-muted-foreground">
-                    Find this in your Airbnb listing settings under Calendar
+                    Leave empty for manual properties. Find this in your Airbnb listing settings under Calendar.
                   </p>
                 </div>
-                )}
                 <div className="grid gap-2">
                   <Label htmlFor="cleaning_fee">Cleaning Fee</Label>
                   <Input
@@ -550,10 +564,24 @@ export default function ListingsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
-                <Button type="submit">Add Listing</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Add Listing'
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

@@ -64,6 +64,13 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 - Error handling and reporting
 - Last sync timestamp tracking
 
+### 9. **Mobile Cleaner Portal**
+- SMS-based authentication for cleaners
+- Phone number verification with 6-digit codes
+- Secure session management (30-day tokens)
+- Mobile-optimized login and verification pages
+- Foundation for cleaner dashboard and feedback system
+
 ## Technical Implementation
 
 ### Database Schema
@@ -75,6 +82,9 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 - `assignments`: Cleaner-property relationships
 - `schedule_items`: All cleaning events (Airbnb & manual)
 - `manual_schedule_rules`: Recurring schedule configurations
+- `cleaner_feedback`: Cleaning job feedback and ratings
+- `cleaner_auth_codes`: SMS verification codes for cleaners
+- `cleaner_sessions`: Cleaner authentication sessions
 
 #### Key Features:
 - UUID primary keys for all tables
@@ -92,6 +102,8 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 - `GET/POST /api/manual-schedules` - Manual schedule rules
 - `POST /api/manual-schedules/[id]/generate` - Generate recurring items
 - `POST /api/manual-schedules/one-time` - Create one-time cleaning
+- `POST /api/cleaner/auth/send-code` - Send SMS verification code
+- `POST /api/cleaner/auth/verify` - Verify SMS code and create session
 
 ### Frontend Architecture
 
@@ -118,6 +130,11 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
    - Progress tracking
    - Messaging preferences (UI ready for future implementation)
 
+4. **Cleaner Portal Pages** (`/src/app/cleaner/`)
+   - Mobile-optimized login page with phone input
+   - SMS verification page with 6-digit code input
+   - Foundation for dashboard and feedback system
+
 ## Docker Configuration
 
 The application runs in Docker containers:
@@ -138,13 +155,15 @@ NEXTAUTH_SECRET=development-secret-key-change-in-production
 ## Future Enhancements
 
 1. **Authentication**: Replace mock auth with real authentication
-2. **SMS Integration**: Implement Twilio/WhatsApp notifications
-3. **Conflict Detection**: Warn about scheduling conflicts
-4. **Mobile App**: React Native companion app
-5. **Payment Tracking**: Integration with payment systems
-6. **Multi-user Support**: Team management features
-7. **Automated Reminders**: Daily/weekly schedule notifications
-8. **Performance Dashboard**: Cleaner performance metrics
+2. **SMS Integration**: Complete Twilio integration for actual SMS sending
+3. **Cleaner Dashboard**: Mobile dashboard with today's cleanings
+4. **Feedback System**: Complete cleaner feedback and rating system
+5. **Conflict Detection**: Warn about scheduling conflicts
+6. **Mobile App**: React Native companion app
+7. **Payment Tracking**: Integration with payment systems
+8. **Multi-user Support**: Team management features
+9. **Automated Reminders**: Daily/weekly schedule notifications
+10. **Performance Dashboard**: Cleaner performance metrics
 
 ## Development Setup
 

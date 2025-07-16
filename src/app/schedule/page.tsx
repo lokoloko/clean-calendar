@@ -133,6 +133,17 @@ export default function SchedulePage() {
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     exportText: ''
   });
+  const [shareModal, setShareModal] = useState({
+    isOpen: false,
+    name: '',
+    cleanerId: 'all',
+    listingIds: [] as string[],
+    dateFrom: '',
+    dateTo: '',
+    expiresInDays: 30,
+    isCreating: false,
+    shareUrl: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -352,10 +363,94 @@ export default function SchedulePage() {
   };
 
   const handleShare = () => {
-    toast({
-      title: 'Share',
-      description: 'Share functionality coming soon',
+    setShareModal({
+      isOpen: true,
+      name: '',
+      cleanerId: selectedCleaner,
+      listingIds: [],
+      dateFrom: date ? format(date, 'yyyy-MM-dd') : '',
+      dateTo: date ? format(date, 'yyyy-MM-dd') : '',
+      expiresInDays: 30,
+      isCreating: false,
+      shareUrl: ''
     });
+  };
+
+  const handleCreateShareLink = async () => {
+    if (!shareModal.name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a name for the share link',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setShareModal({ ...shareModal, isCreating: true });
+
+    try {
+      const payload: any = {
+        name: shareModal.name,
+        expiresInDays: shareModal.expiresInDays
+      };
+
+      if (shareModal.cleanerId !== 'all') {
+        payload.cleanerId = shareModal.cleanerId;
+      }
+
+      if (shareModal.listingIds.length > 0) {
+        payload.listingIds = shareModal.listingIds;
+      }
+
+      if (shareModal.dateFrom) {
+        payload.dateFrom = shareModal.dateFrom;
+      }
+
+      if (shareModal.dateTo) {
+        payload.dateTo = shareModal.dateTo;
+      }
+
+      const response = await fetch('/api/schedule/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create share link');
+      }
+
+      const data = await response.json();
+      setShareModal({ ...shareModal, shareUrl: data.shareUrl, isCreating: false });
+
+      toast({
+        title: 'Success',
+        description: 'Share link created successfully',
+      });
+    } catch (error) {
+      setShareModal({ ...shareModal, isCreating: false });
+      toast({
+        title: 'Error',
+        description: 'Failed to create share link',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareModal.shareUrl);
+      toast({
+        title: 'Success',
+        description: 'Share link copied to clipboard',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to copy to clipboard',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCreateManualCleaning = async (e: React.FormEvent) => {
@@ -740,6 +835,131 @@ export default function SchedulePage() {
                 <Button type="submit">Create Cleaning</Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Share Modal */}
+        <Dialog open={shareModal.isOpen} onOpenChange={(open) => {
+          if (!open) {
+            setShareModal({ ...shareModal, isOpen: false, shareUrl: '' });
+          }
+        }}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Share Schedule</DialogTitle>
+              <DialogDescription>
+                {shareModal.shareUrl 
+                  ? 'Your share link has been created. Anyone with this link can view the filtered schedule.'
+                  : 'Create a shareable link for this schedule. You can optionally filter by cleaner, properties, or date range.'
+                }
+              </DialogDescription>
+            </DialogHeader>
+
+            {!shareModal.shareUrl ? (
+              <>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="share-name">Name for this share link</Label>
+                    <Input
+                      id="share-name"
+                      placeholder="e.g., Weekly Schedule for John"
+                      value={shareModal.name}
+                      onChange={(e) => setShareModal({ ...shareModal, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Filter by Cleaner (optional)</Label>
+                    <Select
+                      value={shareModal.cleanerId}
+                      onValueChange={(value) => setShareModal({ ...shareModal, cleanerId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Cleaners</SelectItem>
+                        {cleaners.map((cleaner) => (
+                          <SelectItem key={cleaner.id} value={cleaner.id}>
+                            {cleaner.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Filter by Date Range (optional)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="date"
+                        placeholder="From date"
+                        value={shareModal.dateFrom}
+                        onChange={(e) => setShareModal({ ...shareModal, dateFrom: e.target.value })}
+                      />
+                      <Input
+                        type="date"
+                        placeholder="To date"
+                        value={shareModal.dateTo}
+                        onChange={(e) => setShareModal({ ...shareModal, dateTo: e.target.value })}
+                        min={shareModal.dateFrom}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="share-expires">Link expires in</Label>
+                    <Select
+                      value={shareModal.expiresInDays.toString()}
+                      onValueChange={(value) => setShareModal({ ...shareModal, expiresInDays: parseInt(value) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">7 days</SelectItem>
+                        <SelectItem value="30">30 days</SelectItem>
+                        <SelectItem value="90">90 days</SelectItem>
+                        <SelectItem value="365">1 year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShareModal({ ...shareModal, isOpen: false })}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreateShareLink}
+                    disabled={shareModal.isCreating}
+                  >
+                    {shareModal.isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Share Link
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-4 py-4">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-mono break-all">{shareModal.shareUrl}</p>
+                  </div>
+                  <Button onClick={copyShareLink} variant="secondary">
+                    Copy Link
+                  </Button>
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setShareModal({ ...shareModal, isOpen: false })}>
+                    Done
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
 
