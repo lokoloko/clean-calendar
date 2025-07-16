@@ -46,7 +46,8 @@ docker-compose up -d
 
 3. Access the application:
 ```
-http://localhost:9002
+Main App: http://localhost:9002
+Cleaner Portal: http://localhost:9002/cleaner/dashboard
 ```
 
 ### Development Mode
@@ -75,13 +76,17 @@ clean-calendar/
 
 ## Environment Variables
 
-Create a `.env.local` file for local development:
+Docker environment variables are configured in `docker-compose.yml`:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5433/cleansweep
+DATABASE_URL=postgresql://postgres:postgres@db:5432/cleansweep
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:9002
 NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-local-dev
+NEXTAUTH_URL=http://localhost:9002
+NEXTAUTH_SECRET=development-secret-key-change-in-production
 ```
+
+For local development without Docker, create a `.env.local` file with localhost:5433 for the database port.
 
 ## Contributing
 

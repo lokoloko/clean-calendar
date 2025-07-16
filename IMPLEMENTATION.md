@@ -69,7 +69,9 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 - Phone number verification with 6-digit codes
 - Secure session management (30-day tokens)
 - Mobile-optimized login and verification pages
-- Foundation for cleaner dashboard and feedback system
+- Complete cleaner dashboard and feedback system
+- Visual cues for actions needed on cleaning cards
+- Progress tracking and completion indicators
 
 ## Technical Implementation
 
@@ -104,6 +106,9 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 - `POST /api/manual-schedules/one-time` - Create one-time cleaning
 - `POST /api/cleaner/auth/send-code` - Send SMS verification code
 - `POST /api/cleaner/auth/verify` - Verify SMS code and create session
+- `GET /api/cleaner/schedule` - Get cleaner's assigned schedule
+- `GET /api/cleaner/cleaning/[id]` - Get individual cleaning details
+- `POST /api/cleaner/cleaning/[id]/feedback` - Submit feedback and complete cleaning
 
 ### Frontend Architecture
 
@@ -133,7 +138,9 @@ CleanSweep Scheduler is a web application designed to manage cleaning schedules 
 4. **Cleaner Portal Pages** (`/src/app/cleaner/`)
    - Mobile-optimized login page with phone input
    - SMS verification page with 6-digit code input
-   - Foundation for dashboard and feedback system
+   - Complete mobile dashboard with today's cleanings
+   - Individual cleaning detail pages with feedback forms
+   - Visual indicators for pending actions and completion status
 
 ## Docker Configuration
 
@@ -156,14 +163,14 @@ NEXTAUTH_SECRET=development-secret-key-change-in-production
 
 1. **Authentication**: Replace mock auth with real authentication
 2. **SMS Integration**: Complete Twilio integration for actual SMS sending
-3. **Cleaner Dashboard**: Mobile dashboard with today's cleanings
-4. **Feedback System**: Complete cleaner feedback and rating system
-5. **Conflict Detection**: Warn about scheduling conflicts
-6. **Mobile App**: React Native companion app
-7. **Payment Tracking**: Integration with payment systems
-8. **Multi-user Support**: Team management features
-9. **Automated Reminders**: Daily/weekly schedule notifications
-10. **Performance Dashboard**: Cleaner performance metrics
+3. **Conflict Detection**: Warn about scheduling conflicts
+4. **Mobile App**: React Native companion app
+5. **Payment Tracking**: Integration with payment systems
+6. **Multi-user Support**: Team management features
+7. **Automated Reminders**: Daily/weekly schedule notifications
+8. **Performance Dashboard**: Cleaner performance metrics
+9. **Photo Upload**: Before/after photos in cleaner feedback
+10. **Push Notifications**: Real-time updates for cleaners
 
 ## Development Setup
 

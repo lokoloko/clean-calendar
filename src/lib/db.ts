@@ -247,7 +247,6 @@ export const db = {
       SELECT s.*, 
              l.name as listing_name, 
              l.timezone as listing_timezone,
-             l.address as listing_address,
              c.name as cleaner_name,
              c.phone as cleaner_phone,
              COALESCE(s.source, 'airbnb') as source,

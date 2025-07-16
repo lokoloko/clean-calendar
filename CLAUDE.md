@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CleanSweep Scheduler is a Next.js 15 application for managing Airbnb property cleaning schedules. It integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
-**Current Status**: UI-only implementation with mock data. All pages and components are built but awaiting backend integration.
+**Current Status**: Complete full-stack implementation with PostgreSQL database, SMS-based cleaner authentication, and mobile cleaner portal. All major features are implemented with real data integration and visual feedback cues.
 
 **Product Goal**: Automate cleaning schedules for Airbnb hosts by parsing .ics calendar links into structured schedules and daily messages, helping hosts assign cleaners and avoid missed turnovers.
 
@@ -25,12 +25,11 @@ npm run genkit:watch     # Start Genkit with watch mode
 
 ### Docker Commands
 ```bash
-npm run docker:dev       # Start Docker environment with Supabase
-npm run docker:down      # Stop Docker environment
-npm run docker:build     # Build Docker containers
-npm run docker:logs      # View app logs
-npm run docker:shell     # Access app container shell
-npm run supabase:types   # Generate TypeScript types from Supabase
+docker-compose up -d --build  # Start Docker environment with PostgreSQL
+docker-compose down           # Stop Docker environment
+docker-compose restart app    # Restart app container
+docker logs clean-calendar-app-1  # View app logs
+docker exec -it clean-calendar-app-1 sh  # Access app container shell
 ```
 
 ### Common Development Tasks
@@ -52,8 +51,8 @@ npm run lint -- --fix
 - **TypeScript**: Strict mode enabled
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Forms**: React Hook Form + Zod validation
-- **Database**: Supabase (PostgreSQL with real-time features)
-- **Authentication**: Supabase Auth with Google OAuth
+- **Database**: PostgreSQL with direct client connections
+- **Authentication**: Custom SMS-based authentication for cleaners
 - **AI**: Google Genkit for schedule optimization
 - **Hosting**: Vercel for production deployment
 
@@ -71,12 +70,11 @@ All pages use Next.js 15 App Router in `src/app/`. Each route has:
 - Components follow the pattern: `export function ComponentName() {}`
 
 #### 3. Data Flow
-- Mock data in `src/data/` for development
+- Database operations in `src/lib/db.ts`
 - Types defined in `src/types/`
-- Supabase types in `src/types/supabase.ts`
 - Custom hooks in `src/hooks/`
 - AI flows in `src/ai/flows/`
-- Supabase clients in `src/lib/supabase*.ts`
+- Cleaner authentication in `src/lib/cleaner-auth.ts`
 
 #### 4. Styling Approach
 - Tailwind CSS with custom configuration
@@ -116,21 +114,30 @@ export function InteractiveComponent() {
 
 ## Key Features and Routes
 
+### Admin/Manager Routes
 - `/dashboard` - Main dashboard with metrics
 - `/listings` - Property management with ICS integration
 - `/cleaners` - Cleaner directory and management
 - `/assignments` - Link cleaners to properties
-- `/schedule` - View and manage cleaning schedule
+- `/schedule` - View and manage cleaning schedule (list, weekly, monthly views)
 - `/stats` - Analytics and performance metrics
+- `/settings` - Sync settings and preferences
+
+### Mobile Cleaner Portal
+- `/cleaner` - SMS-based login for cleaners
+- `/cleaner/verify` - SMS code verification
+- `/cleaner/dashboard` - Mobile dashboard with today's cleanings
+- `/cleaner/cleaning/[id]` - Individual cleaning detail with feedback form
+- `/share/[token]` - Public schedule sharing
 
 ## Development Notes
 
 - TypeScript errors are ignored during builds (see next.config.ts)
 - ESLint errors are also ignored in production builds
-- The app uses mock data from `src/data/` directory
 - Port 9002 is the default development port
-- Docker environment includes full Supabase stack
-- Local development uses Supabase emulators
+- Docker environment includes PostgreSQL database
+- Database migrations are in `supabase/migrations/`
+- SMS authentication bypassed for testing (uses mock-token)
 
 ## Docker Development Setup
 
@@ -141,51 +148,58 @@ export function InteractiveComponent() {
 
 2. **Access services**:
    - App: http://localhost:9002
-   - Supabase Studio: http://localhost:54323
-   - Supabase API: http://localhost:54321
-   - Email testing (Inbucket): http://localhost:54324
+   - Cleaner Portal: http://localhost:9002/cleaner/dashboard
+   - PostgreSQL: localhost:5433 (postgres/postgres)
 
 3. **Environment variables**:
-   - Development: `.env.development` (pre-configured for Docker)
-   - Production: Create `.env.local` from `.env.local.example`
+   - DATABASE_URL: postgresql://postgres:postgres@db:5432/cleansweep
+   - NEXT_PUBLIC_SUPABASE_URL: http://localhost:9002
+   - NEXTAUTH_URL: http://localhost:9002
 
 ## Implementation Status
 
-### Completed UI Pages (from PRD)
-All UI pages are implemented and functional with mock data:
-- ✅ Landing page with hero CTA
-- ✅ Pricing page (3 tiers)
-- ✅ Dashboard with key metrics
-- ✅ Listings management
-- ✅ Cleaners directory
-- ✅ Assignments (cleaner-property linking)
-- ✅ Schedule viewer with filters
-- ✅ Stats page with charts
-- ✅ Settings for notifications
+### Completed Features
+All major features are implemented and functional with real database integration:
 
-### Backend Integration TODOs
-The codebase has 31 TODO comments marking exact integration points:
+#### Admin/Manager Features
+- ✅ **Dashboard**: Metrics with real data
+- ✅ **Listings Management**: Full CRUD with ICS calendar sync
+- ✅ **Cleaners Directory**: Full CRUD with phone/email
+- ✅ **Assignments**: Link cleaners to properties
+- ✅ **Schedule Views**: List, weekly, monthly calendar views
+- ✅ **Manual Scheduling**: Support for non-Airbnb properties
+- ✅ **Export Functionality**: Text-based exports for cleaners
+- ✅ **Share Links**: Secure schedule sharing with tokens
+- ✅ **Statistics**: Historical data and analytics
+- ✅ **Settings**: Sync management and preferences
 
-#### High Priority (Data Integration)
-- Replace mock data with database connections in:
-  - `/src/app/listings/page.tsx` - 5 TODOs
-  - `/src/app/schedule/page.tsx` - 5 TODOs
-  - `/src/app/assignments/page.tsx` - 5 TODOs
-  - `/src/app/cleaners/page.tsx` - 3 TODOs
+#### Mobile Cleaner Portal
+- ✅ **SMS Authentication**: Phone-based login system
+- ✅ **Mobile Dashboard**: Today's cleanings with progress tracking
+- ✅ **Cleaning Details**: Individual cleaning with feedback forms
+- ✅ **Feedback System**: Cleanliness ratings and notes
+- ✅ **Visual Cues**: Clear indicators for actions needed (orange ring/pulsing dot)
+- ✅ **Session Management**: Secure 30-day sessions
+- ✅ **Progress Tracking**: Today's completion percentage
+- ✅ **Multiple Views**: Today/Week/All time filters
 
-#### Key Integration Points
-1. **ICS Calendar Parsing**: Parse Airbnb .ics URLs to extract bookings
-2. **Database CRUD**: All forms need submission handlers
-3. **SMS/WhatsApp**: Twilio integration in settings
-4. **Authentication**: Complete Google OAuth flow
-5. **Export Features**: PDF/CSV generation for schedules
+#### Database & Backend
+- ✅ **PostgreSQL Integration**: Full database with migrations
+- ✅ **ICS Calendar Parsing**: Airbnb calendar synchronization
+- ✅ **Real-time Data**: Live updates and sync tracking
+- ✅ **Data Persistence**: Historical data preservation
+- ✅ **Security**: Row-level security and session management
 
-#### Mock Data Location
-All mock data is centralized in `/src/data/mock-data.ts`:
-- `mockCleaners`
-- `mockListings` 
-- `mockAssignments`
-- `mockSchedule`
+### Remaining TODOs
+#### Medium Priority
+- SMS Integration: Complete Twilio setup for production (currently using mock authentication)
+- Settings page save functionality
+- Stats page timezone-aware date calculations
+
+#### Low Priority
+- Conflict Detection: Warn about scheduling conflicts
+- Remove cleaner edit page (replaced by inline edit)
+- Multi-user Support: Team management features
 
 ### Future Features (from PRD)
 - AI-powered schedule optimization (Genkit foundation exists)
