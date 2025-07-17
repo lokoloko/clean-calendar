@@ -300,9 +300,9 @@ export default function SchedulePage() {
           
           // Always show next check-in info
           if (nextCheckIn === 'Same day') {
-            exportText += ` - ⚠️ ${nextCheckIn}`;
+            exportText += ` - ${nextCheckIn}`;
           } else if (nextCheckIn === 'Next day') {
-            exportText += ` - ⏰ ${nextCheckIn}`;
+            exportText += ` - ${nextCheckIn}`;
           } else if (nextCheckIn === 'No upcoming') {
             exportText += ` - No upcoming`;
           } else {
@@ -697,13 +697,7 @@ export default function SchedulePage() {
                           getNextCheckIn(item.listing_id, item.check_out, item.id) === 'Next day' && "text-yellow-600 font-semibold",
                           ['2 days later', '3 days later'].includes(getNextCheckIn(item.listing_id, item.check_out, item.id)) && "text-blue-600"
                         )}>
-                          {(() => {
-                            const result = getNextCheckIn(item.listing_id, item.check_out, item.id);
-                            // Add emoji indicators for urgency
-                            if (result === 'Same day') return `⚠️ ${result}`;
-                            if (result === 'Next day') return `⏰ ${result}`;
-                            return result;
-                          })()}
+                          {getNextCheckIn(item.listing_id, item.check_out, item.id)}
                         </span>
                       </TableCell>
                       <TableCell>
