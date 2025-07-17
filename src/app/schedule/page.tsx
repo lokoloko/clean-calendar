@@ -297,9 +297,16 @@ export default function SchedulePage() {
         dayItems.forEach(item => {
           const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
           exportText += `${item.listing_name}`;
-          if (exportModal.exportType === 'today' || nextCheckIn !== 'No upcoming') {
-            exportText += ` - ${nextCheckIn}`;
+          
+          // Always show next check-in info
+          if (nextCheckIn === 'Same day') {
+            exportText += ` - ⚠️ ${nextCheckIn}`;
+          } else if (nextCheckIn === 'Next day') {
+            exportText += ` - ⏰ ${nextCheckIn}`;
+          } else if (nextCheckIn !== 'No upcoming') {
+            exportText += ` - Next: ${nextCheckIn}`;
           }
+          
           exportText += '\n';
         });
       }
@@ -539,7 +546,19 @@ export default function SchedulePage() {
           return 'Same day';
         } else if (daysUntil === 1) {
           return 'Next day';
-        } else if (daysUntil <= 7) {
+        } else if (daysUntil === 2) {
+          return '2 days later';
+        } else if (daysUntil === 3) {
+          return '3 days later';
+        } else if (daysUntil === 4) {
+          return '4 days later';
+        } else if (daysUntil === 5) {
+          return '5 days later';
+        } else if (daysUntil === 6) {
+          return '6 days later';
+        } else if (daysUntil === 7) {
+          return '1 week later';
+        } else if (daysUntil <= 14) {
           return `${daysUntil} days later`;
         } else {
           return format(nextCheckin, 'MMM d');
@@ -672,20 +691,15 @@ export default function SchedulePage() {
                       <TableCell>
                         <span className={cn(
                           "font-medium",
-                          getNextCheckIn(item.listing_id, item.check_out, item.id) === 'Same day' && "text-orange-600",
-                          getNextCheckIn(item.listing_id, item.check_out, item.id) === 'Next day' && "text-yellow-600"
+                          getNextCheckIn(item.listing_id, item.check_out, item.id) === 'Same day' && "text-orange-600 font-semibold",
+                          getNextCheckIn(item.listing_id, item.check_out, item.id) === 'Next day' && "text-yellow-600 font-semibold",
+                          ['2 days later', '3 days later'].includes(getNextCheckIn(item.listing_id, item.check_out, item.id)) && "text-blue-600"
                         )}>
                           {(() => {
                             const result = getNextCheckIn(item.listing_id, item.check_out, item.id);
-                            // Debug Unit 2
-                            if (item.listing_name === 'Unit 2' && item.check_out === '2025-07-15') {
-                              console.log('Unit 2 debug:', {
-                                checkout: item.check_out,
-                                listingId: item.listing_id,
-                                bookingId: item.id,
-                                result: result
-                              });
-                            }
+                            // Add emoji indicators for urgency
+                            if (result === 'Same day') return `⚠️ ${result}`;
+                            if (result === 'Next day') return `⏰ ${result}`;
                             return result;
                           })()}
                         </span>
