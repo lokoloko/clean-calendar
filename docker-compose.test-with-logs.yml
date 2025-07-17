@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:16-alpine
+    container_name: cleansweep-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cleansweep_test
+      POSTGRES_INITDB_ARGS: "-c log_statement=all"
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  test-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: cleansweep-test-app
+    depends_on:
+      test-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@test-db:5432/cleansweep_test
+      NEXT_PUBLIC_SUPABASE_URL: http://test-app:9002
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-key-for-testing
+      NEXTAUTH_URL: http://test-app:9002
+      NEXTAUTH_SECRET: test-secret-key-change-in-production
+      NODE_ENV: test
+      # Enable verbose logging
+      DEBUG: "*"
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "9003:9002"
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./jest.config.js:/app/jest.config.js
+      - ./jest.setup.js:/app/jest.setup.js
+      - ./playwright.config.ts:/app/playwright.config.ts
+      - test-node-modules:/app/node_modules
+    command: >
+      sh -c "
+        echo '🚀 Installing test dependencies...' &&
+        npm install &&
+        echo '✅ Dependencies installed' &&
+        echo '🧪 Starting test runner...' &&
+        npm run dev &
+        SERVER_PID=$$! &&
+        echo 'Waiting for server to start...' &&
+        sleep 10 &&
+        echo '📋 Running unit tests...' &&
+        npm run test -- --verbose &&
+        echo '🔗 Running integration tests...' &&
+        npm run test:integration -- --verbose &&
+        echo '🌐 Running E2E tests...' &&
+        npx playwright install chromium &&
+        npm run test:e2e -- --reporter=list &&
+        kill $$SERVER_PID
+      "
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  log-monitor:
+    image: amir20/dozzle:latest
+    container_name: cleansweep-log-monitor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - test-app
+      - test-db
+
+volumes:
+  test-node-modules:

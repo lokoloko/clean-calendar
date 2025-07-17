@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cleansweep_test
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    depends_on:
+      test-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@test-db:5432/cleansweep_test
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:9002
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-key-for-testing
+      NEXTAUTH_URL: http://localhost:9002
+      NEXTAUTH_SECRET: test-secret-key-change-in-production
+      NODE_ENV: test
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./coverage:/app/coverage
+    command: npm run test:all

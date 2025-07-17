@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Plus, ExternalLink, FilePenLine, Trash2, RefreshCcw, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Plus, ExternalLink, FilePenLine, Trash2, RefreshCcw, CheckCircle2, XCircle, AlertCircle, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,9 @@ interface Assignment {
   cleaner?: Cleaner;
 }
 
+type SortField = 'name' | 'cleaners';
+type SortOrder = 'asc' | 'desc';
+
 export default function ListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -68,6 +71,8 @@ export default function ListingsPage() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [formData, setFormData] = useState({
     name: '',
     ics_url: '',
@@ -314,9 +319,63 @@ export default function ListingsPage() {
   const getAssignedCleaners = (listingId: string) => {
     return assignments
       .filter(a => a.listing_id === listingId)
-      .map(a => a.cleaner_name || 'Unknown')
+      .map(a => {
+        const cleaner = cleaners.find(c => c.id === a.cleaner_id);
+        return cleaner?.name || 'Unknown';
+      })
       .join(', ');
   };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortedListings = () => {
+    const sorted = [...listings].sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortField === 'name') {
+        aValue = a.name.toLowerCase();
+        bValue = b.name.toLowerCase();
+      } else if (sortField === 'cleaners') {
+        aValue = getAssignedCleaners(a.id).toLowerCase();
+        bValue = getAssignedCleaners(b.id).toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+    
+    return sorted;
+  };
+
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead>
+      <button
+        onClick={() => handleSort(field)}
+        className="flex items-center gap-2 hover:text-foreground transition-colors"
+      >
+        {children}
+        {sortField === field ? (
+          sortOrder === 'asc' ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )
+        ) : (
+          <ChevronUp className="h-4 w-4 opacity-0" />
+        )}
+      </button>
+    </TableHead>
+  );
 
   const getSyncStatus = (lastSync: string | null): { status: 'synced' | 'error' | 'pending'; icon: React.ReactNode; tooltip: string } => {
     if (!lastSync) {
@@ -377,16 +436,16 @@ export default function ListingsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Listing Name</TableHead>
+                <SortableHeader field="name">Listing Name</SortableHeader>
                 <TableHead>Type</TableHead>
-                <TableHead>Assigned Cleaner(s)</TableHead>
+                <SortableHeader field="cleaners">Assigned Cleaner(s)</SortableHeader>
                 <TableHead>Sync Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TooltipProvider>
-                {listings.map((listing) => {
+                {getSortedListings().map((listing) => {
                   const syncInfo = getSyncStatus(listing.last_sync);
                   return (
                     <TableRow key={listing.id}>

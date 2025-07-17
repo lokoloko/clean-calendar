@@ -4,7 +4,7 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package*.json ./
-RUN npm ci
+RUN npm ci || npm install
 
 FROM base AS dev
 COPY --from=deps /app/node_modules ./node_modules
@@ -18,6 +18,12 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
+
+FROM base AS test
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm install --save-dev @playwright/test @testing-library/react @testing-library/jest-dom jest ts-jest
+CMD ["npm", "run", "test:all"]
 
 FROM base AS runner
 WORKDIR /app
