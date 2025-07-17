@@ -303,8 +303,10 @@ export default function SchedulePage() {
             exportText += ` - ⚠️ ${nextCheckIn}`;
           } else if (nextCheckIn === 'Next day') {
             exportText += ` - ⏰ ${nextCheckIn}`;
-          } else if (nextCheckIn !== 'No upcoming') {
-            exportText += ` - Next: ${nextCheckIn}`;
+          } else if (nextCheckIn === 'No upcoming') {
+            exportText += ` - No upcoming`;
+          } else {
+            exportText += ` - Next Check-in: ${nextCheckIn}`;
           }
           
           exportText += '\n';
