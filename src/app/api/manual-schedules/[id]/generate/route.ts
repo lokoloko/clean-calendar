@@ -4,16 +4,17 @@ import { addDays, addWeeks, addMonths, setDate, getDay, startOfDay, endOfDay } f
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { generateUntil } = body // Optional end date for generation
 
     // Get the manual schedule rule
     const ruleResult = await db.query(
       `SELECT * FROM public.manual_schedule_rules WHERE id = $1 AND is_active = true`,
-      [params.id]
+      [id]
     )
 
     if (ruleResult.rows.length === 0) {
@@ -24,6 +25,18 @@ export async function POST(
     
     // Calculate dates to generate
     const dates = generateDates(rule, generateUntil)
+    
+    console.log('Manual schedule generation:', {
+      ruleId: id,
+      ruleType: rule.schedule_type,
+      frequency: rule.frequency,
+      startDate: rule.start_date,
+      endDate: rule.end_date,
+      daysOfWeek: rule.days_of_week,
+      datesGenerated: dates.length,
+      firstDate: dates[0]?.toISOString(),
+      lastDate: dates[dates.length - 1]?.toISOString()
+    })
     
     // Check for existing schedule items
     const existingResult = await db.query(
@@ -98,6 +111,12 @@ function generateDates(rule: any, generateUntil?: string): Date[] {
   }
 
   let currentDate = startOfDay(startDate)
+  const today = startOfDay(new Date())
+  
+  // If start date is in the past, begin from today
+  if (currentDate < today) {
+    currentDate = today
+  }
 
   while (currentDate <= finalEndDate) {
     switch (rule.frequency) {

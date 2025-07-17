@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const {
       listing_id,
@@ -44,7 +45,7 @@ export async function PUT(
         end_date,
         notes,
         is_active,
-        params.id
+        id
       ]
     )
 
@@ -64,16 +65,17 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     // Soft delete by setting is_active = false
     const result = await db.query(
       `UPDATE public.manual_schedule_rules 
        SET is_active = false, updated_at = NOW()
        WHERE id = $1
        RETURNING id`,
-      [params.id]
+      [id]
     )
 
     if (result.rows.length === 0) {
