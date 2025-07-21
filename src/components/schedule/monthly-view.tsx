@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { format, isSameDay, isToday, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
+import { format, isSameDay, isToday, isPast, startOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -27,6 +27,14 @@ interface ScheduleItem {
   cleaner_id: string;
   cleaner_name: string;
   cleaner_phone: string | null;
+  // Historical fields
+  original_check_in?: string;
+  original_check_out?: string;
+  cancelled_at?: string;
+  is_extended?: boolean;
+  extension_notes?: string;
+  extension_count?: number;
+  modification_history?: any[];
 }
 
 interface MonthlyViewProps {
@@ -84,37 +92,49 @@ export function MonthlyView({
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 auto-rows-auto">
         {calendarDays.map((day) => {
           const items = getItemsForDate(day);
           const hasTurnaround = hasSameDayTurnaround(day);
           const isCurrentMonth = isSameMonth(day, currentMonth);
+          const isPastDate = isPast(startOfDay(day)) && !isToday(day);
           
           return (
             <Popover key={day.toISOString()}>
               <PopoverTrigger asChild>
                 <div
                   className={cn(
-                    "border rounded-lg p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors relative",
+                    "border rounded-lg p-2 min-h-[100px] cursor-pointer hover:bg-gray-50 transition-colors relative",
                     !isCurrentMonth && "bg-gray-50 text-muted-foreground",
-                    isToday(day) && "bg-blue-50 border-blue-300",
-                    hasTurnaround && "border-orange-300"
+                    isPastDate && "bg-gray-100 text-gray-500",
+                    isToday(day) && "bg-blue-50 border-orange-500 border-2",
+                    hasTurnaround && !isToday(day) && "border-orange-300"
                   )}
                   onClick={() => onDateClick(day)}
                 >
-                  <div className="text-sm font-medium mb-1">
-                    {format(day, 'd')}
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="text-sm font-medium">
+                      {format(day, 'd')}
+                    </div>
+                    {isToday(day) && (
+                      <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                        TODAY
+                      </span>
+                    )}
                   </div>
                   
                   {items.length > 0 && (
                     <div className="flex flex-col gap-1">
                       <div className="flex gap-1">
-                        {items.slice(0, 3).map((_, idx) => (
+                        {items.slice(0, 3).map((item, idx) => (
                           <div
                             key={idx}
                             className={cn(
                               "w-2 h-2 rounded-full",
-                              hasTurnaround ? "bg-orange-500" : "bg-blue-500"
+                              item.status === 'cancelled' ? "bg-gray-400" :
+                              item.is_extended ? "bg-purple-500" :
+                              hasTurnaround ? "bg-orange-500" : 
+                              isPastDate ? "bg-gray-400" : "bg-blue-500"
                             )}
                           />
                         ))}
@@ -139,15 +159,46 @@ export function MonthlyView({
                     </h4>
                     <div className="space-y-2">
                       {items.map((item) => (
-                        <div key={item.id} className="text-sm border-b pb-2 last:border-0">
-                          <div className="font-medium">{item.listing_name}</div>
+                        <div key={item.id} className={cn(
+                          "text-sm border-b pb-2 last:border-0",
+                          item.status === 'cancelled' && "opacity-60"
+                        )}>
+                          <div className="font-medium flex items-center gap-2">
+                            {item.listing_name}
+                            {item.status === 'cancelled' && (
+                              <Badge variant="destructive" className="text-xs">Cancelled</Badge>
+                            )}
+                            {item.is_extended && (
+                              <Badge variant="outline" className="text-xs">Extended</Badge>
+                            )}
+                          </div>
                           <div className="text-muted-foreground">
                             {item.cleaner_name} • {item.checkout_time || '11:00 AM'}
                           </div>
+                          {item.guest_name && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Guest: {item.guest_name}
+                            </div>
+                          )}
                           {item.source !== 'airbnb' && (
                             <Badge variant="secondary" className="text-xs mt-1">
                               {item.source === 'manual' ? 'Manual' : 'Recurring'}
                             </Badge>
+                          )}
+                          {item.is_extended && item.extension_notes && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              {item.extension_notes}
+                            </div>
+                          )}
+                          {item.cancelled_at && (
+                            <div className="text-xs text-destructive mt-1">
+                              Cancelled on {format(new Date(item.cancelled_at), 'MMM d')}
+                            </div>
+                          )}
+                          {item.original_check_out && item.original_check_out !== item.check_out && !item.is_extended && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Original checkout: {format(new Date(item.original_check_out), 'MMM d')}
+                            </div>
                           )}
                         </div>
                       ))}

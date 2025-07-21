@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     expiresAt.setDate(expiresAt.getDate() + 30)
 
     // Get device info from headers
-    const headersList = headers()
+    const headersList = await headers()
     const userAgent = headersList.get('user-agent') || 'Unknown'
     const deviceInfo = {
       userAgent,

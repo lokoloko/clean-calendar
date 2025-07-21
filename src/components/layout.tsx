@@ -193,9 +193,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
-      <SidebarInset className={cn("transition-all duration-300 ease-in-out")}>
+      <SidebarInset className={cn("transition-all duration-300 ease-in-out flex flex-col min-h-screen")}>
         <AppHeader />
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

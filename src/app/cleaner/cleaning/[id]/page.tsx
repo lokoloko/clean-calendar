@@ -284,13 +284,13 @@ export default function CleaningDetailPage({ params }: Props) {
                   <button
                     key={option.value}
                     onClick={() => setCleanlinessRating(option.value as 'clean' | 'normal' | 'dirty')}
-                    disabled={isCompleted && !submitting}
+                    disabled={(isCompleted || false) && !submitting}
                     className={cn(
                       "flex items-center space-x-3 p-4 rounded-lg border-2 transition-all text-left",
                       cleanlinessRating === option.value
                         ? option.color
                         : "bg-white border-gray-200 hover:border-gray-300",
-                      (isCompleted && !submitting) && "opacity-50 cursor-not-allowed"
+                      ((isCompleted || false) && !submitting) && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     <span className="text-2xl">{option.icon}</span>
@@ -317,7 +317,7 @@ export default function CleaningDetailPage({ params }: Props) {
                 placeholder="Any issues, broken items, or special notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                disabled={isCompleted && !submitting}
+                disabled={(isCompleted || false) && !submitting}
                 className="min-h-[100px] resize-none"
               />
             </div>

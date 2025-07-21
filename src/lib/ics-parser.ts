@@ -41,6 +41,10 @@ export function parseICSData(icsData: string): ParsedBooking[] {
       continue
     }
 
+    if (!event.start || !event.end) {
+      continue
+    }
+
     const booking: ParsedBooking = {
       uid: event.uid || key,
       summary: event.summary || 'Booking',

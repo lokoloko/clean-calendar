@@ -52,7 +52,26 @@ export async function POST(request: Request) {
         // Get all future bookings UIDs from the ICS feed
         const currentBookingUids = bookings.map(b => b.uid);
         
+        // First, mark past bookings as completed if they haven't been marked yet
+        await db.query(
+          `UPDATE public.schedule_items 
+           SET status = 'completed',
+               is_completed = true,
+               modification_history = modification_history || 
+                 jsonb_build_object(
+                   'type', 'completion',
+                   'timestamp', NOW(),
+                   'previous_status', status
+                 ),
+               updated_at = NOW()
+           WHERE listing_id = $1 
+             AND check_out < CURRENT_DATE
+             AND status = 'pending'`,
+          [listing.id]
+        )
+
         // Mark future bookings that are no longer in the ICS feed as cancelled
+        // Only mark bookings as cancelled if they are in the future (not today or past)
         await db.query(
           `UPDATE public.schedule_items 
            SET status = 'cancelled', 
@@ -66,8 +85,10 @@ export async function POST(request: Request) {
                  ),
                updated_at = NOW()
            WHERE listing_id = $1 
-             AND check_out >= CURRENT_DATE 
+             AND check_out > CURRENT_DATE  -- Changed from >= to > to preserve today's and past checkouts
              AND status != 'cancelled'
+             AND status != 'completed'  -- Don't mark completed bookings as cancelled
+             AND source = 'airbnb'  -- Only cancel Airbnb bookings, not manual ones
              AND booking_uid NOT IN (${currentBookingUids.map((_, i) => `$${i + 2}`).join(', ') || 'NULL'})`,
           [listing.id, ...currentBookingUids]
         )
@@ -135,7 +156,7 @@ export async function POST(request: Request) {
               listing.id,
               defaultCleanerId,
               booking.uid,
-              booking.guestName || 'Guest',
+              booking.guestName || null,
               booking.checkIn.toISOString(),
               booking.checkOut.toISOString(),
               getCheckoutTime(booking.checkOut),
@@ -145,7 +166,7 @@ export async function POST(request: Request) {
               booking.checkOut.toISOString()  // original_check_out
             ]
           )
-          if (result.rowCount > 0) {
+          if (result.rowCount && result.rowCount > 0) {
             if (result.command === 'INSERT') insertedCount++
             else updatedCount++
           }

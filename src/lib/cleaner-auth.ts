@@ -1,6 +1,6 @@
 import { db } from './db'
 
-export async function validateCleanerSession(token: string) {
+export async function validateCleanerSession(token: string | null) {
   // Temporary bypass for testing - return mock cleaner data
   if (token === 'mock-token') {
     // Get Jane (the cleaner with more schedule items) for testing

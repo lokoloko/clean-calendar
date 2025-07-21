@@ -152,6 +152,11 @@ export default function SchedulePage() {
     isCreating: false,
     shareUrl: ''
   });
+  const [dayDetailsModal, setDayDetailsModal] = useState({
+    isOpen: false,
+    date: new Date(),
+    items: [] as ScheduleItem[]
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -197,6 +202,9 @@ export default function SchedulePage() {
     
     // Filter out cancelled bookings unless explicitly showing them
     if (!showCancelled && item.status === 'cancelled') return false;
+    
+    // Filter out completed/past bookings in list view
+    if (item.status === 'completed') return false;
     
     if (!date) return true;
     
@@ -261,6 +269,15 @@ export default function SchedulePage() {
       startDate: new Date(),
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       exportText: ''
+    });
+  };
+
+  const handleShowDayDetails = (date: Date) => {
+    const items = getItemsForDate(date);
+    setDayDetailsModal({
+      isOpen: true,
+      date,
+      items
     });
   };
 
@@ -687,6 +704,29 @@ export default function SchedulePage() {
             </div>
           </div>
 
+          {/* Legend for visual indicators */}
+          {(viewType === 'week' || viewType === 'month') && (
+            <div className="flex items-center gap-4 text-xs text-muted-foreground bg-gray-50 rounded-lg p-2 mb-4">
+              <span className="font-medium">Legend:</span>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span>Regular</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                <span>Same-day turnaround</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                <span>Extended stay</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                <span>Cancelled</span>
+              </div>
+            </div>
+          )}
+
           <TabsContent value="list" className="mt-0">
             <div className="border rounded-xl shadow-sm">
               <Table>
@@ -780,24 +820,20 @@ export default function SchedulePage() {
               hasSameDayTurnaround={hasSameDayTurnaround}
               currentWeek={currentWeek}
               setCurrentWeek={setCurrentWeek}
-              onDateClick={(date) => {
-                setManualFormData({ ...manualFormData, date: format(date, 'yyyy-MM-dd') });
-                setIsManualModalOpen(true);
-              }}
+              onDateClick={handleShowDayDetails}
             />
           </TabsContent>
 
-          <TabsContent value="month" className="mt-0">
-            <MonthlyView
-              getItemsForDate={getItemsForDate}
-              hasSameDayTurnaround={hasSameDayTurnaround}
-              currentMonth={currentMonth}
-              setCurrentMonth={setCurrentMonth}
-              onDateClick={(date) => {
-                setManualFormData({ ...manualFormData, date: format(date, 'yyyy-MM-dd') });
-                setIsManualModalOpen(true);
-              }}
-            />
+          <TabsContent value="month" className="mt-0 overflow-visible">
+            <div className="overflow-visible">
+              <MonthlyView
+                getItemsForDate={getItemsForDate}
+                hasSameDayTurnaround={hasSameDayTurnaround}
+                currentMonth={currentMonth}
+                setCurrentMonth={setCurrentMonth}
+                onDateClick={handleShowDayDetails}
+              />
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -1153,6 +1189,112 @@ export default function SchedulePage() {
                   Done
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Day Details Modal */}
+        <Dialog open={dayDetailsModal.isOpen} onOpenChange={(open) => {
+          if (!open) {
+            setDayDetailsModal({ ...dayDetailsModal, isOpen: false });
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Cleanings for {format(dayDetailsModal.date, 'EEEE, MMMM d, yyyy')}
+              </DialogTitle>
+              <DialogDescription>
+                {dayDetailsModal.items.length === 0
+                  ? 'No cleanings scheduled for this day'
+                  : `${dayDetailsModal.items.length} cleaning${dayDetailsModal.items.length !== 1 ? 's' : ''} scheduled`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {dayDetailsModal.items.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No cleanings scheduled for this day
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {dayDetailsModal.items.map((item) => {
+                    const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
+                    return (
+                      <div key={item.id} className={cn(
+                        "border rounded-lg p-4 space-y-2",
+                        item.status === 'cancelled' && "opacity-60 bg-gray-50",
+                        item.status === 'completed' && "bg-gray-50"
+                      )}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold text-lg">{item.listing_name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Cleaner: {item.cleaner_name}
+                              {item.cleaner_phone && ` • ${item.cleaner_phone}`}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            {item.status === 'cancelled' && (
+                              <Badge variant="destructive">Cancelled</Badge>
+                            )}
+                            {item.status === 'completed' && (
+                              <Badge variant="secondary">Completed</Badge>
+                            )}
+                            {item.is_extended && (
+                              <Badge variant="outline">Extended</Badge>
+                            )}
+                            {nextCheckIn === 'Same day' && (
+                              <Badge variant="outline" className="border-orange-300 text-orange-600">
+                                Same-day turnaround
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Checkout Time</p>
+                            <p className="font-medium">{item.checkout_time || '11:00 AM'}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Next Check-in</p>
+                            <p className="font-medium">{nextCheckIn}</p>
+                          </div>
+                        </div>
+
+                        {item.notes && (
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">Notes</p>
+                            <p className="whitespace-pre-wrap">{item.notes}</p>
+                          </div>
+                        )}
+
+                        {item.is_extended && item.extension_notes && (
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">Extension Details</p>
+                            <p className="text-blue-600">{item.extension_notes}</p>
+                          </div>
+                        )}
+
+                        {item.cancelled_at && (
+                          <div className="text-sm">
+                            <p className="text-destructive">
+                              Cancelled on {format(new Date(item.cancelled_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDayDetailsModal({ ...dayDetailsModal, isOpen: false })}>
+                Close
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 export async function GET(request: Request) {
   try {
     const token = getCleanerToken(request)
-    const session = await validateCleanerSession(token)
+    const session = await validateCleanerSession(token || null)
     
     if (!session) {
       return NextResponse.json(

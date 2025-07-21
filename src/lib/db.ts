@@ -72,11 +72,14 @@ export const db = {
              s.original_check_out,
              s.cancelled_at,
              s.is_extended,
-             s.extension_notes
+             s.extension_notes,
+             s.extension_count,
+             s.modification_history
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
-      WHERE l.user_id = $1 AND s.check_out >= CURRENT_DATE
+      WHERE l.user_id = $1 
+        AND s.check_out >= CURRENT_DATE - INTERVAL '30 days'  -- Include last 30 days of history
       ORDER BY s.check_out ASC
     `, [userId])
     return result.rows
@@ -94,7 +97,9 @@ export const db = {
              s.original_check_out,
              s.cancelled_at,
              s.is_extended,
-             s.extension_notes
+             s.extension_notes,
+             s.extension_count,
+             s.modification_history
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id

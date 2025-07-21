@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { validateCleanerSession, getCleanerToken } from '@/lib/cleaner-auth'
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const token = getCleanerToken(request)
-    const session = await validateCleanerSession(token)
+    const session = await validateCleanerSession(token || null)
     
     if (!session) {
       return NextResponse.json(
@@ -15,7 +16,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     const { cleanlinessRating, notes } = await request.json()
-    const cleaningId = params.id
+    const cleaningId = id
 
     // Validate the cleanliness rating
     if (!cleanlinessRating || !['clean', 'normal', 'dirty'].includes(cleanlinessRating)) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { format, isSameDay, isToday, addWeeks, subWeeks } from 'date-fns';
+import { format, isSameDay, isToday, isPast, startOfDay, addWeeks, subWeeks } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -22,6 +22,14 @@ interface ScheduleItem {
   cleaner_id: string;
   cleaner_name: string;
   cleaner_phone: string | null;
+  // Historical fields
+  original_check_in?: string;
+  original_check_out?: string;
+  cancelled_at?: string;
+  is_extended?: boolean;
+  extension_notes?: string;
+  extension_count?: number;
+  modification_history?: any[];
 }
 
 interface WeeklyViewProps {
@@ -69,22 +77,31 @@ export function WeeklyView({
         {weekDays.map((day) => {
           const items = getItemsForDate(day);
           const hasTurnaround = hasSameDayTurnaround(day);
+          const isPastDate = isPast(startOfDay(day)) && !isToday(day);
           
           return (
             <div
               key={day.toISOString()}
               className={cn(
-                "border rounded-lg p-3 min-h-[150px] cursor-pointer hover:bg-gray-50 transition-colors",
-                isToday(day) && "bg-blue-50 border-blue-300",
-                hasTurnaround && "border-orange-300"
+                "border rounded-lg p-3 min-h-[150px] cursor-pointer hover:bg-gray-50 transition-colors relative",
+                isPastDate && "bg-gray-100 text-gray-500",
+                isToday(day) && "bg-blue-50 border-orange-500 border-2",
+                hasTurnaround && !isToday(day) && "border-orange-300"
               )}
               onClick={() => onDateClick(day)}
             >
-              <div className="font-semibold text-sm mb-2">
-                {format(day, 'EEE')}
-                <span className="text-muted-foreground ml-1">
-                  {format(day, 'd')}
-                </span>
+              <div className="flex items-start justify-between mb-2">
+                <div className="font-semibold text-sm">
+                  {format(day, 'EEE')}
+                  <span className="text-muted-foreground ml-1">
+                    {format(day, 'd')}
+                  </span>
+                </div>
+                {isToday(day) && (
+                  <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                    TODAY
+                  </span>
+                )}
               </div>
               
               <div className="space-y-1">
@@ -94,10 +111,21 @@ export function WeeklyView({
                   items.slice(0, 3).map((item) => (
                     <div
                       key={item.id}
-                      className="text-xs p-1 bg-gray-100 rounded"
+                      className={cn(
+                        "text-xs p-1 rounded",
+                        item.status === 'cancelled' ? "bg-gray-50 opacity-60" :
+                        item.is_extended ? "bg-purple-50" : 
+                        isPastDate ? "bg-gray-50" : "bg-gray-100"
+                      )}
                     >
-                      <div className="font-medium truncate">
+                      <div className="font-medium truncate flex items-center gap-1">
                         {item.listing_name}
+                        {item.status === 'cancelled' && (
+                          <span className="text-red-500">×</span>
+                        )}
+                        {item.is_extended && (
+                          <span className="text-purple-500">↗</span>
+                        )}
                       </div>
                       <div className="text-muted-foreground truncate">
                         {item.cleaner_name}
