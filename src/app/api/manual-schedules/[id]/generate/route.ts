@@ -26,38 +26,49 @@ export async function POST(
     // Calculate dates to generate
     const dates = generateDates(rule, generateUntil)
     
-    console.log('Manual schedule generation:', {
-      ruleId: id,
-      ruleType: rule.schedule_type,
-      frequency: rule.frequency,
-      startDate: rule.start_date,
-      endDate: rule.end_date,
-      daysOfWeek: rule.days_of_week,
-      datesGenerated: dates.length,
-      firstDate: dates[0]?.toISOString(),
-      lastDate: dates[dates.length - 1]?.toISOString()
-    })
-    
-    // Check for existing schedule items
+    // Check for existing schedule items from this specific rule
     const existingResult = await db.query(
       `SELECT check_out FROM public.schedule_items 
-       WHERE listing_id = $1 AND source IN ('manual', 'manual_recurring')`,
-      [rule.listing_id]
+       WHERE listing_id = $1 AND manual_rule_id = $2`,
+      [rule.listing_id, rule.id]
     )
     
     const existingDates = new Set(
       existingResult.rows.map(row => row.check_out.toISOString().split('T')[0])
     )
 
+    // Also check for any schedule conflicts (different rules, same date)
+    let conflictDates = new Set<string>()
+    
+    if (dates.length > 0) {
+      const conflictResult = await db.query(
+        `SELECT check_out FROM public.schedule_items 
+         WHERE listing_id = $1 AND check_out >= $2 AND check_out <= $3
+         AND (manual_rule_id IS NULL OR manual_rule_id != $4)`,
+        [rule.listing_id, dates[0], dates[dates.length - 1], rule.id]
+      )
+      
+      conflictDates = new Set(
+        conflictResult.rows.map(row => row.check_out.toISOString().split('T')[0])
+      )
+    }
+
     // Create schedule items for non-existing dates
     let created = 0
     let skipped = 0
+    let conflicts = 0
     
     for (const date of dates) {
       const dateStr = date.toISOString().split('T')[0]
       
       if (existingDates.has(dateStr)) {
         skipped++
+        continue
+      }
+      
+      if (conflictDates.has(dateStr)) {
+        conflicts++
+        console.log(`Conflict detected for ${dateStr} - skipping`)
         continue
       }
 
@@ -85,6 +96,7 @@ export async function POST(
       success: true,
       created,
       skipped,
+      conflicts,
       total: dates.length
     })
   } catch (error) {

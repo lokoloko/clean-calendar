@@ -30,20 +30,14 @@ export default function LandingPage() {
   }, [user, router]);
 
   const handleGenerateSchedule = async () => {
-    console.log('Generate Schedule clicked');
-    console.log('Calendar URL:', calendarUrl);
-    
     if (!calendarUrl) {
-      console.log('No calendar URL provided');
       return;
     }
     
     // Store the calendar URL in sessionStorage to use after login
     sessionStorage.setItem('pendingCalendarUrl', calendarUrl);
-    console.log('Stored URL in sessionStorage');
     
     // Sign in the user (will redirect to dashboard)
-    console.log('Signing in...');
     await signInWithGoogle();
   };
   const benefits = [

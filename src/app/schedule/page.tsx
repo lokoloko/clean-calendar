@@ -33,14 +33,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WeeklyView } from '@/components/schedule/weekly-view';
 import { MonthlyView } from '@/components/schedule/monthly-view';
+import { Checkbox } from '@/components/ui/checkbox';
 
-type ScheduleStatus = 'pending' | 'confirmed' | 'declined' | 'completed';
+type ScheduleStatus = 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
 
 const statusMap: Record<ScheduleStatus, { text: string, variant: "default" | "secondary" | "destructive" | "outline", icon: React.ReactNode }> = {
   pending: { text: 'Pending', variant: 'outline', icon: null },
   confirmed: { text: 'Confirmed', variant: 'secondary', icon: null },
   declined: { text: 'Declined', variant: 'destructive', icon: null },
   completed: { text: 'Completed', variant: 'default', icon: <Check className="h-3 w-3" /> },
+  cancelled: { text: 'Cancelled', variant: 'destructive', icon: null },
 }
 
 interface ScheduleItem {
@@ -58,6 +60,11 @@ interface ScheduleItem {
   cleaner_id: string;
   cleaner_name: string;
   cleaner_phone: string | null;
+  original_check_in?: string;
+  original_check_out?: string;
+  cancelled_at?: string;
+  is_extended?: boolean;
+  extension_notes?: string;
 }
 
 interface Listing {
@@ -114,6 +121,7 @@ export default function SchedulePage() {
   const [selectedCleaner, setSelectedCleaner] = useState<string>('all');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
   const [viewType, setViewType] = useState<'list' | 'week' | 'month'>('list');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -187,6 +195,9 @@ export default function SchedulePage() {
     
     if (!matchesCleaner) return false;
     
+    // Filter out cancelled bookings unless explicitly showing them
+    if (!showCancelled && item.status === 'cancelled') return false;
+    
     if (!date) return true;
     
     const itemDate = parseLocalDate(item.check_out);
@@ -204,6 +215,9 @@ export default function SchedulePage() {
     return scheduleItems.filter(item => {
       const matchesCleaner = selectedCleaner === 'all' || item.cleaner_id === selectedCleaner;
       if (!matchesCleaner) return false;
+      
+      // Filter out cancelled bookings unless explicitly showing them
+      if (!showCancelled && item.status === 'cancelled') return false;
       
       const itemDate = parseLocalDate(item.check_out);
       return isSameDay(itemDate, targetDate);
@@ -298,7 +312,7 @@ export default function SchedulePage() {
           const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
           exportText += `${item.listing_name}`;
           
-          // Always show next check-in info
+          // Always show next cleaning info
           if (nextCheckIn === 'Same day') {
             exportText += ` - ${nextCheckIn}`;
           } else if (nextCheckIn === 'Next day') {
@@ -306,7 +320,7 @@ export default function SchedulePage() {
           } else if (nextCheckIn === 'No upcoming') {
             exportText += ` - No upcoming`;
           } else {
-            exportText += ` - Next Check-in: ${nextCheckIn}`;
+            exportText += ` - Next Cleaning: ${nextCheckIn}`;
           }
           
           exportText += '\n';
@@ -640,6 +654,17 @@ export default function SchedulePage() {
                 </SelectContent>
               </Select>
               
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="show-cancelled" 
+                  checked={showCancelled} 
+                  onCheckedChange={(checked) => setShowCancelled(checked as boolean)}
+                />
+                <Label htmlFor="show-cancelled" className="text-sm font-normal cursor-pointer">
+                  Show cancelled
+                </Label>
+              </div>
+              
               {viewType === 'list' && (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -680,7 +705,9 @@ export default function SchedulePage() {
                     const isValidDate = !isNaN(checkoutDate.getTime());
                     
                     return (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className={cn(
+                      item.status === 'cancelled' && "opacity-60"
+                    )}>
                       <TableCell className="font-medium">
                         {isValidDate ? format(checkoutDate, 'MMM d, yyyy') : 'Invalid date'}
                         <span className="text-sm text-muted-foreground block">
@@ -701,13 +728,26 @@ export default function SchedulePage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {item.listing_name}
-                          {item.source === 'manual' && (
-                            <Badge variant="secondary" className="text-xs">Manual</Badge>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {item.listing_name}
+                            {item.source === 'manual' && (
+                              <Badge variant="secondary" className="text-xs">Manual</Badge>
+                            )}
+                            {item.source === 'manual_recurring' && (
+                              <Badge variant="secondary" className="text-xs">Recurring</Badge>
+                            )}
+                            {item.is_extended && (
+                              <Badge variant="outline" className="text-xs">Extended</Badge>
+                            )}
+                          </div>
+                          {item.is_extended && item.extension_notes && (
+                            <span className="text-xs text-muted-foreground">{item.extension_notes}</span>
                           )}
-                          {item.source === 'manual_recurring' && (
-                            <Badge variant="secondary" className="text-xs">Recurring</Badge>
+                          {item.cancelled_at && (
+                            <span className="text-xs text-destructive">
+                              Cancelled on {format(parseISO(item.cancelled_at), 'MMM d, yyyy')}
+                            </span>
                           )}
                         </div>
                       </TableCell>
@@ -1056,7 +1096,7 @@ export default function SchedulePage() {
                     id="export-start-date"
                     type="date"
                     value={format(exportModal.startDate, 'yyyy-MM-dd')}
-                    onChange={(e) => setExportModal({ ...exportModal, startDate: new Date(e.target.value) })}
+                    onChange={(e) => setExportModal({ ...exportModal, startDate: parseLocalDate(e.target.value) })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -1065,7 +1105,7 @@ export default function SchedulePage() {
                     id="export-end-date"
                     type="date"
                     value={format(exportModal.endDate, 'yyyy-MM-dd')}
-                    onChange={(e) => setExportModal({ ...exportModal, endDate: new Date(e.target.value) })}
+                    onChange={(e) => setExportModal({ ...exportModal, endDate: parseLocalDate(e.target.value) })}
                     min={format(exportModal.startDate, 'yyyy-MM-dd')}
                   />
                 </div>

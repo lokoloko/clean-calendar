@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,81 @@ import { useToast } from '@/hooks/use-toast';
 export default function SettingsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  
+  // Settings state
+  const [settings, setSettings] = useState({
+    auto_sync_enabled: true,
+    auto_sync_time: '03:00',
+    sms_provider: 'twilio',
+    send_weekly_schedule: true,
+    send_daily_reminders: true,
+    weekly_schedule_day: 'sunday',
+    daily_reminder_time: '06:00',
+    require_confirmation: false
+  });
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) {
+        const data = await res.json();
+        setSettings({
+          auto_sync_enabled: data.auto_sync_enabled ?? true,
+          auto_sync_time: data.auto_sync_time?.slice(0, 5) ?? '03:00',
+          sms_provider: data.sms_provider ?? 'twilio',
+          send_weekly_schedule: data.send_weekly_schedule ?? true,
+          send_daily_reminders: data.send_daily_reminders ?? true,
+          weekly_schedule_day: data.weekly_schedule_day ?? 'sunday',
+          daily_reminder_time: data.daily_reminder_time?.slice(0, 5) ?? '06:00',
+          require_confirmation: data.require_confirmation ?? false
+        });
+      }
+    } catch (error) {
+      // Error loading settings, use defaults
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...settings,
+          auto_sync_time: settings.auto_sync_time + ':00',
+          daily_reminder_time: settings.daily_reminder_time + ':00'
+        })
+      });
+      
+      if (res.ok) {
+        toast({
+          title: 'Settings saved',
+          description: 'Your preferences have been updated successfully.',
+        });
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save settings. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSyncAll = async () => {
     setIsSyncing(true);
@@ -62,11 +136,9 @@ export default function SettingsPage() {
             successCount++;
           } else {
             errorCount++;
-            console.error(`Failed to sync ${listing.name}`);
           }
         } catch (error) {
           errorCount++;
-          console.error(`Error syncing ${listing.name}:`, error);
         }
       }
 
@@ -158,9 +230,13 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Automatic Sync</p>
                   <div className="flex items-center space-x-3">
-                    <Switch id="auto-sync" />
+                    <Switch 
+                      id="auto-sync" 
+                      checked={settings.auto_sync_enabled}
+                      onCheckedChange={(checked) => setSettings({...settings, auto_sync_enabled: checked})}
+                    />
                     <Label htmlFor="auto-sync" className="text-sm font-normal">
-                      Automatically sync all listings daily at 3:00 AM
+                      Automatically sync all listings daily at {settings.auto_sync_time}
                     </Label>
                   </div>
                 </div>
@@ -182,8 +258,10 @@ export default function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="grid gap-2">
                     <Label htmlFor="sms-provider">SMS Provider</Label>
-                    {/* TODO: Connect this to a backend service like Twilio. */}
-                    <Select defaultValue="twilio">
+                    <Select 
+                      value={settings.sms_provider}
+                      onValueChange={(value) => setSettings({...settings, sms_provider: value})}
+                    >
                       <SelectTrigger id="sms-provider" className="w-full md:w-[300px]">
                         <SelectValue placeholder="Select provider" />
                       </SelectTrigger>
@@ -203,18 +281,30 @@ export default function SettingsPage() {
                   <div className="grid gap-4">
                     <Label className="font-semibold">What to Send Cleaners</Label>
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="weekly-schedule" defaultChecked />
+                      <Checkbox 
+                        id="weekly-schedule" 
+                        checked={settings.send_weekly_schedule}
+                        onCheckedChange={(checked) => setSettings({...settings, send_weekly_schedule: !!checked})}
+                      />
                       <Label htmlFor="weekly-schedule">Weekly Schedule</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="daily-reminders" defaultChecked />
+                      <Checkbox 
+                        id="daily-reminders" 
+                        checked={settings.send_daily_reminders}
+                        onCheckedChange={(checked) => setSettings({...settings, send_daily_reminders: !!checked})}
+                      />
                       <Label htmlFor="daily-reminders">Daily Reminders</Label>
                     </div>
                   </div>
                   {/* Section for configuring when to send the weekly schedule */}
                   <div className="grid gap-4">
                     <Label className="font-semibold">When to Send Weekly Schedule</Label>
-                    <RadioGroup defaultValue="sunday" className="flex gap-4">
+                    <RadioGroup 
+                      value={settings.weekly_schedule_day}
+                      onValueChange={(value) => setSettings({...settings, weekly_schedule_day: value})}
+                      className="flex gap-4"
+                    >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="sunday" id="sunday" />
                         <Label htmlFor="sunday">Sunday</Label>
@@ -230,7 +320,13 @@ export default function SettingsPage() {
                 {/* Input for setting the daily reminder time */}
                 <div className="grid gap-2">
                   <Label htmlFor="send-time">Daily Reminder Time</Label>
-                  <Input id="send-time" type="time" defaultValue="06:00" className="w-full md:w-[300px]" />
+                  <Input 
+                    id="send-time" 
+                    type="time" 
+                    value={settings.daily_reminder_time}
+                    onChange={(e) => setSettings({...settings, daily_reminder_time: e.target.value})}
+                    className="w-full md:w-[300px]" 
+                  />
                 </div>
 
                 <Separator />
@@ -239,13 +335,29 @@ export default function SettingsPage() {
                 <div className="grid gap-4">
                     <Label className="font-semibold">Confirmation</Label>
                     <div className="flex items-center space-x-3">
-                        <Switch id="require-reply" />
+                        <Switch 
+                          id="require-reply" 
+                          checked={settings.require_confirmation}
+                          onCheckedChange={(checked) => setSettings({...settings, require_confirmation: checked})}
+                        />
                         <Label htmlFor="require-reply">Require cleaners to reply 'DONE' after each cleaning</Label>
                     </div>
                 </div>
 
-                {/* TODO: Implement save functionality */}
-                <Button className="w-fit">Save Preferences</Button>
+                <Button 
+                  className="w-fit" 
+                  onClick={handleSaveSettings}
+                  disabled={isSaving || isLoading}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Preferences'
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>

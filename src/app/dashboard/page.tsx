@@ -86,7 +86,7 @@ export default function DashboardPage() {
         });
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      // Error is caught but not logged in production
     } finally {
       setLoading(false);
     }

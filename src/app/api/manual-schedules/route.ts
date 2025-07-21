@@ -14,7 +14,7 @@ export async function GET() {
       FROM public.manual_schedule_rules msr
       JOIN public.listings l ON msr.listing_id = l.id
       JOIN public.cleaners c ON msr.cleaner_id = c.id
-      WHERE l.user_id = $1
+      WHERE l.user_id = $1 AND msr.is_active = true
       ORDER BY msr.created_at DESC
     `, [DEV_USER_ID])
     

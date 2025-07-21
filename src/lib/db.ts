@@ -67,7 +67,12 @@ export const db = {
              l.timezone as listing_timezone, 
              c.name as cleaner_name, 
              c.phone as cleaner_phone,
-             COALESCE(s.source, 'airbnb') as source
+             COALESCE(s.source, 'airbnb') as source,
+             s.original_check_in,
+             s.original_check_out,
+             s.cancelled_at,
+             s.is_extended,
+             s.extension_notes
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
@@ -84,7 +89,12 @@ export const db = {
              l.timezone as listing_timezone, 
              c.name as cleaner_name, 
              c.phone as cleaner_phone,
-             COALESCE(s.source, 'airbnb') as source
+             COALESCE(s.source, 'airbnb') as source,
+             s.original_check_in,
+             s.original_check_out,
+             s.cancelled_at,
+             s.is_extended,
+             s.extension_notes
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
@@ -250,6 +260,11 @@ export const db = {
              c.name as cleaner_name,
              c.phone as cleaner_phone,
              COALESCE(s.source, 'airbnb') as source,
+             s.original_check_in,
+             s.original_check_out,
+             s.cancelled_at,
+             s.is_extended,
+             s.extension_notes,
              cf.id as feedback_id,
              cf.cleanliness_rating,
              cf.notes as feedback_notes,

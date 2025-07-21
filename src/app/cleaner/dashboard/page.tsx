@@ -44,6 +44,11 @@ interface CleaningItem {
     notes: string;
     completedAt: string;
   } | null;
+  originalCheckIn?: string;
+  originalCheckOut?: string;
+  cancelledAt?: string;
+  isExtended?: boolean;
+  extensionNotes?: string;
 }
 
 interface CleanerData {
@@ -125,12 +130,14 @@ export default function CleanerDashboard() {
   };
 
   const getStatusColor = (item: CleaningItem) => {
+    if (item.status === 'cancelled') return 'bg-red-100 text-red-800';
     if (item.isCompleted || item.feedback) return 'bg-green-100 text-green-800';
     if (isSameDay(parseISO(item.checkOut), new Date())) return 'bg-orange-100 text-orange-800';
     return 'bg-blue-100 text-blue-800';
   };
 
   const getStatusText = (item: CleaningItem) => {
+    if (item.status === 'cancelled') return 'Cancelled';
     if (item.isCompleted || item.feedback) return 'Completed';
     if (isSameDay(parseISO(item.checkOut), new Date())) return 'Due Today';
     return 'Scheduled';
@@ -319,14 +326,26 @@ export default function CleanerDashboard() {
                         {format(parseISO(item.checkOut), 'MMM d, yyyy')} at {item.checkoutTime || '11:00 AM'}
                       </div>
                     </div>
-                    <Badge className={cn("text-xs", getStatusColor(item))}>
-                      {getStatusText(item)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={cn("text-xs", getStatusColor(item))}>
+                        {getStatusText(item)}
+                      </Badge>
+                      {item.isExtended && (
+                        <Badge variant="outline" className="text-xs">
+                          Extended
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {item.guestName && (
                     <div className="text-sm text-gray-600 mb-2">
                       Guest: {item.guestName}
+                    </div>
+                  )}
+                  {item.isExtended && item.extensionNotes && (
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {item.extensionNotes}
                     </div>
                   )}
 

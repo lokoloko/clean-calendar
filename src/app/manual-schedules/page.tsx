@@ -84,6 +84,7 @@ export default function ManualSchedulesPage() {
     start_date: format(new Date(), 'yyyy-MM-dd'),
     end_date: '',
     notes: '',
+    is_active: true,
   });
   const { toast } = useToast();
 
@@ -144,6 +145,7 @@ export default function ManualSchedulesPage() {
           day_of_month: formData.frequency === 'monthly' ? formData.day_of_month : null,
           custom_interval_days: formData.frequency === 'custom' ? formData.custom_interval_days : null,
           end_date: formData.end_date || null,
+          is_active: formData.is_active,
         }),
       });
 
@@ -195,9 +197,18 @@ export default function ManualSchedulesPage() {
 
       const result = await response.json();
       
+      let description = `Generated ${result.created} cleanings`;
+      if (result.skipped > 0) {
+        description += ` (${result.skipped} already exist)`;
+      }
+      if (result.conflicts > 0) {
+        description += ` (${result.conflicts} conflicts)`;
+      }
+      
       toast({
-        title: 'Success',
-        description: `Generated ${result.created} cleanings (${result.skipped} skipped)`,
+        title: result.created > 0 ? 'Success' : 'Info',
+        description,
+        variant: result.created === 0 && result.total > 0 ? 'destructive' : 'default',
       });
     } catch (error) {
       toast({
@@ -282,6 +293,7 @@ export default function ManualSchedulesPage() {
       start_date: format(new Date(), 'yyyy-MM-dd'),
       end_date: '',
       notes: '',
+      is_active: true,
     });
     setEditingSchedule(null);
   };
@@ -300,6 +312,7 @@ export default function ManualSchedulesPage() {
       start_date: schedule.start_date.split('T')[0],
       end_date: schedule.end_date ? schedule.end_date.split('T')[0] : '',
       notes: schedule.notes || '',
+      is_active: schedule.is_active,
     });
     setIsModalOpen(true);
   };
