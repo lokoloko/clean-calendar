@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
-import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +34,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WeeklyView } from '@/components/schedule/weekly-view';
 import { MonthlyView } from '@/components/schedule/monthly-view';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type ScheduleStatus = 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
 
@@ -156,6 +162,15 @@ export default function SchedulePage() {
     isOpen: false,
     date: new Date(),
     items: [] as ScheduleItem[]
+  });
+  const [reassignModal, setReassignModal] = useState<{
+    isOpen: boolean;
+    scheduleItem: ScheduleItem | null;
+    newCleanerId: string;
+  }>({
+    isOpen: false,
+    scheduleItem: null,
+    newCleanerId: ''
   });
   const { toast } = useToast();
 
@@ -737,6 +752,7 @@ export default function SchedulePage() {
                     <TableHead>Property</TableHead>
                     <TableHead>Cleaner</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[70px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -804,6 +820,29 @@ export default function SchedulePage() {
                           {statusMap[item.status as ScheduleStatus]?.icon}
                           {statusMap[item.status as ScheduleStatus]?.text || item.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {['pending', 'confirmed'].includes(item.status) && new Date(item.check_in) > new Date() && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setReassignModal({
+                                  isOpen: true,
+                                  scheduleItem: item,
+                                  newCleanerId: item.cleaner_id
+                                })}
+                              >
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Reassign Cleaner
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </TableCell>
                     </TableRow>
                     );
@@ -1294,6 +1333,101 @@ export default function SchedulePage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setDayDetailsModal({ ...dayDetailsModal, isOpen: false })}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reassign Cleaner Modal */}
+        <Dialog open={reassignModal.isOpen} onOpenChange={(open) => {
+          if (!open) {
+            setReassignModal({ isOpen: false, scheduleItem: null, newCleanerId: '' });
+          }
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reassign Cleaner</DialogTitle>
+              <DialogDescription>
+                Change the assigned cleaner for this cleaning task
+              </DialogDescription>
+            </DialogHeader>
+
+            {reassignModal.scheduleItem && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                  <p className="font-medium">{reassignModal.scheduleItem.listing_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(parseLocalDate(reassignModal.scheduleItem.check_out), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Current cleaner: {reassignModal.scheduleItem.cleaner_name}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="new-cleaner">Select New Cleaner</Label>
+                  <Select 
+                    value={reassignModal.newCleanerId} 
+                    onValueChange={(value) => setReassignModal({ ...reassignModal, newCleanerId: value })}
+                  >
+                    <SelectTrigger id="new-cleaner">
+                      <SelectValue placeholder="Choose a cleaner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cleaners.map((cleaner) => (
+                        <SelectItem key={cleaner.id} value={cleaner.id}>
+                          {cleaner.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setReassignModal({ isOpen: false, scheduleItem: null, newCleanerId: '' })}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!reassignModal.scheduleItem || !reassignModal.newCleanerId) return;
+                  
+                  try {
+                    const response = await fetch(`/api/schedule/${reassignModal.scheduleItem.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ cleaner_id: reassignModal.newCleanerId })
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || 'Failed to reassign cleaner');
+                    }
+
+                    toast({
+                      title: "Cleaner reassigned",
+                      description: "The cleaning task has been reassigned successfully."
+                    });
+
+                    // Refresh the schedule
+                    fetchData();
+                    setReassignModal({ isOpen: false, scheduleItem: null, newCleanerId: '' });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: error instanceof Error ? error.message : "Failed to reassign cleaner",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                disabled={!reassignModal.newCleanerId || reassignModal.newCleanerId === reassignModal.scheduleItem?.cleaner_id}
+              >
+                Reassign
               </Button>
             </DialogFooter>
           </DialogContent>
