@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Loader2, Play, Pause, Trash2, Edit } from 'lucide-react';
+import { Plus, Calendar, Loader2, Play, Pause, Trash2, Edit, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -71,6 +71,7 @@ export default function ManualSchedulesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ManualSchedule | null>(null);
+  const [originalSchedule, setOriginalSchedule] = useState<ManualSchedule | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     listing_id: '',
@@ -159,7 +160,6 @@ export default function ManualSchedulesPage() {
       });
 
       setIsModalOpen(false);
-      resetForm();
       fetchData();
       
       // If creating new schedule, offer to generate
@@ -171,7 +171,31 @@ export default function ManualSchedulesPage() {
             handleGenerate(newSchedule.id);
           }
         }
+      } else {
+        // Check if critical fields have changed that would affect schedule items
+        const hasFrequencyChanged = originalSchedule && (
+          originalSchedule.frequency !== formData.frequency ||
+          JSON.stringify(originalSchedule.days_of_week) !== JSON.stringify(formData.days_of_week) ||
+          originalSchedule.day_of_month !== formData.day_of_month ||
+          originalSchedule.custom_interval_days !== formData.custom_interval_days ||
+          originalSchedule.start_date.split('T')[0] !== formData.start_date
+        );
+        
+        if (hasFrequencyChanged && formData.schedule_type === 'recurring') {
+          const shouldRegenerate = window.confirm(
+            'You\'ve changed the schedule pattern. Would you like to regenerate the schedule items?\n\n' +
+            'This will:\n' +
+            '• Delete all future schedule items for this rule\n' +
+            '• Create new items based on the updated pattern\n\n' +
+            'Note: Completed or cancelled items will not be affected.'
+          );
+          if (shouldRegenerate) {
+            handleRegenerate(editingSchedule.id);
+          }
+        }
       }
+      
+      resetForm();
     } catch (error) {
       toast({
         title: 'Error',
@@ -221,6 +245,40 @@ export default function ManualSchedulesPage() {
     }
   };
 
+  const handleRegenerate = async (scheduleId: string) => {
+    setGeneratingId(scheduleId);
+    
+    try {
+      const response = await fetch(`/api/manual-schedules/${scheduleId}/regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to regenerate schedule');
+      }
+      const result = await response.json();
+      
+      let description = `Deleted ${result.deleted} old items and created ${result.created} new cleanings`;
+      if (result.conflicts > 0) {
+        description += ` (${result.conflicts} conflicts skipped)`;
+      }
+      
+      toast({
+        title: 'Schedule Regenerated',
+        description,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to regenerate schedule',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
   const handleToggleActive = async (schedule: ManualSchedule) => {
     try {
       const response = await fetch(`/api/manual-schedules/${schedule.id}`, {
@@ -252,7 +310,10 @@ export default function ManualSchedulesPage() {
   };
 
   const handleDelete = async (scheduleId: string) => {
-    if (!window.confirm('Are you sure you want to delete this schedule?')) {
+    if (!window.confirm(
+      'Are you sure you want to delete this schedule?\n\n' +
+      'This will also delete all associated schedule items.'
+    )) {
       return;
     }
 
@@ -265,9 +326,10 @@ export default function ManualSchedulesPage() {
         throw new Error('Failed to delete schedule');
       }
 
+      const result = await response.json();
       toast({
         title: 'Success',
-        description: 'Schedule deleted successfully',
+        description: `Schedule deleted successfully${result.deletedItems > 0 ? ` (${result.deletedItems} items removed)` : ''}`,
       });
 
       fetchData();
@@ -296,10 +358,12 @@ export default function ManualSchedulesPage() {
       is_active: true,
     });
     setEditingSchedule(null);
+    setOriginalSchedule(null);
   };
 
   const openEditModal = (schedule: ManualSchedule) => {
     setEditingSchedule(schedule);
+    setOriginalSchedule(schedule);
     setFormData({
       listing_id: schedule.listing_id,
       cleaner_id: schedule.cleaner_id,
@@ -396,18 +460,44 @@ export default function ManualSchedulesPage() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       {schedule.schedule_type === 'recurring' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerate(schedule.id)}
-                          disabled={generatingId === schedule.id}
-                        >
-                          {generatingId === schedule.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleGenerate(schedule.id)}
+                            disabled={generatingId === schedule.id}
+                            title="Generate new schedule items"
+                          >
+                            {generatingId === schedule.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (window.confirm(
+                                'Are you sure you want to regenerate this schedule?\n\n' +
+                                'This will:\n' +
+                                '• Delete all future schedule items\n' +
+                                '• Create new items based on the current settings\n\n' +
+                                'Note: Completed or cancelled items will not be affected.'
+                              )) {
+                                handleRegenerate(schedule.id);
+                              }
+                            }}
+                            disabled={generatingId === schedule.id}
+                            title="Regenerate schedule (delete old, create new)"
+                          >
+                            {generatingId === schedule.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </>
                       )}
                       <Button
                         size="sm"

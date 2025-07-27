@@ -29,6 +29,7 @@ import {
   UserCircle,
   BarChart3,
   CalendarClock,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -51,6 +52,7 @@ const navItems = [
   { href: '/assignments', label: 'Assignments', icon: Link2 },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
+  { href: '/feedback', label: 'Feedback', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

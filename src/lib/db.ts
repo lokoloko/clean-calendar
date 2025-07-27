@@ -74,10 +74,17 @@ export const db = {
              s.is_extended,
              s.extension_notes,
              s.extension_count,
-             s.modification_history
+             s.modification_history,
+             msr.frequency as manual_rule_frequency,
+             cf.id as feedback_id,
+             cf.cleanliness_rating,
+             cf.notes as feedback_notes,
+             cf.completed_at as feedback_completed_at
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
+      LEFT JOIN public.manual_schedule_rules msr ON s.manual_rule_id = msr.id
+      LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
       WHERE l.user_id = $1 
         AND s.check_out >= CURRENT_DATE - INTERVAL '30 days'  -- Include last 30 days of history
       ORDER BY s.check_out ASC
@@ -99,10 +106,17 @@ export const db = {
              s.is_extended,
              s.extension_notes,
              s.extension_count,
-             s.modification_history
+             s.modification_history,
+             msr.frequency as manual_rule_frequency,
+             cf.id as feedback_id,
+             cf.cleanliness_rating,
+             cf.notes as feedback_notes,
+             cf.completed_at as feedback_completed_at
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
+      LEFT JOIN public.manual_schedule_rules msr ON s.manual_rule_id = msr.id
+      LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
       WHERE l.user_id = $1
       ORDER BY s.check_out ASC
     `, [userId])
@@ -273,11 +287,13 @@ export const db = {
              cf.id as feedback_id,
              cf.cleanliness_rating,
              cf.notes as feedback_notes,
-             cf.completed_at
+             cf.completed_at,
+             msr.frequency as manual_rule_frequency
       FROM public.schedule_items s
       JOIN public.listings l ON s.listing_id = l.id
       JOIN public.cleaners c ON s.cleaner_id = c.id
       LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
+      LEFT JOIN public.manual_schedule_rules msr ON s.manual_rule_id = msr.id
       WHERE s.cleaner_id = $1
     `
     

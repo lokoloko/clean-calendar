@@ -69,10 +69,20 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    // Soft delete by setting is_active = false
+    
+    // First, delete all associated schedule items
+    const deleteItemsResult = await db.query(
+      `DELETE FROM public.schedule_items 
+       WHERE manual_rule_id = $1
+       RETURNING id`,
+      [id]
+    )
+    
+    const deletedItemsCount = deleteItemsResult.rows.length
+    
+    // Then delete the manual schedule rule
     const result = await db.query(
-      `UPDATE public.manual_schedule_rules 
-       SET is_active = false, updated_at = NOW()
+      `DELETE FROM public.manual_schedule_rules 
        WHERE id = $1
        RETURNING id`,
       [id]
@@ -82,7 +92,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      deletedItems: deletedItemsCount
+    })
   } catch (error) {
     console.error('Error deleting manual schedule:', error)
     return NextResponse.json(

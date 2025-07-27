@@ -120,6 +120,8 @@ export function InteractiveComponent() {
 - `/cleaners` - Cleaner directory and management
 - `/assignments` - Link cleaners to properties
 - `/schedule` - View and manage cleaning schedule (list, weekly, monthly views)
+- `/manual-schedules` - Manage recurring manual cleanings
+- `/feedback` - View and analyze cleaner feedback
 - `/stats` - Analytics and performance metrics
 - `/settings` - Sync settings and preferences
 
@@ -190,11 +192,34 @@ All major features are implemented and functional with real database integration
 - ✅ **Data Persistence**: Historical data preservation
 - ✅ **Security**: Row-level security and session management
 
+### Recent Updates (January 2025)
+
+#### Manual Schedule System Improvements
+- ✅ **Regeneration Feature**: When editing manual schedules, changing frequency/pattern prompts to regenerate schedule items
+- ✅ **Regenerate Button**: Added explicit regenerate button to delete old items and create new ones
+- ✅ **Delete Improvements**: Deleting a manual schedule now also removes all associated schedule items
+- ✅ **Frequency Display Fix**: "Next Check-in" column now correctly shows manual rule frequency (e.g., "Monthly") even if items were generated with different pattern
+
+#### Cleaner Feedback System
+- ✅ **Feedback Display in Schedule**: Added visual feedback column showing cleanliness ratings with icons:
+  - ✨ Clean (green)
+  - ✓ Normal (blue) 
+  - ⚠️ Dirty (orange)
+- ✅ **Feedback Summary Page** (`/feedback`): Comprehensive feedback management with:
+  - Statistics cards showing rating breakdowns with percentages
+  - Advanced filters (date range, property, cleaner, rating)
+  - Detailed feedback table with notes
+  - CSV export functionality
+- ✅ **Dashboard Integration**: Recent feedback appears in the activity feed
+- ✅ **Database Updates**: Feedback data now included in all schedule queries
+
 ### Remaining TODOs
 #### Medium Priority
 - SMS Integration: Complete Twilio setup for production (currently using mock authentication)
 - Settings page save functionality
 - Stats page timezone-aware date calculations
+- Add feedback metrics to stats page
+- Add feedback history to listing details
 
 #### Low Priority
 - Conflict Detection: Warn about scheduling conflicts

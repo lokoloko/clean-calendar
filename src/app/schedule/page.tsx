@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
-import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck, Home, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -71,6 +71,11 @@ interface ScheduleItem {
   cancelled_at?: string;
   is_extended?: boolean;
   extension_notes?: string;
+  manual_rule_frequency?: string;
+  feedback_id?: string;
+  cleanliness_rating?: 'clean' | 'normal' | 'dirty';
+  feedback_notes?: string;
+  feedback_completed_at?: string;
 }
 
 interface Listing {
@@ -125,6 +130,7 @@ export default function SchedulePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCleaner, setSelectedCleaner] = useState<string>('all');
+  const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
@@ -210,10 +216,40 @@ export default function SchedulePage() {
     }
   };
 
+  // Helper function to get cleanliness display
+  const getCleanlinessDisplay = (rating: string | undefined) => {
+    switch (rating) {
+      case 'clean':
+        return {
+          icon: <Sparkles className="h-4 w-4" />,
+          color: 'text-green-600',
+          label: 'Clean'
+        };
+      case 'normal':
+        return {
+          icon: <CheckCircle2 className="h-4 w-4" />,
+          color: 'text-blue-600',
+          label: 'Normal'
+        };
+      case 'dirty':
+        return {
+          icon: <AlertTriangle className="h-4 w-4" />,
+          color: 'text-orange-600',
+          label: 'Dirty'
+        };
+      default:
+        return null;
+    }
+  };
+
   const filteredSchedule = scheduleItems.filter(item => {
     const matchesCleaner = selectedCleaner === 'all' || item.cleaner_id === selectedCleaner;
     
     if (!matchesCleaner) return false;
+    
+    // Filter by selected listings
+    const matchesListing = selectedListings.length === 0 || selectedListings.includes(item.listing_id);
+    if (!matchesListing) return false;
     
     // Filter out cancelled bookings unless explicitly showing them
     if (!showCancelled && item.status === 'cancelled') return false;
@@ -238,6 +274,10 @@ export default function SchedulePage() {
     return scheduleItems.filter(item => {
       const matchesCleaner = selectedCleaner === 'all' || item.cleaner_id === selectedCleaner;
       if (!matchesCleaner) return false;
+      
+      // Filter by selected listings
+      const matchesListing = selectedListings.length === 0 || selectedListings.includes(item.listing_id);
+      if (!matchesListing) return false;
       
       // Filter out cancelled bookings unless explicitly showing them
       if (!showCancelled && item.status === 'cancelled') return false;
@@ -564,6 +604,10 @@ export default function SchedulePage() {
       
       const checkoutDateStr = format(checkoutDateObj, 'yyyy-MM-dd');
       
+      // Get the current item to check if it's a recurring manual cleaning
+      const currentItem = scheduleItems.find(item => item.id === currentBookingId);
+      const isRecurring = currentItem?.source === 'manual_recurring';
+      
       // Look for a booking that checks in on the same day as this checkout
       const sameDay = scheduleItems.find(item => {
         if (item.listing_id !== listingId || item.id === currentBookingId) return false;
@@ -587,8 +631,43 @@ export default function SchedulePage() {
         .sort((a, b) => parseLocalDate(a.check_in).getTime() - parseLocalDate(b.check_in).getTime());
       
       if (futureBookings.length > 0) {
-        const nextCheckin = parseLocalDate(futureBookings[0].check_in);
+        const nextBooking = futureBookings[0];
+        const nextCheckin = parseLocalDate(nextBooking.check_in);
         const daysUntil = Math.ceil((nextCheckin.getTime() - checkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // For recurring manual cleanings, use the manual rule frequency if available
+        if (isRecurring && nextBooking.source === 'manual_recurring') {
+          // If we have the manual rule frequency, use it
+          if (currentItem?.manual_rule_frequency) {
+            switch (currentItem.manual_rule_frequency) {
+              case 'monthly':
+                return 'Monthly';
+              case 'weekly':
+                return 'Weekly';
+              case 'biweekly':
+                return 'Biweekly';
+              case 'daily':
+                return 'Daily';
+              default:
+                // Fall back to date-based detection
+                break;
+            }
+          }
+          
+          // Fall back to date-based pattern detection if no rule frequency
+          // Check if it's approximately monthly (28-31 days)
+          if (daysUntil >= 28 && daysUntil <= 31) {
+            return 'Monthly';
+          }
+          // Check if it's biweekly (14 days)
+          else if (daysUntil === 14) {
+            return 'Biweekly';
+          }
+          // Check if it's weekly (7 days)
+          else if (daysUntil === 7) {
+            return 'Weekly';
+          }
+        }
         
         if (daysUntil === 0) {
           return 'Same day';
@@ -608,9 +687,16 @@ export default function SchedulePage() {
           return '1 week later';
         } else if (daysUntil <= 14) {
           return `${daysUntil} days later`;
+        } else if (daysUntil >= 28 && daysUntil <= 31) {
+          return '~1 month later';
         } else {
           return format(nextCheckin, 'MMM d');
         }
+      }
+      
+      // For recurring cleanings with no future bookings, indicate the pattern
+      if (isRecurring) {
+        return 'Recurring';
       }
       
       return 'No upcoming';
@@ -686,6 +772,62 @@ export default function SchedulePage() {
                 </SelectContent>
               </Select>
               
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[200px] justify-between">
+                    {selectedListings.length === 0 
+                      ? "All Properties" 
+                      : `${selectedListings.length} ${selectedListings.length === 1 ? 'property' : 'properties'}`}
+                    <Home className="ml-2 h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Filter by Property</h4>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (selectedListings.length === listings.length) {
+                            setSelectedListings([]);
+                          } else {
+                            setSelectedListings(listings.map(l => l.id));
+                          }
+                        }}
+                      >
+                        {selectedListings.length === listings.length ? 'Clear All' : 'Select All'}
+                      </Button>
+                    </div>
+                    <div className="border-t pt-3 space-y-2 max-h-[300px] overflow-y-auto">
+                      {listings.map((listing) => (
+                        <label
+                          key={listing.id}
+                          className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded-md"
+                        >
+                          <Checkbox
+                            checked={selectedListings.includes(listing.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedListings([...selectedListings, listing.id]);
+                              } else {
+                                setSelectedListings(selectedListings.filter(id => id !== listing.id));
+                              }
+                            }}
+                          />
+                          <span className="text-sm flex-1">
+                            {listing.name}
+                            {!listing.is_active_on_airbnb && (
+                              <Badge variant="secondary" className="ml-2 text-xs">Manual</Badge>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
               <div className="flex items-center gap-2">
                 <Checkbox 
                   id="show-cancelled" 
@@ -752,6 +894,7 @@ export default function SchedulePage() {
                     <TableHead>Property</TableHead>
                     <TableHead>Cleaner</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Feedback</TableHead>
                     <TableHead className="w-[70px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -820,6 +963,30 @@ export default function SchedulePage() {
                           {statusMap[item.status as ScheduleStatus]?.icon}
                           {statusMap[item.status as ScheduleStatus]?.text || item.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {item.feedback_completed_at ? (
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const cleanlinessInfo = getCleanlinessDisplay(item.cleanliness_rating);
+                              return cleanlinessInfo ? (
+                                <div className="group relative">
+                                  <div className={cn("flex items-center gap-1", cleanlinessInfo.color)}>
+                                    {cleanlinessInfo.icon}
+                                    <span className="text-sm font-medium">{cleanlinessInfo.label}</span>
+                                  </div>
+                                  {item.feedback_notes && (
+                                    <div className="absolute z-10 hidden group-hover:block w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 -translate-y-full left-0">
+                                      {item.feedback_notes}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null;
+                            })()}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {['pending', 'confirmed'].includes(item.status) && new Date(item.check_in) > new Date() && (
