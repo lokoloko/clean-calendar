@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-// For client-side usage
+// Default client for backwards compatibility
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+// For client-side usage - use @/lib/supabase-browser instead
 export function createBrowserClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

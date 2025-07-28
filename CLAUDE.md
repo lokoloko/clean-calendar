@@ -143,17 +143,31 @@ export function InteractiveComponent() {
 
 ## Docker Development Setup
 
+**IMPORTANT**: Always use Docker commands for local development. Do NOT use `npm run dev` directly.
+
 1. **Start the environment**:
    ```bash
    npm run docker:dev
+   # OR
+   docker-compose up -d --build
    ```
 
-2. **Access services**:
+2. **View logs** (essential for debugging auth issues):
+   ```bash
+   docker logs -f clean-calendar-app-1
+   ```
+
+3. **Restart after environment changes**:
+   ```bash
+   docker-compose restart app
+   ```
+
+4. **Access services**:
    - App: http://localhost:9002
    - Cleaner Portal: http://localhost:9002/cleaner/dashboard
    - PostgreSQL: localhost:5433 (postgres/postgres)
 
-3. **Environment variables**:
+5. **Environment variables**:
    - DATABASE_URL: postgresql://postgres:postgres@db:5432/cleansweep
    - NEXT_PUBLIC_SUPABASE_URL: http://localhost:9002
    - NEXTAUTH_URL: http://localhost:9002

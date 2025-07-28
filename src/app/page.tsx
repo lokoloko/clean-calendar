@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check, HelpCircle, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/auth-context-dev';
+import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AirbnbCalendarPreview } from '@/components/airbnb-calendar-preview';
