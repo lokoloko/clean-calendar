@@ -45,6 +45,49 @@ export async function POST(request: Request) {
       is_active_on_airbnb: is_active_on_airbnb !== false
     })
 
+    // Check if there are cleaners before trying to sync
+    let hasCleaners = false
+    try {
+      const cleanersResult = await db.query(
+        'SELECT COUNT(*) as count FROM public.cleaners WHERE user_id = $1',
+        [user.id]
+      )
+      hasCleaners = cleanersResult.rows[0].count > 0
+    } catch (error) {
+      console.error('Error checking cleaners:', error)
+    }
+
+    // Automatically sync if it's an Airbnb listing with ICS URL and cleaners exist
+    if (listing.is_active_on_airbnb && listing.ics_url && hasCleaners) {
+      try {
+        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/listings/${listing.id}/sync`, {
+          method: 'POST',
+          headers: {
+            'Authorization': request.headers.get('authorization') || '',
+            'Cookie': request.headers.get('cookie') || ''
+          }
+        })
+        
+        if (syncResponse.ok) {
+          const syncResult = await syncResponse.json()
+          if (syncResult.note) {
+            console.log(`Auto-sync for new listing ${listing.name}: ${syncResult.note}`)
+          } else {
+            console.log(`Auto-synced new listing ${listing.name}: ${syncResult.itemsCreated} items created`)
+          }
+        }
+      } catch (syncError) {
+        // Don't fail the listing creation if sync fails
+        console.error('Auto-sync failed for new listing:', syncError)
+      }
+    } else if (listing.is_active_on_airbnb && listing.ics_url && !hasCleaners) {
+      // Return listing with a note about adding cleaners
+      return NextResponse.json({
+        ...listing,
+        syncNote: 'Calendar sync will start automatically after you add cleaners and assign them to this listing.'
+      })
+    }
+
     return NextResponse.json(listing)
   } catch (error) {
     console.error('Error creating listing:', error)

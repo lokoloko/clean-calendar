@@ -38,10 +38,14 @@ export async function POST(
     const defaultCleanerId = cleanerIds[0] || null
 
     if (!defaultCleanerId) {
-      return NextResponse.json(
-        { error: 'No cleaner assigned to this listing' },
-        { status: 400 }
-      )
+      // For auto-sync, return success but with a note about assigning cleaners
+      return NextResponse.json({
+        success: true,
+        itemsCreated: 0,
+        itemsUpdated: 0,
+        lastSync: new Date().toISOString(),
+        note: 'Calendar data fetched but no schedule items created. Please assign a cleaner first.'
+      })
     }
 
     // Get all future bookings UIDs from the ICS feed
