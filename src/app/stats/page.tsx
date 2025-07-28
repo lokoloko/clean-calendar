@@ -25,7 +25,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   Select,
   SelectContent,
@@ -38,6 +38,7 @@ import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, addMonths } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { MessageSquare, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 // Configuration for the charts on this page.
 const chartConfig: ChartConfig = {
@@ -73,6 +74,15 @@ interface StatsData {
   totalBookings: number;
   averageStay: number;
   totalCost: number;
+  feedbackStats: {
+    total: number;
+    withFeedback: number;
+    cleanCount: number;
+    normalCount: number;
+    dirtyCount: number;
+    averageRating: number;
+    trend: 'up' | 'down' | 'stable';
+  };
 }
 
 // Page for displaying stats based on Airbnb calendar data.
@@ -89,6 +99,15 @@ export default function StatsPage() {
     totalBookings: 0,
     averageStay: 0,
     totalCost: 0,
+    feedbackStats: {
+      total: 0,
+      withFeedback: 0,
+      cleanCount: 0,
+      normalCount: 0,
+      dirtyCount: 0,
+      averageRating: 0,
+      trend: 'stable'
+    }
   });
   const { toast } = useToast();
 
@@ -219,6 +238,80 @@ export default function StatsPage() {
       const cleaningFee = listing ? parseFloat(listing.cleaning_fee || 0) : 50; // Default $50
       const totalCost = totalBookings * cleaningFee;
 
+      // Fetch feedback stats
+      let feedbackStats = {
+        total: 0,
+        withFeedback: 0,
+        cleanCount: 0,
+        normalCount: 0,
+        dirtyCount: 0,
+        averageRating: 0,
+        trend: 'stable' as 'up' | 'down' | 'stable'
+      };
+
+      try {
+        const feedbackParams = new URLSearchParams();
+        if (selectedListing !== 'all') {
+          feedbackParams.append('listing_id', selectedListing);
+        }
+        
+        // Set date range for feedback
+        feedbackParams.append('date_from', format(monthStart, 'yyyy-MM-dd'));
+        feedbackParams.append('date_to', format(monthEnd, 'yyyy-MM-dd'));
+        
+        const feedbackRes = await fetch(`/api/feedback?${feedbackParams}`);
+        if (feedbackRes.ok) {
+          const feedbackData = await feedbackRes.json();
+          
+          const cleaningsWithFeedback = feedbackData.filter((item: any) => item.cleanliness_rating !== null);
+          const cleanCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 5).length;
+          const normalCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 3).length;
+          const dirtyCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 1).length;
+          
+          // Calculate average rating
+          const totalRating = cleaningsWithFeedback.reduce((sum: number, item: any) => sum + item.cleanliness_rating, 0);
+          const averageRating = cleaningsWithFeedback.length > 0 ? totalRating / cleaningsWithFeedback.length : 0;
+          
+          // Calculate trend by comparing to previous month
+          const prevMonthStart = startOfMonth(subMonths(monthDate, 1));
+          const prevMonthEnd = endOfMonth(subMonths(monthDate, 1));
+          const prevFeedbackParams = new URLSearchParams();
+          if (selectedListing !== 'all') {
+            prevFeedbackParams.append('listing_id', selectedListing);
+          }
+          prevFeedbackParams.append('date_from', format(prevMonthStart, 'yyyy-MM-dd'));
+          prevFeedbackParams.append('date_to', format(prevMonthEnd, 'yyyy-MM-dd'));
+          
+          const prevFeedbackRes = await fetch(`/api/feedback?${prevFeedbackParams}`);
+          if (prevFeedbackRes.ok) {
+            const prevFeedbackData = await prevFeedbackRes.json();
+            const prevCleaningsWithFeedback = prevFeedbackData.filter((item: any) => item.cleanliness_rating !== null);
+            const prevTotalRating = prevCleaningsWithFeedback.reduce((sum: number, item: any) => sum + item.cleanliness_rating, 0);
+            const prevAverageRating = prevCleaningsWithFeedback.length > 0 ? prevTotalRating / prevCleaningsWithFeedback.length : 0;
+            
+            if (prevAverageRating > 0) {
+              if (averageRating > prevAverageRating + 0.2) {
+                feedbackStats.trend = 'up';
+              } else if (averageRating < prevAverageRating - 0.2) {
+                feedbackStats.trend = 'down';
+              }
+            }
+          }
+          
+          feedbackStats = {
+            total: feedbackData.length,
+            withFeedback: cleaningsWithFeedback.length,
+            cleanCount,
+            normalCount,
+            dirtyCount,
+            averageRating: Math.round(averageRating * 10) / 10,
+            trend: feedbackStats.trend
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching feedback stats:', error);
+      }
+
       setStats({
         weeklyBookingData: weeklyData,
         checkoutDayData: checkoutData,
@@ -227,6 +320,7 @@ export default function StatsPage() {
         totalBookings,
         averageStay: Math.round(averageStay * 10) / 10,
         totalCost,
+        feedbackStats
       });
     } catch (error) {
       toast({
@@ -420,6 +514,139 @@ export default function StatsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Cleanliness Metrics Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Cleanliness Feedback
+            </CardTitle>
+            <CardDescription>
+              Property condition ratings from cleaner feedback
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pie Chart */}
+              <div className="space-y-4">
+                <div className="h-[200px]">
+                  {stats.feedbackStats.withFeedback > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Clean', value: stats.feedbackStats.cleanCount, color: '#22c55e' },
+                            { name: 'Normal', value: stats.feedbackStats.normalCount, color: '#eab308' },
+                            { name: 'Dirty', value: stats.feedbackStats.dirtyCount, color: '#ef4444' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          <Cell fill="#22c55e" />
+                          <Cell fill="#eab308" />
+                          <Cell fill="#ef4444" />
+                        </Pie>
+                        <ChartTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      No feedback data available
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-green-500" />
+                    <span>Clean</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-yellow-500" />
+                    <span>Normal</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-red-500" />
+                    <span>Dirty</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Average Rating</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {stats.feedbackStats.averageRating > 0 
+                          ? `${stats.feedbackStats.averageRating}/5` 
+                          : '-'
+                        }
+                      </span>
+                      {stats.feedbackStats.trend === 'up' && (
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                      )}
+                      {stats.feedbackStats.trend === 'down' && (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      )}
+                      {stats.feedbackStats.trend === 'stable' && (
+                        <Minus className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                  <Progress 
+                    value={stats.feedbackStats.averageRating * 20} 
+                    className="h-2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Cleanings</span>
+                    <span className="font-medium">{stats.feedbackStats.total}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">With Feedback</span>
+                    <span className="font-medium">
+                      {stats.feedbackStats.withFeedback} 
+                      ({stats.feedbackStats.total > 0 
+                        ? Math.round((stats.feedbackStats.withFeedback / stats.feedbackStats.total) * 100)
+                        : 0
+                      }%)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  <div className="text-center">
+                    <div className="text-xl">😊</div>
+                    <div className="text-lg font-bold text-green-600">
+                      {stats.feedbackStats.cleanCount}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl">😐</div>
+                    <div className="text-lg font-bold text-yellow-600">
+                      {stats.feedbackStats.normalCount}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl">😟</div>
+                    <div className="text-lg font-bold text-red-600">
+                      {stats.feedbackStats.dirtyCount}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Trends Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

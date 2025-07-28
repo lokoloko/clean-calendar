@@ -27,7 +27,6 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { type ScheduleItem, type Cleaner, type OptimizedAssignment } from '@/types';
 import { optimizeScheduleAction } from './actions';
-// TODO: Toast is currently unused. It can be used for showing success/error messages for AI optimization.
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -54,7 +53,6 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
       const result = await optimizeScheduleAction();
       if (result.success && result.data) {
         setOptimizedAssignments(result.data);
-        // TODO: The toast is currently not displayed, this needs to be fixed.
         toast({
           title: "Schedule Optimized!",
           description: "AI has generated an optimized schedule.",

@@ -63,15 +63,19 @@ Last Updated: 2025-01-26
 - **Status**: ✅ Complete
 - **Description**: Ability to reassign cleaners to scheduled cleanings
 
+### 10. Supabase CLI Installation
+- **Status**: ✅ Complete
+- **Description**: Successfully installed Supabase CLI v2.31.8 at `~/bin/supabase`
+- **Details**: 
+  - Installed via direct binary download (Homebrew failed due to XCode tools)
+  - Successfully linked to project `puvlcvcbxmobxpnbjrwp`
+  - Ready for database migrations and management
+
 ## 🚧 In Progress
 
 ### 1. Google OAuth Configuration
 - **Status**: User is setting up in Google Cloud Console
 - **Next Steps**: Configure OAuth in Supabase dashboard
-
-### 2. Supabase CLI Installation
-- **Status**: Installation attempted, needs terminal access resolution
-- **Next Steps**: Install Supabase CLI after restarting Claude Code
 
 ## 📋 Remaining Tasks
 
@@ -147,9 +151,11 @@ PostgreSQL (Local) / Supabase (Production)
 
 ## Next Session Action Items
 
-1. Restart Claude Code to resolve terminal access
-2. Install Supabase CLI
-3. Complete Google OAuth setup
-4. Test authentication flow
-5. Migrate data to production
-6. Deploy to chosen platform (Vercel recommended)
+1. Complete Google OAuth setup in Google Cloud Console
+2. Push database migrations to Supabase using CLI:
+   ```bash
+   ~/bin/supabase db push
+   ```
+3. Test authentication flow
+4. Migrate data to production
+5. Deploy to chosen platform (Vercel recommended)

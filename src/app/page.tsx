@@ -10,18 +10,29 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Image from 'next/image';
-import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check } from 'lucide-react';
+import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check, HelpCircle, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context-dev';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { AirbnbCalendarPreview } from '@/components/airbnb-calendar-preview';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 // Landing page for attracting and converting new users.
 export default function LandingPage() {
   const { user, signInWithGoogle } = useAuth();
   const router = useRouter();
   const [calendarUrl, setCalendarUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,15 +40,51 @@ export default function LandingPage() {
     }
   }, [user, router]);
 
+  const validateAirbnbUrl = (url: string): boolean => {
+    const airbnbRegex = /^https:\/\/(www\.)?airbnb\.(com|[a-z]{2})\/calendar\/ical\/.+\.ics(\?.*)?$/i;
+    return airbnbRegex.test(url);
+  };
+
   const handleGenerateSchedule = async () => {
     if (!calendarUrl) {
+      setError('Please enter your Airbnb calendar URL');
       return;
     }
-    
-    // Store the calendar URL in sessionStorage to use after login
-    sessionStorage.setItem('pendingCalendarUrl', calendarUrl);
-    
-    // Sign in the user (will redirect to dashboard)
+
+    if (!validateAirbnbUrl(calendarUrl)) {
+      setError('Please enter a valid Airbnb calendar URL (it should end with .ics)');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+    setPreviewData(null);
+
+    try {
+      const response = await fetch('/api/calendar/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ calendarUrl }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to preview calendar');
+      }
+
+      setPreviewData(data);
+      // Store the calendar URL in sessionStorage to use after login
+      sessionStorage.setItem('pendingCalendarUrl', calendarUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    // Calendar URL is already in sessionStorage
     await signInWithGoogle();
   };
   const benefits = [
@@ -90,18 +137,91 @@ export default function LandingPage() {
               <p className="text-muted-foreground md:text-xl">
                 Paste your calendar link and get a personalized cleaner schedule in seconds.
               </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                {/* Primary conversion area - input for .ics link */}
-                <Input
-                  type="text"
-                  placeholder="Enter your Airbnb .ics calendar link"
-                  className="max-w-lg flex-1"
-                  value={calendarUrl}
-                  onChange={(e) => setCalendarUrl(e.target.value)}
-                />
-                <Button size="lg" onClick={handleGenerateSchedule}>
-                  Generate My Schedule
-                </Button>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Primary conversion area - input for .ics link */}
+                  <Input
+                    type="url"
+                    placeholder="Paste your Airbnb calendar link (.ics)"
+                    className="max-w-lg flex-1"
+                    value={calendarUrl}
+                    onChange={(e) => {
+                      setCalendarUrl(e.target.value);
+                      setError('');
+                    }}
+                    disabled={isLoading}
+                  />
+                  <Button 
+                    size="lg" 
+                    onClick={handleGenerateSchedule}
+                    disabled={isLoading || !calendarUrl}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      'Preview Schedule'
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Error message */}
+                {error && (
+                  <Alert variant="destructive" className="animate-in fade-in-50">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* Instructions link */}
+                <button
+                  onClick={() => setShowInstructions(!showInstructions)}
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  How do I find my Airbnb calendar URL?
+                </button>
+                
+                {/* Instructions collapsible */}
+                <Collapsible open={showInstructions} onOpenChange={setShowInstructions}>
+                  <CollapsibleContent className="space-y-2">
+                    <Card className="bg-muted/50">
+                      <CardContent className="pt-6">
+                        <ol className="space-y-3 text-sm">
+                          <li className="flex gap-2">
+                            <span className="font-semibold text-primary">1.</span>
+                            <span>Log in to your Airbnb account and go to <strong>Calendar</strong></span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="font-semibold text-primary">2.</span>
+                            <span>Click on <strong>Availability settings</strong> in the right panel</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="font-semibold text-primary">3.</span>
+                            <span>Scroll down to <strong>Sync calendars</strong> section</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="font-semibold text-primary">4.</span>
+                            <span>Under <strong>Export calendar</strong>, copy the link that ends with <code className="px-1 py-0.5 bg-background rounded">.ics</code></span>
+                          </li>
+                        </ol>
+                        <div className="mt-4 pt-4 border-t">
+                          <a
+                            href="https://www.airbnb.com/hosting/calendar"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            Go to Airbnb Calendar
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
             <div>
@@ -118,8 +238,19 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Calendar Preview Section */}
+        {previewData && (
+          <section className="container py-12">
+            <AirbnbCalendarPreview
+              stats={previewData.stats}
+              preview={previewData.preview}
+              onSignIn={handleSignIn}
+            />
+          </section>
+        )}
+
         {/* "How It Works" section with three steps */}
-        <section className="bg-muted py-12 md:py-24">
+        <section className={`bg-muted py-12 md:py-24 ${previewData ? 'mt-12' : ''}`}>
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-headline font-bold">How It Works</h2>
@@ -197,9 +328,10 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 1 listing</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Email notifications only</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Manual schedule viewing</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 1 Airbnb listing</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Preview calendar instantly</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Basic cleaning schedule</li>
+                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Email notifications</li>
                 </ul>
               </CardContent>
               <CardFooter>

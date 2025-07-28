@@ -43,11 +43,28 @@ While user worked on Google OAuth setup, completed:
 - API documentation
 - Production readiness status tracking
 
-### 3. 🚧 Supabase CLI Installation
-- Attempted Homebrew installation (XCode tools issue)
-- NPM installation not supported
-- Direct binary download attempted
-- **Action Required**: Restart Claude Code to resolve terminal access
+### 3. ✅ Supabase CLI Installation
+- Homebrew installation failed due to XCode tools issue
+- Successfully installed via direct binary download
+- Installed to `~/bin/supabase` (version 2.31.8)
+- Successfully linked to project: `puvlcvcbxmobxpnbjrwp`
+
+### 4. ✅ Multi-Select Property Filter for Schedule
+- **What**: Added ability to filter schedule by multiple properties
+- **Files Modified**:
+  - `/src/app/schedule/page.tsx` - Added multi-select dropdown and filtering logic
+- **How it works**:
+  - New dropdown between cleaner filter and "Show cancelled" checkbox
+  - Shows "All Properties" when none selected or count when filtered
+  - Popover with checkboxes for each property
+  - "Select All/Clear All" button for convenience
+  - Filters apply to all views: list, weekly, and monthly
+  - Manual properties show a badge for easy identification
+
+### 5. ✅ Code Cleanup
+- Removed misleading TODO comments about toast notifications
+- Identified obsolete cleaner edit page (inline editing already implemented)
+- Preserved intentional comments for future implementations (SMS, error tracking)
 
 ## Current State
 
@@ -60,6 +77,7 @@ While user worked on Google OAuth setup, completed:
 - Local PostgreSQL running in Docker
 - All migrations ready for Supabase
 - Connection configured for both local and Supabase
+- Supabase CLI linked and ready for database operations
 
 ### Authentication
 - Dev mode active (`NEXT_PUBLIC_USE_AUTH=false`)
@@ -68,23 +86,22 @@ While user worked on Google OAuth setup, completed:
 
 ## Next Steps
 
-1. **Restart Claude Code** to resolve terminal access issues
-2. **Install Supabase CLI**:
-   ```bash
-   brew install supabase/tap/supabase
-   ```
-3. **Complete Google OAuth Setup**:
+1. **Complete Google OAuth Setup**:
    - Configure in Google Cloud Console
    - Add credentials to Supabase
-4. **Test Authentication**:
+2. **Push Database Migrations to Supabase**:
+   ```bash
+   ~/bin/supabase db push
+   ```
+3. **Test Authentication**:
    - Visit `/test-auth`
    - Sign in with Google
    - Get your user ID
-5. **Migrate Data**:
+4. **Migrate Data**:
    ```bash
    npx tsx scripts/migrate-user-data.ts YOUR-USER-ID
    ```
-6. **Enable Production Auth**:
+5. **Enable Production Auth**:
    - Set `NEXT_PUBLIC_USE_AUTH=true`
    - Test all features
 
@@ -95,25 +112,26 @@ While user worked on Google OAuth setup, completed:
 - `/docs/PRODUCTION_DEPLOYMENT.md` - Deployment guide
 - `.env.production.example` - Production environment template
 
-## Terminal Commands Needed
+## Supabase CLI Commands
 
-After restarting Claude Code:
+The Supabase CLI is now installed at `~/bin/supabase`. Common commands:
 
 ```bash
-# Install Supabase CLI
-brew install supabase/tap/supabase
+# Check project status
+~/bin/supabase status
 
-# Or download directly
-curl -L https://github.com/supabase/cli/releases/latest/download/supabase_darwin_arm64.tar.gz -o supabase.tar.gz
-tar -xzf supabase.tar.gz
-sudo mv supabase /usr/local/bin/
+# Push local migrations to remote
+~/bin/supabase db push
 
-# Verify installation
-supabase --version
+# Pull remote schema changes
+~/bin/supabase db pull
 
-# Login to Supabase
-supabase login
+# Generate TypeScript types from database
+~/bin/supabase gen types typescript --linked > src/types/database.types.ts
 
-# Link to your project
-supabase link --project-ref puvlcvcbxmobxpnbjrwp
+# Run migrations on remote database
+~/bin/supabase migration up --linked
+
+# Create a new migration
+~/bin/supabase migration new <migration_name>
 ```

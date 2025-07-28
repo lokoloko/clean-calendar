@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - [ ] Supabase project set up
+- [ ] Supabase CLI installed (`~/bin/supabase`)
 - [ ] Domain name (optional but recommended)
 - [ ] Google OAuth credentials configured
 - [ ] Environment variables prepared
@@ -63,6 +64,17 @@
 ## Pre-Deployment Checklist
 
 ### 1. Database Migration
+
+#### Option A: Using Supabase CLI (Recommended)
+```bash
+# Push all local migrations to Supabase
+~/bin/supabase db push
+
+# Or run specific migrations
+~/bin/supabase migration up --linked
+```
+
+#### Option B: Using psql directly
 ```bash
 # Apply all migrations to Supabase
 psql $DATABASE_URL < supabase/migrations/001_initial_schema.sql

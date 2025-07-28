@@ -434,7 +434,11 @@ export default function ListingsContent() {
               <TableBody>
                 {getSortedListings().map((listing) => (
                   <TableRow key={listing.id}>
-                    <TableCell className="font-medium">{listing.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/listings/${listing.id}`} className="hover:underline">
+                        {listing.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {listing.ics_url ? (

@@ -172,7 +172,7 @@ export default function DashboardPage() {
                 id: `feedback-${fb.id}`,
                 type: 'feedback',
                 title: `${fb.listing_name} cleaned`,
-                description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating}` : ''}`,
+                description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating === 5 ? '😊 Clean' : fb.cleanliness_rating === 3 ? '😐 Normal' : '😟 Dirty'}` : ''}`,
                 timestamp: new Date(fb.completed_at),
                 icon: 'CheckCircle2'
               });

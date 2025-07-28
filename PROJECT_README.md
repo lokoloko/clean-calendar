@@ -8,15 +8,29 @@ See [PRODUCTION_READINESS_STATUS.md](docs/PRODUCTION_READINESS_STATUS.md) for de
 
 ## 📋 Features
 
+### Core Features
 - **Airbnb Calendar Sync**: Automatically sync bookings from Airbnb iCal feeds
-- **Cleaner Management**: Manage multiple cleaners and their assignments
-- **Smart Scheduling**: Automatic assignment of cleaners to properties
-- **Manual Bookings**: Add one-time or recurring manual cleanings
-- **Calendar Views**: List, weekly, and monthly schedule views
-- **Share Schedules**: Generate shareable links for cleaners
-- **Mobile Support**: Cleaner dashboard optimized for mobile devices
-- **Historical Tracking**: Track extensions, cancellations, and modifications
-- **Cleaner Reassignment**: Easily reassign cleaners to scheduled cleanings
+- **Cleaner Management**: Manage multiple cleaners with contact info and assignments
+- **Smart Scheduling**: Automatic assignment of cleaners based on property relationships
+- **Manual Bookings**: Add one-time or recurring manual cleanings with regeneration support
+- **Calendar Views**: List, weekly, and monthly schedule views with visual indicators
+- **Advanced Filtering**: Multi-select property filtering and cleaner selection
+
+### Operational Features
+- **Dashboard Analytics**: Real-time metrics, today's cleanings, and attention alerts
+- **Cleaner Feedback System**: Track property cleanliness with ratings and notes
+- **Share Schedules**: Generate secure, time-limited links with custom permissions
+- **Export Capabilities**: Text exports for cleaners, CSV exports for feedback data
+- **Reassignment**: Easily change cleaner assignments for scheduled cleanings
+- **Historical Tracking**: Monitor extensions, cancellations, and modifications
+
+### Mobile Features
+- **Cleaner Portal**: Dedicated mobile-optimized interface for cleaners
+- **SMS Authentication**: Secure phone-based login (production)
+- **Progress Tracking**: Visual completion indicators and daily progress
+- **Quick Feedback**: Simple cleanliness rating submission
+
+See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed feature descriptions.
 
 ## 🛠️ Tech Stack
 
@@ -113,6 +127,7 @@ See `.env.example` for all available environment variables. Key variables:
 
 ## 📚 Documentation
 
+- [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) - Comprehensive list of all features
 - [API Documentation](docs/API_DOCUMENTATION.md)
 - [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)
 - [Google OAuth Setup](docs/OAUTH_NEXT_STEPS.md)

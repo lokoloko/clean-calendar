@@ -202,24 +202,31 @@ All major features are implemented and functional with real database integration
 
 #### Cleaner Feedback System
 - ✅ **Feedback Display in Schedule**: Added visual feedback column showing cleanliness ratings with icons:
-  - ✨ Clean (green)
-  - ✓ Normal (blue) 
-  - ⚠️ Dirty (orange)
+  - 😊 Clean (green)
+  - 😐 Normal (blue) 
+  - 😟 Dirty (orange)
 - ✅ **Feedback Summary Page** (`/feedback`): Comprehensive feedback management with:
   - Statistics cards showing rating breakdowns with percentages
   - Advanced filters (date range, property, cleaner, rating)
   - Detailed feedback table with notes
   - CSV export functionality
-- ✅ **Dashboard Integration**: Recent feedback appears in the activity feed
+- ✅ **Listing Details Page**: Added feedback section to individual property pages showing:
+  - Cleanliness statistics with visual indicators
+  - Feedback coverage percentage with progress bar
+  - Recent cleanings with feedback ratings
+  - Breakdown by rating type (Clean/Normal/Dirty)
+- ✅ **Stats Page Enhancement**: Added comprehensive cleanliness metrics section with:
+  - Pie chart visualization of rating distribution
+  - Average rating with trend indicators (up/down/stable)
+  - Feedback coverage statistics
+  - Month-over-month comparison
+- ✅ **Dashboard Integration**: Recent feedback appears in the activity feed with visual indicators
 - ✅ **Database Updates**: Feedback data now included in all schedule queries
 
 ### Remaining TODOs
 #### Medium Priority
 - SMS Integration: Complete Twilio setup for production (currently using mock authentication)
 - Settings page save functionality
-- Stats page timezone-aware date calculations
-- Add feedback metrics to stats page
-- Add feedback history to listing details
 
 #### Low Priority
 - Conflict Detection: Warn about scheduling conflicts
