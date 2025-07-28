@@ -109,6 +109,18 @@ export default function DashboardPage() {
     fetchDashboardStats();
   }, [router, toast]);
 
+  // Helper to parse date strings as local dates
+  const parseLocalDate = (dateStr: string): Date => {
+    if (!dateStr) return new Date();
+    const datePart = dateStr.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      console.error('Invalid date string:', dateStr);
+      return new Date();
+    }
+    return new Date(year, month - 1, day);
+  };
+
   const fetchDashboardStats = async () => {
     try {
       const [listingsRes, cleanersRes, scheduleRes, assignmentsRes, feedbackRes] = await Promise.all([
@@ -155,7 +167,7 @@ export default function DashboardPage() {
           const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
           
           schedule.forEach((item: any) => {
-            const checkoutDate = new Date(item.check_out);
+            const checkoutDate = parseLocalDate(item.check_out);
             const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
             
             // Count upcoming cleanings in next 7 days
@@ -317,18 +329,6 @@ export default function DashboardPage() {
     } finally {
       setSyncing(false);
     }
-  };
-
-  // Helper to parse date strings as local dates
-  const parseLocalDate = (dateStr: string): Date => {
-    if (!dateStr) return new Date();
-    const datePart = dateStr.split('T')[0];
-    const [year, month, day] = datePart.split('-').map(Number);
-    if (isNaN(year) || isNaN(month) || isNaN(day)) {
-      console.error('Invalid date string:', dateStr);
-      return new Date();
-    }
-    return new Date(year, month - 1, day);
   };
 
   // Find the next check-in for a given listing
@@ -594,7 +594,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${loading ? "..." : stats.monthlyRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${loading ? "..." : stats.monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
             <p className="text-xs text-muted-foreground">
               cleaning fees this month
             </p>
