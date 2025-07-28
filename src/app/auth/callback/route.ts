@@ -28,8 +28,23 @@ export async function GET(request: Request) {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       
       if (!error && data?.session) {
-        // Successful authentication, redirect to dashboard
-        console.log('Authentication successful, redirecting to dashboard')
+        // Successful authentication
+        console.log('Authentication successful, creating/updating profile')
+        
+        // Create or update user profile
+        try {
+          const { db } = await import('@/lib/db')
+          await db.createOrUpdateProfile(data.session.user.id, {
+            email: data.session.user.email,
+            name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name,
+            avatar_url: data.session.user.user_metadata?.avatar_url
+          })
+          console.log('Profile created/updated successfully')
+        } catch (profileError) {
+          console.error('Error creating/updating profile:', profileError)
+          // Continue anyway - the profile will be created on next login
+        }
+        
         const redirectUrl = new URL(next, request.url)
         return NextResponse.redirect(redirectUrl)
       } else {

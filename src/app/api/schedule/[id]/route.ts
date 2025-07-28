@@ -1,15 +1,13 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { env } from '@/lib/env'
-
-// Mock user ID for development
-const DEV_USER_ID = env.devUserId
+import { requireAuth } from '@/lib/auth-server'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params;
     const body = await request.json()
     const { status, cleaner_id } = body
@@ -38,7 +36,7 @@ export async function PATCH(
       // Verify the cleaner exists and belongs to the user
       const cleanerResult = await db.query(
         `SELECT id FROM public.cleaners WHERE id = $1 AND user_id = $2`,
-        [cleaner_id, DEV_USER_ID]
+        [cleaner_id, user.id]
       )
       
       if (cleanerResult.rows.length === 0) {
@@ -67,7 +65,7 @@ export async function PATCH(
        FROM public.schedule_items s
        JOIN public.listings l ON s.listing_id = l.id
        WHERE s.id = $1 AND l.user_id = $2`,
-      [id, DEV_USER_ID]
+      [id, user.id]
     )
 
     if (verifyResult.rows.length === 0) {

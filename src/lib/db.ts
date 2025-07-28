@@ -16,6 +16,22 @@ export const db = {
     return result.rows[0]
   },
 
+  async createOrUpdateProfile(userId: string, data: { email?: string; name?: string; avatar_url?: string }) {
+    const result = await pool.query(
+      `INSERT INTO public.profiles (id, email, name, avatar_url, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, NOW(), NOW()) 
+       ON CONFLICT (id) 
+       DO UPDATE SET 
+         email = COALESCE($2, profiles.email),
+         name = COALESCE($3, profiles.name),
+         avatar_url = COALESCE($4, profiles.avatar_url),
+         updated_at = NOW()
+       RETURNING *`,
+      [userId, data.email, data.name, data.avatar_url]
+    )
+    return result.rows[0]
+  },
+
   async getListings(userId: string) {
     const result = await pool.query(
       'SELECT * FROM public.listings WHERE user_id = $1 ORDER BY created_at DESC',

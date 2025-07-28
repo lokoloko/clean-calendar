@@ -1,12 +1,11 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
-    const assignments = await db.getAssignments(DEV_USER_ID)
+    const user = await requireAuth()
+    const assignments = await db.getAssignments(user.id)
     return NextResponse.json(assignments)
   } catch (error) {
     console.error('Error fetching assignments:', error)

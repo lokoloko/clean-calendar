@@ -1,11 +1,11 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
+    const user = await requireAuth()
+    
     // Get cancellation stats
     const cancellationStats = await db.query(`
       SELECT 
@@ -20,7 +20,7 @@ export async function GET() {
       WHERE l.user_id = $1
       GROUP BY l.id, l.name
       ORDER BY total_cancellations DESC
-    `, [DEV_USER_ID])
+    `, [user.id])
 
     // Get cleaner-specific cancellation impact
     const cleanerImpact = await db.query(`
@@ -35,7 +35,7 @@ export async function GET() {
       WHERE l.user_id = $1 AND (s.status = 'cancelled' OR s.is_extended = true)
       GROUP BY c.id, c.name
       ORDER BY cancellations_affected DESC
-    `, [DEV_USER_ID])
+    `, [user.id])
 
     return NextResponse.json({
       byListing: cancellationStats.rows,

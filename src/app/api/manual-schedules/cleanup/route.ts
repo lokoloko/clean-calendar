@@ -1,11 +1,11 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function POST() {
   try {
+    const user = await requireAuth()
+    
     // Delete orphaned manual schedule items (where the rule no longer exists)
     const result = await db.query(`
       DELETE FROM public.schedule_items si
@@ -21,7 +21,7 @@ export async function POST() {
         SELECT id FROM public.listings WHERE user_id = $1
       )
       RETURNING si.id
-    `, [DEV_USER_ID])
+    `, [user.id])
     
     console.log(`Cleaned up ${result.rowCount} orphaned manual schedule items`)
     

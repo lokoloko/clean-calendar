@@ -1,13 +1,12 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 // GET: List all share tokens for the user
 export async function GET(request: Request) {
   try {
-    const shareTokens = await db.getShareTokens(DEV_USER_ID)
+    const user = await requireAuth()
+    const shareTokens = await db.getShareTokens(user.id)
     
     // Add share URLs to each token
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || 3001}`
@@ -39,6 +38,7 @@ export async function GET(request: Request) {
 // DELETE: Delete a share token
 export async function DELETE(request: Request) {
   try {
+    const user = await requireAuth()
     const { searchParams } = new URL(request.url)
     const tokenId = searchParams.get('id')
     
@@ -49,7 +49,7 @@ export async function DELETE(request: Request) {
       )
     }
     
-    const deletedToken = await db.deleteShareToken(tokenId, DEV_USER_ID)
+    const deletedToken = await db.deleteShareToken(tokenId, user.id)
     
     if (!deletedToken) {
       return NextResponse.json(

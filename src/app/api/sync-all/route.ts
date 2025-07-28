@@ -1,9 +1,7 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function POST(request: Request) {
   try {
@@ -16,10 +14,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const user = await requireAuth()
+
     // Get all Airbnb listings (only sync those with ICS URLs)
     const listingsResult = await db.query(
       'SELECT * FROM public.listings WHERE user_id = $1 AND is_active_on_airbnb = true AND ics_url IS NOT NULL',
-      [DEV_USER_ID]
+      [user.id]
     )
 
     const listings = listingsResult.rows

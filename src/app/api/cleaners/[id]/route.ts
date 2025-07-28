@@ -1,19 +1,18 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params;
     
     const result = await db.query(
       'SELECT * FROM public.cleaners WHERE id = $1 AND user_id = $2',
-      [id, DEV_USER_ID]
+      [id, user.id]
     )
 
     if (result.rows.length === 0) {
@@ -35,6 +34,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params;
     const body = await request.json()
     const { name, email, phone } = body
@@ -44,7 +44,7 @@ export async function PUT(
        SET name = $1, email = $2, phone = $3, updated_at = NOW()
        WHERE id = $4 AND user_id = $5
        RETURNING *`,
-      [name, email, phone, id, DEV_USER_ID]
+      [name, email, phone, id, user.id]
     )
 
     if (result.rows.length === 0) {
@@ -66,11 +66,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params;
     
     const result = await db.query(
       'DELETE FROM public.cleaners WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, DEV_USER_ID]
+      [id, user.id]
     )
 
     if (result.rows.length === 0) {

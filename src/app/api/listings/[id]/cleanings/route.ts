@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { requireAuth } from '@/lib/auth-server';
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -31,7 +30,7 @@ export async function GET(
       WHERE s.listing_id = $1 AND s.user_id = $2
       ORDER BY s.check_out DESC
       LIMIT $3`,
-      [id, DEV_USER_ID, limit]
+      [id, user.id, limit]
     );
 
     return NextResponse.json(result.rows);

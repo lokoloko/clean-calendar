@@ -1,11 +1,10 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
+    const user = await requireAuth()
     const result = await db.query(`
       SELECT 
         msr.*,
@@ -16,7 +15,7 @@ export async function GET() {
       JOIN public.cleaners c ON msr.cleaner_id = c.id
       WHERE l.user_id = $1 AND msr.is_active = true
       ORDER BY msr.created_at DESC
-    `, [DEV_USER_ID])
+    `, [user.id])
     
     return NextResponse.json(result.rows)
   } catch (error) {

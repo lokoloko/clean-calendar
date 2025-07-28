@@ -1,15 +1,15 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
+    const user = await requireAuth()
+    
     // Get user settings
     const result = await db.query(
       `SELECT * FROM public.user_settings WHERE user_id = $1`,
-      [DEV_USER_ID]
+      [user.id]
     )
     
     // If no settings exist, create default settings
@@ -18,7 +18,7 @@ export async function GET() {
         `INSERT INTO public.user_settings (user_id) 
          VALUES ($1) 
          RETURNING *`,
-        [DEV_USER_ID]
+        [user.id]
       )
       return NextResponse.json(createResult.rows[0])
     }
@@ -35,6 +35,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const user = await requireAuth()
     const body = await request.json()
     const {
       auto_sync_enabled,
@@ -70,7 +71,7 @@ export async function PUT(request: Request) {
         weekly_schedule_day,
         daily_reminder_time,
         require_confirmation,
-        DEV_USER_ID
+        user.id
       ]
     )
     
@@ -84,7 +85,7 @@ export async function PUT(request: Request) {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
         [
-          DEV_USER_ID,
+          user.id,
           auto_sync_enabled,
           auto_sync_time,
           sms_provider,

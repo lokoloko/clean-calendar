@@ -1,12 +1,11 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
-    const listings = await db.getListings(DEV_USER_ID)
+    const user = await requireAuth()
+    const listings = await db.getListings(user.id)
     return NextResponse.json(listings)
   } catch (error) {
     console.error('Error fetching listings:', error)
@@ -19,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth()
     const body = await request.json()
     const { name, ics_url, cleaning_fee, timezone, is_active_on_airbnb } = body
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const listing = await db.createListing(DEV_USER_ID, {
+    const listing = await db.createListing(user.id, {
       name,
       ics_url: is_active_on_airbnb ? ics_url : null,
       cleaning_fee: parseFloat(cleaning_fee) || 0,

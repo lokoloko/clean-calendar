@@ -2,13 +2,12 @@ import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import type { CreateShareRequest, ShareToken } from '@/types/share'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 // POST: Create a new share token
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth()
     const body: CreateShareRequest = await request.json()
     
     // Generate a unique token
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
     }
     
     // Create the share token
-    const shareToken = await db.createShareToken(DEV_USER_ID, {
+    const shareToken = await db.createShareToken(user.id, {
       token,
       name: body.name,
       cleaner_id: body.cleanerId,
@@ -107,7 +106,7 @@ export async function GET(request: Request) {
       WHERE l.user_id = $1
     `
     
-    const queryParams: any[] = [shareToken.user_id || DEV_USER_ID]
+    const queryParams: any[] = [shareToken.user_id]
     let paramIndex = 2
     
     // Apply cleaner filter if specified
@@ -151,7 +150,7 @@ export async function GET(request: Request) {
     
     const cleanersParams = shareToken.cleaner_id 
       ? [shareToken.cleaner_id]
-      : [shareToken.user_id || DEV_USER_ID]
+      : [shareToken.user_id]
     
     const cleanersResult = await db.query(cleanersQuery, cleanersParams)
     
@@ -161,7 +160,7 @@ export async function GET(request: Request) {
     
     const listingsParams = shareToken.listing_ids && shareToken.listing_ids.length > 0
       ? [shareToken.listing_ids]
-      : [shareToken.user_id || DEV_USER_ID]
+      : [shareToken.user_id]
     
     const listingsResult = await db.query(listingsQuery, listingsParams)
     

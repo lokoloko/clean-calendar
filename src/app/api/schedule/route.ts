@@ -1,17 +1,16 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET(request: Request) {
   try {
+    const user = await requireAuth()
     const { searchParams } = new URL(request.url)
     const includeHistory = searchParams.get('includeHistory') === 'true'
     
     const schedule = includeHistory 
-      ? await db.getAllSchedule(DEV_USER_ID)
-      : await db.getSchedule(DEV_USER_ID)
+      ? await db.getAllSchedule(user.id)
+      : await db.getSchedule(user.id)
       
     return NextResponse.json(schedule)
   } catch (error) {

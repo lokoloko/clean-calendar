@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { requireAuth } from '@/lib/auth-server';
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
     const { id } = await context.params;
     
     const result = await db.query(
@@ -22,7 +21,7 @@ export async function GET(
       FROM public.schedule s
       LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_id
       WHERE s.listing_id = $1 AND s.user_id = $2`,
-      [id, DEV_USER_ID]
+      [id, user.id]
     );
 
     const stats = result.rows[0];

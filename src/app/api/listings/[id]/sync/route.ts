@@ -1,21 +1,20 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth()
     const { id } = await params;
     
     // Get the listing
     const listingResult = await db.query(
       'SELECT * FROM public.listings WHERE id = $1 AND user_id = $2',
-      [id, DEV_USER_ID]
+      [id, user.id]
     )
 
     if (listingResult.rows.length === 0) {

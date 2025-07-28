@@ -1,12 +1,11 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-// Mock user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { requireAuth } from '@/lib/auth-server'
 
 export async function GET() {
   try {
-    const cleaners = await db.getCleaners(DEV_USER_ID)
+    const user = await requireAuth()
+    const cleaners = await db.getCleaners(user.id)
     return NextResponse.json(cleaners)
   } catch (error) {
     console.error('Error fetching cleaners:', error)
@@ -19,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth()
     const body = await request.json()
     const { name, phone, email } = body
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const cleaner = await db.createCleaner(DEV_USER_ID, {
+    const cleaner = await db.createCleaner(user.id, {
       name,
       phone,
       email
