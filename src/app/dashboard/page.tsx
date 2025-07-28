@@ -131,6 +131,16 @@ export default function DashboardPage() {
         fetch('/api/cleaner/feedback')
       ]);
 
+      // Check for non-ok responses
+      if (!listingsRes.ok) {
+        const error = await listingsRes.text();
+        throw new Error(`Listings API failed: ${listingsRes.status} - ${error}`);
+      }
+      if (!cleanersRes.ok) {
+        const error = await cleanersRes.text();
+        throw new Error(`Cleaners API failed: ${cleanersRes.status} - ${error}`);
+      }
+
       if (listingsRes.ok && cleanersRes.ok) {
         const listings = await listingsRes.json();
         const cleaners = await cleanersRes.json();
@@ -294,9 +304,10 @@ export default function DashboardPage() {
         setRecentActivity(activities.slice(0, 5));
       }
     } catch (error) {
+      console.error('Dashboard loading error:', error);
       toast({
         title: "Error loading dashboard",
-        description: "Some data may not be displayed correctly",
+        description: error instanceof Error ? error.message : "Some data may not be displayed correctly",
         variant: "destructive"
       });
     } finally {
