@@ -5,40 +5,57 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
+  const next = requestUrl.searchParams.get('next') ?? '/dashboard'
   
-  // If there's an error from the OAuth provider
-  if (error) {
-    return NextResponse.redirect(new URL(`/login?error=${error}`, request.url))
-  }
+  console.log('Auth callback received:', {
+    url: request.url,
+    code: code ? 'present' : 'absent',
+    error: error,
+    searchParams: requestUrl.searchParams.toString()
+  })
 
-  if (code) {
-    const supabase = await createClient()
-    
-    const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!sessionError) {
-      // Successful authentication, redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-    
-    console.error('Session exchange error:', sessionError)
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error)
     return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 
-  // If no code is present, check if we're in implicit flow (token in hash)
-  // For implicit flow, we need to handle it client-side
-  // Create a page that will handle the hash fragment
+  // Handle authorization code flow
+  if (code) {
+    const supabase = await createClient()
+    
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (!error && data?.session) {
+        // Successful authentication, redirect to dashboard
+        console.log('Authentication successful, redirecting to dashboard')
+        const redirectUrl = new URL(next, request.url)
+        return NextResponse.redirect(redirectUrl)
+      } else {
+        console.error('Error exchanging code for session:', error)
+        return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+      }
+    } catch (err) {
+      console.error('Exception during code exchange:', err)
+      return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+    }
+  }
+
+  // Handle implicit flow (tokens in hash fragment)
+  // Since hash fragments aren't sent to the server, we need to handle this client-side
+  console.log('No code or error in query params, returning client-side handler')
   return new Response(`
     <html>
       <head>
         <script>
-          // Check if there's a hash with access_token
+          // Check if there's an access token in the hash
           const hash = window.location.hash;
           if (hash && hash.includes('access_token')) {
-            // Redirect to dashboard - the client-side auth will pick up the token
+            // Redirect to dashboard - the client will handle the token
             window.location.href = '/dashboard';
           } else {
-            // No token found, redirect to login
+            // No code or token found
             window.location.href = '/login?error=no_code';
           }
         </script>
@@ -48,6 +65,6 @@ export async function GET(request: Request) {
       </body>
     </html>
   `, {
-    headers: { 'Content-Type': 'text/html' },
+    headers: { 'Content-Type': 'text/html' }
   })
 }

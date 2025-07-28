@@ -153,17 +153,31 @@ export function InteractiveComponent() {
 
 **Note**: Docker setup is for development only. For production, use Supabase cloud.
 
+**IMPORTANT**: Always use Docker commands for local development. Do NOT use `npm run dev` directly.
+
 1. **Start the environment**:
    ```bash
    npm run docker:dev
+   # OR
+   docker-compose up -d --build
    ```
 
-2. **Access services**:
+2. **View logs** (essential for debugging auth issues):
+   ```bash
+   docker logs -f clean-calendar-app-1
+   ```
+
+3. **Restart after environment changes**:
+   ```bash
+   docker-compose restart app
+   ```
+
+4. **Access services**:
    - App: http://localhost:9002
    - Cleaner Portal: http://localhost:9002/cleaner/dashboard
    - PostgreSQL: localhost:5433 (postgres/postgres)
 
-3. **Environment variables**:
+5. **Environment variables**:
    **For Development (local branch)**:
    - DATABASE_URL: `postgresql://postgres:postgres@localhost:54321/postgres`
    - NEXT_PUBLIC_SUPABASE_URL: `http://localhost:54321`
@@ -175,6 +189,11 @@ export function InteractiveComponent() {
      - Example: `postgresql://postgres:abc123xyz@db.puvlcvcbxmobxpnbjrwp.supabase.co:5432/postgres`
    - NEXT_PUBLIC_SUPABASE_URL: `https://[YOUR-PROJECT-REF].supabase.co`
    - NEXT_PUBLIC_SUPABASE_ANON_KEY: Get from Supabase Dashboard > Settings > API
+   
+   **For Docker Development**:
+   - DATABASE_URL: postgresql://postgres:postgres@db:5432/cleansweep
+   - NEXT_PUBLIC_SUPABASE_URL: (Set in .env.local)
+   - NEXTAUTH_URL: http://localhost:9002
 
 ## Implementation Status
 

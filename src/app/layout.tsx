@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { AppLayout } from '@/components/layout';
 import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from '@/contexts/auth-context-dev'
+import { AuthProvider } from '@/contexts/auth-context'
 
 export const metadata: Metadata = {
   title: 'CleanSweep Scheduler',
