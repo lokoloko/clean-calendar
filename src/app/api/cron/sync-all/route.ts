@@ -16,9 +16,9 @@ export async function POST(request: Request) {
     // In the future, this would iterate through all users
     const userId = 'e488f6e1-1b21-4513-be24-0b8c2bb5f3f0' // richmontoya@gmail.com
     
-    // Get all Airbnb listings with ICS URLs for this user
+    // Get all listings with ICS URLs for this user
     const listingsResult = await db.query(
-      'SELECT * FROM public.listings WHERE user_id = $1 AND is_active_on_airbnb = true AND ics_url IS NOT NULL',
+      'SELECT * FROM public.listings WHERE user_id = $1 AND ics_url IS NOT NULL',
       [userId]
     )
 

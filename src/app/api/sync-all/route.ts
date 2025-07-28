@@ -16,9 +16,9 @@ export async function POST(request: Request) {
 
     const user = await requireAuth()
 
-    // Get all Airbnb listings (only sync those with ICS URLs)
+    // Get all listings with ICS URLs (regardless of is_active_on_airbnb status)
     const listingsResult = await db.query(
-      'SELECT * FROM public.listings WHERE user_id = $1 AND is_active_on_airbnb = true AND ics_url IS NOT NULL',
+      'SELECT * FROM public.listings WHERE user_id = $1 AND ics_url IS NOT NULL',
       [user.id]
     )
 

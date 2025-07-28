@@ -106,14 +106,15 @@ export default function SettingsPage() {
       if (!listingsRes.ok) throw new Error('Failed to fetch listings');
       
       const listings = await listingsRes.json();
-      const airbnbListings = listings.filter((listing: any) => listing.is_active_on_airbnb && listing.ics_url);
+      // Sync any listing with an ICS URL, not just those marked as active on Airbnb
+      const syncableListings = listings.filter((listing: any) => listing.ics_url);
       
-      setSyncProgress({ current: 0, total: airbnbListings.length });
+      setSyncProgress({ current: 0, total: syncableListings.length });
       
-      if (airbnbListings.length === 0) {
+      if (syncableListings.length === 0) {
         toast({
           title: 'No listings to sync',
-          description: 'No active Airbnb listings found with calendar URLs',
+          description: 'No listings found with calendar URLs',
         });
         setIsSyncing(false);
         return;
@@ -123,9 +124,9 @@ export default function SettingsPage() {
       let errorCount = 0;
 
       // Sync each listing
-      for (let i = 0; i < airbnbListings.length; i++) {
-        const listing = airbnbListings[i];
-        setSyncProgress({ current: i + 1, total: airbnbListings.length });
+      for (let i = 0; i < syncableListings.length; i++) {
+        const listing = syncableListings[i];
+        setSyncProgress({ current: i + 1, total: syncableListings.length });
         
         try {
           const syncRes = await fetch(`/api/listings/${listing.id}/sync`, {
@@ -188,7 +189,7 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm font-medium">Sync All Listings</p>
                     <p className="text-sm text-muted-foreground">
-                      Sync all active Airbnb listings with their calendar URLs
+                      Sync all listings that have calendar URLs
                     </p>
                   </div>
                   <Button 
