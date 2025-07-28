@@ -40,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useSearchParams } from 'next/navigation';
 
 type ScheduleStatus = 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
 
@@ -179,10 +180,19 @@ export default function SchedulePage() {
     newCleanerId: ''
   });
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchData();
-  }, []);
+    
+    // Check if export parameter is present
+    if (searchParams?.get('export') === 'true') {
+      // Open export modal after data is loaded
+      setTimeout(() => {
+        handleExport();
+      }, 500);
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     try {

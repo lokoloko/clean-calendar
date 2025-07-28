@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from "@/components/page-header";
-import { DollarSign, Home, Users, CalendarCheck2, AlertCircle, RefreshCw, Plus, ArrowRight, Clock, CheckCircle2, UserPlus, Activity } from "lucide-react";
+import { DollarSign, Home, Users, CalendarCheck2, AlertCircle, RefreshCw, Plus, ArrowRight, Clock, CheckCircle2, UserPlus, Activity, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -141,7 +141,7 @@ export default function DashboardPage() {
                 status: item.status
               });
               
-              // Check if needs attention (no cleaner assigned)
+              // Check if needs attention (no cleaner assigned for today's cleaning)
               if (!item.cleaner_id) {
                 attentionItems.push({
                   id: item.id,
@@ -152,8 +152,18 @@ export default function DashboardPage() {
               }
             }
             
+            // Check for unassigned future cleanings (excluding today which is handled above)
+            if (item.status !== 'cancelled' && checkoutDate > now && !item.cleaner_id && checkoutDateStr !== today) {
+              attentionItems.push({
+                id: item.id,
+                listing_name: item.listing_name,
+                issue: 'No cleaner assigned',
+                checkout_date: checkoutDateStr
+              });
+            }
+            
             // Check for same-day turnovers that need attention
-            if (item.status !== 'cancelled' && checkoutDate > now) {
+            if (item.status !== 'cancelled' && checkoutDate >= now) {
               const nextGuest = schedule.find((s: any) => 
                 s.listing_id === item.listing_id && 
                 s.check_in === item.check_out &&
@@ -290,6 +300,12 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/schedule?export=true">
+              <FileText className="h-4 w-4 mr-2" />
+              Export Schedule
+            </Link>
+          </Button>
           <Button asChild size="sm">
             <Link href="/schedule">
               View Schedule
