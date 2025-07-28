@@ -1,4 +1,4 @@
-import { Pool, PoolConfig } from 'pg'
+import { Pool, PoolConfig, QueryResultRow } from 'pg'
 import { env } from './env'
 import { logger } from './logger'
 
@@ -89,7 +89,7 @@ export function getPool(): Pool {
 /**
  * Execute a query with automatic retries and logging
  */
-export async function query<T = any>(
+export async function query<T extends QueryResultRow = any>(
   text: string,
   params?: any[],
   retries = 2
@@ -97,7 +97,9 @@ export async function query<T = any>(
   const startTime = Date.now()
   const queryLogger = logger.child({ 
     action: 'db.query',
-    query: env.isDevelopment ? text.substring(0, 100) : undefined 
+    metadata: {
+      query: env.isDevelopment ? text.substring(0, 100) : undefined
+    }
   })
   
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -113,7 +115,10 @@ export async function query<T = any>(
         }
       })
       
-      return result
+      return {
+        rows: result.rows,
+        rowCount: result.rowCount || 0
+      }
     } catch (error: any) {
       const isRetryable = 
         error.code === 'ECONNREFUSED' ||
