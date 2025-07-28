@@ -10,20 +10,27 @@ CleanSweep Scheduler is a Next.js 15 application for managing Airbnb property cl
 
 **Product Goal**: Automate cleaning schedules for Airbnb hosts by parsing .ics calendar links into structured schedules and daily messages, helping hosts assign cleaners and avoid missed turnovers.
 
+## Branch Strategy
+
+- **`local` branch**: Development environment with local Supabase
+- **`main` branch**: Production environment with Supabase cloud
+
 ## Essential Commands
 
-### Development
+### Development (local branch)
 ```bash
-npm run dev              # Start development server on port 9002 with Turbopack
-npm run build            # Build for production
-npm run start            # Start production server
-npm run lint             # Run Next.js linter
-npm run typecheck        # Run TypeScript type checking
-npm run genkit:dev       # Start Genkit AI development server
-npm run genkit:watch     # Start Genkit with watch mode
+git checkout local       # Switch to development branch
+supabase start          # Start local Supabase
+npm run dev             # Start development server on port 9002 with Turbopack
+npm run build           # Build for production
+npm run start           # Start production server
+npm run lint            # Run Next.js linter
+npm run typecheck       # Run TypeScript type checking
+npm run genkit:dev      # Start Genkit AI development server
+npm run genkit:watch    # Start Genkit with watch mode
 ```
 
-### Docker Commands
+### Docker Commands (Alternative to Supabase CLI)
 ```bash
 docker-compose up -d --build  # Start Docker environment with PostgreSQL
 docker-compose down           # Stop Docker environment
@@ -137,11 +144,14 @@ export function InteractiveComponent() {
 - TypeScript errors are ignored during builds (see next.config.ts)
 - ESLint errors are also ignored in production builds
 - Port 9002 is the default development port
-- Docker environment includes PostgreSQL database
+- **Development**: Use `local` branch with local Supabase instance
+- **Production**: Use `main` branch with Supabase cloud
 - Database migrations are in `supabase/migrations/`
 - SMS authentication bypassed for testing (uses mock-token)
 
-## Docker Development Setup
+## Docker Development Setup (Alternative to Supabase CLI)
+
+**Note**: Docker setup is for development only. For production, use Supabase cloud.
 
 1. **Start the environment**:
    ```bash
@@ -154,9 +164,17 @@ export function InteractiveComponent() {
    - PostgreSQL: localhost:5433 (postgres/postgres)
 
 3. **Environment variables**:
-   - DATABASE_URL: postgresql://postgres:postgres@db:5432/cleansweep
-   - NEXT_PUBLIC_SUPABASE_URL: http://localhost:9002
-   - NEXTAUTH_URL: http://localhost:9002
+   **For Development (local branch)**:
+   - DATABASE_URL: `postgresql://postgres:postgres@localhost:54321/postgres`
+   - NEXT_PUBLIC_SUPABASE_URL: `http://localhost:54321`
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY: (from `supabase start` output)
+   
+   **For Production (main branch)**:
+   - DATABASE_URL: Get from Supabase Dashboard > Settings > Database
+     - Format: `postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres`
+     - Example: `postgresql://postgres:abc123xyz@db.puvlcvcbxmobxpnbjrwp.supabase.co:5432/postgres`
+   - NEXT_PUBLIC_SUPABASE_URL: `https://[YOUR-PROJECT-REF].supabase.co`
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY: Get from Supabase Dashboard > Settings > API
 
 ## Implementation Status
 

@@ -2,30 +2,48 @@
 
 ## Prerequisites
 
-- [ ] Supabase project set up
+- [ ] Supabase cloud project set up
 - [ ] Supabase CLI installed (`~/bin/supabase`)
 - [ ] Domain name (optional but recommended)
 - [ ] Google OAuth credentials configured
 - [ ] Environment variables prepared
+- [ ] Currently on `main` branch (production code)
+
+## Branch Strategy
+
+- **Development**: Use `local` branch with local Supabase instance
+- **Production**: Use `main` branch with Supabase cloud
+
+⚠️ **Important**: Always deploy from the `main` branch to production. The `local` branch is for development only.
 
 ## Deployment Options
 
 ### Option 1: Vercel (Recommended)
 
-1. **Install Vercel CLI**
+1. **Ensure you're on main branch**
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Install Vercel CLI**
    ```bash
    npm i -g vercel
    ```
 
-2. **Configure Environment Variables**
+3. **Configure Environment Variables**
    - Copy `.env.production.example` to `.env.production`
-   - Fill in all required values
+   - Fill in all required values with Supabase cloud credentials
    - In Vercel dashboard, add all environment variables
 
-3. **Deploy**
+4. **Deploy**
    ```bash
    vercel --prod
    ```
+
+5. **Configure Vercel Settings**
+   - Set Production Branch to `main` only
+   - Disable preview deployments from other branches if desired
 
 4. **Configure Domain**
    - In Vercel dashboard, add your custom domain
@@ -39,11 +57,12 @@
 
 2. **Configure Environment Variables**
    - Add all variables from `.env.production.example`
+   - Use Supabase cloud credentials (not local)
    - Railway automatically detects Next.js
 
 3. **Deploy**
-   - Push to main branch
-   - Railway auto-deploys
+   - Push to `main` branch only
+   - Railway auto-deploys from main
 
 ### Option 3: Render
 
@@ -67,11 +86,14 @@
 
 #### Option A: Using Supabase CLI (Recommended)
 ```bash
-# Push all local migrations to Supabase
-~/bin/supabase db push
+# Link to your Supabase cloud project
+supabase link --project-ref your-project-ref
+
+# Push all local migrations to Supabase cloud
+supabase db push
 
 # Or run specific migrations
-~/bin/supabase migration up --linked
+supabase migration up --linked
 ```
 
 #### Option B: Using psql directly
@@ -91,10 +113,14 @@ psql $DATABASE_URL < supabase/migrations/002_add_recurring_schedules.sql
 ### 3. Data Migration
 If you have data in local development:
 ```bash
+# From local branch development environment
 # Export local data
-docker exec clean-calendar-db-1 pg_dump -U postgres cleanings > local_backup.sql
+supabase db dump -f local_backup.sql
 
-# Import to Supabase (be careful with this!)
+# Switch to production credentials
+export DATABASE_URL="your-supabase-cloud-database-url"
+
+# Import to Supabase cloud (be careful with this!)
 psql $DATABASE_URL < local_backup.sql
 ```
 

@@ -41,6 +41,11 @@ See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed fea
 - **Calendar Parsing**: ical library
 - **Date Handling**: date-fns
 
+## 🌳 Branch Strategy
+
+- **`local` branch**: Development with local Supabase instance
+- **`main` branch**: Production with Supabase cloud
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -51,10 +56,11 @@ See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed fea
 
 ### Local Development
 
-1. **Clone the repository**
+1. **Clone the repository and checkout development branch**
    ```bash
    git clone <repository-url>
    cd clean-calendar
+   git checkout local  # For development
    ```
 
 2. **Install dependencies**
@@ -65,10 +71,33 @@ See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed fea
 3. **Set up environment variables**
    ```bash
    cp .env.example .env.local
-   # Edit .env.local with your configuration
+   ```
+   
+   **For Development (local branch):**
+   ```env
+   # Local Supabase
+   NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+   DATABASE_URL=postgresql://postgres:postgres@localhost:54321/postgres
+   ```
+   
+   **For Production (main branch):**
+   ```env
+   # Supabase Cloud
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_cloud_anon_key
+   
+   # Get this from Supabase Dashboard > Settings > Database
+   # Format: postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres
+   DATABASE_URL=postgresql://postgres:your-password@db.your-project-ref.supabase.co:5432/postgres
    ```
 
-4. **Start the database**
+4. **Start local Supabase (development only)**
+   ```bash
+   supabase start
+   ```
+   
+   Or use Docker:
    ```bash
    npm run docker:dev
    ```
@@ -116,14 +145,30 @@ See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed fea
 See `.env.example` for all available environment variables. Key variables:
 
 - `DATABASE_URL` - PostgreSQL connection string
+  - Development: `postgresql://postgres:postgres@localhost:54321/postgres`
+  - Production: Get from Supabase Dashboard > Settings > Database > Connection string
+    - Example: `postgresql://postgres:abc123xyz@db.puvlcvcbxmobxpnbjrwp.supabase.co:5432/postgres`
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+  - Development: `http://localhost:54321`
+  - Production: `https://your-project-ref.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+  - Development: Get from `supabase start` output
+  - Production: Get from Supabase Dashboard > Settings > API > anon public key
 - `NEXT_PUBLIC_USE_AUTH` - Enable/disable authentication
 
 ### Authentication Modes
 
 - **Dev Mode** (`NEXT_PUBLIC_USE_AUTH=false`): Uses mock user, no login required
 - **Production Mode** (`NEXT_PUBLIC_USE_AUTH=true`): Requires Supabase authentication
+
+### Development vs Production
+
+| Aspect | Development (`local` branch) | Production (`main` branch) |
+|--------|-----------------------------|--------------------------|
+| Database | Local Supabase/PostgreSQL | Supabase Cloud |
+| Auth | Mock user (optional) | Supabase Auth + Google OAuth |
+| API URL | http://localhost:54321 | https://your-project.supabase.co |
+| Port | 9002 | As configured in Vercel |
 
 ## 📚 Documentation
 
@@ -156,10 +201,12 @@ See [PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md) for detailed deplo
 
 ### Quick Deploy to Vercel
 
-1. Push to GitHub
-2. Connect repository to Vercel
-3. Add environment variables
-4. Deploy
+1. Ensure you're on the `main` branch with production-ready code
+2. Push to GitHub
+3. Connect repository to Vercel
+4. Configure Vercel to deploy from `main` branch only
+5. Add production environment variables (Supabase cloud credentials)
+6. Deploy
 
 ## 🔐 Security
 

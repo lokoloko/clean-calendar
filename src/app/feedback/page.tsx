@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AppLayout from '@/components/app-layout';
+import { AppLayout } from '@/components/layout';
 import PageHeader from '@/components/page-header';
 import {
   Table,
