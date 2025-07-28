@@ -123,6 +123,7 @@ export default function DashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
+      console.log('Fetching dashboard data...');
       const [listingsRes, cleanersRes, scheduleRes, assignmentsRes, feedbackRes] = await Promise.all([
         fetch('/api/listings'),
         fetch('/api/cleaners'),
@@ -131,50 +132,54 @@ export default function DashboardPage() {
         fetch('/api/cleaner/feedback')
       ]);
 
-      // Check for non-ok responses
-      if (!listingsRes.ok) {
-        throw new Error(`Listings API failed: ${listingsRes.status}`);
-      }
-      if (!cleanersRes.ok) {
-        throw new Error(`Cleaners API failed: ${cleanersRes.status}`);
-      }
+      console.log('API responses:', {
+        listings: listingsRes.status,
+        cleaners: cleanersRes.status,
+        schedule: scheduleRes.status,
+        assignments: assignmentsRes.status,
+        feedback: feedbackRes.status
+      });
 
-      if (listingsRes.ok && cleanersRes.ok) {
-        const listings = await listingsRes.json();
-        const cleaners = await cleanersRes.json();
-        const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
-        
-        // Store cleaners and schedule for export functionality
-        setCleaners(cleaners);
-        if (scheduleRes.ok) {
-          const schedule = await scheduleRes.json();
-          setScheduleItems(schedule);
+      // Process the responses regardless of status for better debugging
+      const listings = listingsRes.ok ? await listingsRes.json() : [];
+      const cleaners = cleanersRes.ok ? await cleanersRes.json() : [];
+      const schedule = scheduleRes.ok ? await scheduleRes.json() : [];
+      const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
+      const feedbackData = feedbackRes.ok ? await feedbackRes.json() : [];
+
+      console.log('Data received:', {
+        listings: listings.length,
+        cleaners: cleaners.length,
+        schedule: schedule.length,
+        assignments: assignments.length,
+        feedback: feedbackData.length
+      });
+
+      // Store cleaners and schedule for export functionality
+      setCleaners(cleaners);
+      setScheduleItems(schedule);
+      
+      // Get last sync time from listings
+      if (listings.length > 0) {
+        const syncTimes = listings
+          .filter((l: any) => l.last_sync_at)
+          .map((l: any) => new Date(l.last_sync_at));
+        if (syncTimes.length > 0) {
+          setLastSyncTime(new Date(Math.max(...syncTimes.map((d: Date) => d.getTime()))));
         }
-        
-        // Get last sync time from listings
-        if (listings.length > 0) {
-          const syncTimes = listings
-            .filter((l: any) => l.last_sync)
-            .map((l: any) => new Date(l.last_sync));
-          if (syncTimes.length > 0) {
-            setLastSyncTime(new Date(Math.max(...syncTimes.map((d: Date) => d.getTime()))));
-          }
-        }
-        
-        // Calculate upcoming cleanings and today's cleanings
-        let upcomingCount = 0;
-        let monthlyRevenue = 0;
-        const todayCleanings: TodayCleaning[] = [];
-        const attentionItems: NeedsAttention[] = [];
-        
-        if (scheduleRes.ok) {
-          const schedule = await scheduleRes.json();
-          const now = new Date();
-          const today = format(now, 'yyyy-MM-dd');
-          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-          
-          schedule.forEach((item: any) => {
+      }
+      
+      // Calculate upcoming cleanings and today's cleanings
+      let upcomingCount = 0;
+      let monthlyRevenue = 0;
+      const todayCleanings: TodayCleaning[] = [];
+      const attentionItems: NeedsAttention[] = [];
+      const now = new Date();
+      const today = format(now, 'yyyy-MM-dd');
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      schedule.forEach((item: any) => {
             const checkoutDate = parseLocalDate(item.check_out);
             const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
             
@@ -300,6 +305,7 @@ export default function DashboardPage() {
         setTodaysCleanings(todayCleanings);
         setNeedsAttention(attentionItems.slice(0, 5)); // Limit to 5 items
         setRecentActivity(activities.slice(0, 5));
+        console.log('Dashboard data loaded successfully');
       }
     } catch (error) {
       console.error('Dashboard loading error:', error);
@@ -309,6 +315,7 @@ export default function DashboardPage() {
         variant: "destructive"
       });
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
