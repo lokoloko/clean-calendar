@@ -182,6 +182,7 @@ export function InteractiveComponent() {
    - DATABASE_URL: `postgresql://postgres:postgres@localhost:54321/postgres`
    - NEXT_PUBLIC_SUPABASE_URL: `http://localhost:54321`
    - NEXT_PUBLIC_SUPABASE_ANON_KEY: (from `supabase start` output)
+   - CRON_SECRET: (generate with: `openssl rand -base64 32`)
    
    **For Production (main branch)**:
    - DATABASE_URL: Get from Supabase Dashboard > Settings > Database
@@ -230,6 +231,13 @@ All major features are implemented and functional with real database integration
 - ✅ **Security**: Row-level security and session management
 
 ### Recent Updates (January 2025)
+
+#### Calendar Sync System
+- ✅ **Automated Sync**: Vercel cron job runs every 3 hours to sync all listings
+- ✅ **Manual Sync Button**: Dashboard "Sync All" button with last sync time display
+- ✅ **Cron Endpoint**: Dedicated `/api/cron/sync-all` endpoint secured with CRON_SECRET
+- ✅ **Historical Data Preservation**: All booking modifications tracked in modification_history JSONB
+- ✅ **Single-User Optimization**: Currently hardcoded for primary user, ready for multi-tenant expansion
 
 #### Manual Schedule System Improvements
 - ✅ **Regeneration Feature**: When editing manual schedules, changing frequency/pattern prompts to regenerate schedule items

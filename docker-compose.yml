@@ -5,11 +5,13 @@ services:
       target: dev
     ports:
       - "9002:9002"
-    env_file:
-      - .env.local
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/cleansweep
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:9002
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-local-dev
+      - SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-local-dev
+      - NEXT_PUBLIC_USE_AUTH=false
       - NEXTAUTH_URL=http://localhost:9002
       - NEXTAUTH_SECRET=development-secret-key-change-in-production
     volumes:

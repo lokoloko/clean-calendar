@@ -1,0 +1,235 @@
+import { db } from '@/lib/db'
+import { NextResponse } from 'next/server'
+import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
+
+export async function POST(request: Request) {
+  try {
+    // Verify cron secret
+    const authHeader = request.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+    
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // For now, sync only for the primary user (you)
+    // In the future, this would iterate through all users
+    const userId = 'e488f6e1-1b21-4513-be24-0b8c2bb5f3f0' // richmontoya@gmail.com
+    
+    // Get all Airbnb listings with ICS URLs for this user
+    const listingsResult = await db.query(
+      'SELECT * FROM public.listings WHERE user_id = $1 AND is_active_on_airbnb = true AND ics_url IS NOT NULL',
+      [userId]
+    )
+
+    const listings = listingsResult.rows
+    const results = []
+
+    for (const listing of listings) {
+      try {
+        // Get assigned cleaners for this listing
+        const assignmentsResult = await db.query(
+          'SELECT cleaner_id FROM public.assignments WHERE listing_id = $1',
+          [listing.id]
+        )
+
+        const cleanerIds = assignmentsResult.rows.map(row => row.cleaner_id)
+        const defaultCleanerId = cleanerIds[0] || null
+
+        if (!defaultCleanerId) {
+          results.push({
+            listingId: listing.id,
+            listingName: listing.name,
+            status: 'skipped',
+            reason: 'No cleaner assigned'
+          })
+          continue
+        }
+
+        // Parse the ICS file
+        const bookings = await parseICSFromURL(listing.ics_url)
+        
+        // Get all future bookings UIDs from the ICS feed
+        const currentBookingUids = bookings.map(b => b.uid);
+        
+        // First, mark past bookings as completed if they haven't been marked yet
+        await db.query(
+          `UPDATE public.schedule_items 
+           SET status = 'completed',
+               is_completed = true,
+               modification_history = modification_history || 
+                 jsonb_build_object(
+                   'type', 'completion',
+                   'timestamp', NOW(),
+                   'previous_status', status
+                 ),
+               updated_at = NOW()
+           WHERE listing_id = $1 
+             AND check_out < CURRENT_DATE
+             AND status = 'pending'`,
+          [listing.id]
+        )
+
+        // Mark future bookings that are no longer in the ICS feed as cancelled
+        await db.query(
+          `UPDATE public.schedule_items 
+           SET status = 'cancelled', 
+               cancelled_at = NOW(),
+               notes = COALESCE(notes || ' | ', '') || 'Cancelled on ' || TO_CHAR(NOW(), 'YYYY-MM-DD'),
+               modification_history = modification_history || 
+                 jsonb_build_object(
+                   'type', 'cancellation',
+                   'timestamp', NOW(),
+                   'previous_status', status
+                 ),
+               updated_at = NOW()
+           WHERE listing_id = $1 
+             AND check_out > CURRENT_DATE
+             AND status != 'cancelled'
+             AND status != 'completed'
+             AND source = 'airbnb'
+             AND booking_uid NOT IN (${currentBookingUids.map((_, i) => `$${i + 2}`).join(', ') || 'NULL'})`,
+          [listing.id, ...currentBookingUids]
+        )
+
+        // Create new schedule items
+        let insertedCount = 0
+        let updatedCount = 0
+        
+        for (const booking of bookings) {
+          // Use ON CONFLICT to update existing bookings if they've changed
+          const result = await db.query(
+            `INSERT INTO public.schedule_items 
+            (listing_id, cleaner_id, booking_uid, guest_name, check_in, check_out, 
+             checkout_time, notes, status, original_check_in, original_check_out, source) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            ON CONFLICT (booking_uid) 
+            DO UPDATE SET 
+              guest_name = EXCLUDED.guest_name,
+              check_in = EXCLUDED.check_in,
+              previous_check_out = CASE 
+                WHEN public.schedule_items.check_out != EXCLUDED.check_out 
+                THEN public.schedule_items.check_out
+                ELSE public.schedule_items.previous_check_out
+              END,
+              check_out = EXCLUDED.check_out,
+              checkout_time = EXCLUDED.checkout_time,
+              notes = EXCLUDED.notes,
+              is_extended = CASE 
+                WHEN EXCLUDED.check_out > public.schedule_items.check_out 
+                THEN true
+                ELSE public.schedule_items.is_extended
+              END,
+              extension_count = CASE 
+                WHEN EXCLUDED.check_out > public.schedule_items.check_out 
+                THEN public.schedule_items.extension_count + 1
+                ELSE public.schedule_items.extension_count
+              END,
+              extension_notes = CASE 
+                WHEN EXCLUDED.check_out > public.schedule_items.check_out 
+                THEN 'Extended from ' || TO_CHAR(public.schedule_items.check_out, 'YYYY-MM-DD') || 
+                     ' to ' || TO_CHAR(EXCLUDED.check_out, 'YYYY-MM-DD') || 
+                     ' on ' || TO_CHAR(NOW(), 'YYYY-MM-DD')
+                ELSE public.schedule_items.extension_notes
+              END,
+              modification_history = CASE 
+                WHEN public.schedule_items.check_out != EXCLUDED.check_out 
+                THEN public.schedule_items.modification_history || 
+                     jsonb_build_object(
+                       'type', CASE 
+                         WHEN EXCLUDED.check_out > public.schedule_items.check_out THEN 'extension'
+                         WHEN EXCLUDED.check_out < public.schedule_items.check_out THEN 'shortened'
+                         ELSE 'date_change'
+                       END,
+                       'timestamp', NOW(),
+                       'old_check_out', public.schedule_items.check_out,
+                       'new_check_out', EXCLUDED.check_out,
+                       'old_check_in', public.schedule_items.check_in,
+                       'new_check_in', EXCLUDED.check_in
+                     )
+                ELSE public.schedule_items.modification_history
+              END,
+              updated_at = NOW()
+            WHERE public.schedule_items.check_out >= CURRENT_DATE`,
+            [
+              listing.id,
+              defaultCleanerId,
+              booking.uid,
+              booking.guestName || null,
+              booking.checkIn.toISOString(),
+              booking.checkOut.toISOString(),
+              getCheckoutTime(booking.checkOut),
+              booking.description || null,
+              'pending',
+              booking.checkIn.toISOString(), // original_check_in
+              booking.checkOut.toISOString(), // original_check_out
+              'airbnb' // source
+            ]
+          )
+          if (result.rowCount && result.rowCount > 0) {
+            if (result.command === 'INSERT') insertedCount++
+            else updatedCount++
+          }
+        }
+
+        // Update last sync time
+        await db.query(
+          'UPDATE public.listings SET last_sync = NOW() WHERE id = $1',
+          [listing.id]
+        )
+
+        results.push({
+          listingId: listing.id,
+          listingName: listing.name,
+          status: 'success',
+          itemsCreated: insertedCount,
+          itemsUpdated: updatedCount,
+          totalBookings: bookings.length
+        })
+      } catch (error) {
+        console.error(`Error syncing listing ${listing.name}:`, error)
+        results.push({
+          listingId: listing.id,
+          listingName: listing.name,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+      }
+    }
+
+    const successful = results.filter(r => r.status === 'success').length
+    const failed = results.filter(r => r.status === 'error').length
+    const skipped = results.filter(r => r.status === 'skipped').length
+
+    console.log(`Cron sync completed: ${successful} successful, ${failed} failed, ${skipped} skipped`)
+
+    return NextResponse.json({
+      success: true,
+      summary: {
+        total: listings.length,
+        successful,
+        failed,
+        skipped
+      },
+      results,
+      syncedAt: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Error in cron sync-all:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to sync all calendars' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET endpoint for monitoring/health checks
+export async function GET() {
+  return NextResponse.json({
+    endpoint: '/api/cron/sync-all',
+    method: 'POST',
+    description: 'Cron job endpoint for syncing all calendars',
+    authentication: 'Bearer token via CRON_SECRET env var',
+    note: 'This endpoint is designed to be called by Vercel cron jobs only'
+  })
+}

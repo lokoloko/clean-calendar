@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -89,6 +90,16 @@ export default function DashboardPage() {
         const listings = await listingsRes.json();
         const cleaners = await cleanersRes.json();
         const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
+        
+        // Get last sync time from listings
+        if (listings.length > 0) {
+          const syncTimes = listings
+            .filter((l: any) => l.last_sync)
+            .map((l: any) => new Date(l.last_sync));
+          if (syncTimes.length > 0) {
+            setLastSyncTime(new Date(Math.max(...syncTimes.map((d: Date) => d.getTime()))));
+          }
+        }
         
         // Calculate upcoming cleanings and today's cleanings
         let upcomingCount = 0;
@@ -236,13 +247,16 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/sync-all', { method: 'POST' });
       if (response.ok) {
+        const result = await response.json();
         toast({
           title: "Sync complete",
-          description: "All calendars have been updated",
+          description: `Updated ${result.summary.successful} listings, ${result.summary.failed} failed`,
         });
+        setLastSyncTime(new Date());
         fetchDashboardStats(); // Refresh data
       } else {
-        throw new Error('Sync failed');
+        const error = await response.json();
+        throw new Error(error.error || 'Sync failed');
       }
     } catch (error) {
       toast({
@@ -259,16 +273,23 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       {/* Page Header Component */}
       <PageHeader title="Dashboard">
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleSyncAll} 
-            variant="outline" 
-            size="sm"
-            disabled={syncing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            Sync All
-          </Button>
+        <div className="flex gap-2 items-center">
+          <div className="flex flex-col items-end mr-4">
+            <Button 
+              onClick={handleSyncAll} 
+              variant="outline" 
+              size="sm"
+              disabled={syncing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync All'}
+            </Button>
+            {lastSyncTime && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last sync: {formatRelative(lastSyncTime, new Date())}
+              </p>
+            )}
+          </div>
           <Button asChild size="sm">
             <Link href="/schedule">
               View Schedule
