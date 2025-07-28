@@ -57,6 +57,11 @@ original_check_out DATE
 CRON_SECRET=your-secret-key  # Generate with: openssl rand -base64 32
 ```
 
+### Sync Filtering Changes (January 2025)
+- **Previous**: Only synced listings with `is_active_on_airbnb = true`
+- **Current**: Syncs ALL listings that have an ICS URL
+- **Reason**: Supports public user flow and imported calendars
+
 ### Vercel Cron Configuration
 ```json
 {
@@ -77,6 +82,30 @@ CRON_SECRET=your-secret-key  # Generate with: openssl rand -base64 32
 4. **Update Existing**: Modify bookings with new dates
 5. **Create New**: Add new bookings from feed
 6. **Update Metadata**: Record sync time and history
+
+## Auto-Sync Triggers
+
+The system automatically attempts to sync calendars in these scenarios:
+
+### 1. New Listing Creation
+- Triggered when a listing is created with an ICS URL
+- Only executes if cleaners exist in the system
+- Provides guidance if cleaners need to be added first
+
+### 2. Listing Updates
+- Triggered when ICS URL is added or changed
+- Triggered when listing becomes active on Airbnb
+- Compares before/after state to detect changes
+
+### 3. Manual Sync
+- Dashboard "Sync All" button
+- Settings page sync functionality
+- Individual listing sync buttons
+
+### 4. Scheduled Sync
+- Cron job runs every 3 hours
+- Processes all listings with ICS URLs
+- No user interaction required
 
 ## Scalability Considerations
 

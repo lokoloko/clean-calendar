@@ -238,6 +238,9 @@ All major features are implemented and functional with real database integration
 - ✅ **Cron Endpoint**: Dedicated `/api/cron/sync-all` endpoint secured with CRON_SECRET
 - ✅ **Historical Data Preservation**: All booking modifications tracked in modification_history JSONB
 - ✅ **Single-User Optimization**: Currently hardcoded for primary user, ready for multi-tenant expansion
+- ✅ **Auto-Sync on Creation**: New listings with ICS URLs sync automatically
+- ✅ **Auto-Sync on Update**: Syncs when ICS URL is added or changed
+- ✅ **Public User Flow**: Seamless import from landing page through to synced schedule
 
 #### Manual Schedule System Improvements
 - ✅ **Regeneration Feature**: When editing manual schedules, changing frequency/pattern prompts to regenerate schedule items

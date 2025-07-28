@@ -32,6 +32,10 @@ See [PRODUCTION_READINESS_STATUS.md](docs/PRODUCTION_READINESS_STATUS.md) for de
 
 See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed feature descriptions.
 
+### User Flows
+- **Public User Flow**: See [PUBLIC_USER_FLOW.md](docs/PUBLIC_USER_FLOW.md) for the complete onboarding journey from landing page to synced schedule
+- **Calendar Sync**: See [CALENDAR_SYNC.md](docs/CALENDAR_SYNC.md) for technical sync implementation details
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15, React 18, TypeScript
