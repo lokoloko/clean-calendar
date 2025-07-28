@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUserId } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-server';
 
 export async function GET() {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const user = await requireAuth();
 
     // Get recent cleaner feedback with related data
     const result = await db.query(`
@@ -23,11 +20,14 @@ export async function GET() {
       WHERE l.user_id = $1
       ORDER BY cf.completed_at DESC
       LIMIT 10
-    `, [userId]);
+    `, [user.id]);
 
     return NextResponse.json(result.rows);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching cleaner feedback:', error);
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 });
   }
 }

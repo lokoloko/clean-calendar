@@ -133,12 +133,10 @@ export default function DashboardPage() {
 
       // Check for non-ok responses
       if (!listingsRes.ok) {
-        const error = await listingsRes.text();
-        throw new Error(`Listings API failed: ${listingsRes.status} - ${error}`);
+        throw new Error(`Listings API failed: ${listingsRes.status}`);
       }
       if (!cleanersRes.ok) {
-        const error = await cleanersRes.text();
-        throw new Error(`Cleaners API failed: ${cleanersRes.status} - ${error}`);
+        throw new Error(`Cleaners API failed: ${cleanersRes.status}`);
       }
 
       if (listingsRes.ok && cleanersRes.ok) {
@@ -246,7 +244,7 @@ export default function DashboardPage() {
         // Generate recent activity
         const activities: RecentActivity[] = [];
         
-        // Add recent feedback
+        // Add recent feedback (only if authenticated and response is ok)
         if (feedbackRes.ok) {
           const feedbackData = await feedbackRes.json();
           feedbackData.slice(0, 3).forEach((fb: any) => {
