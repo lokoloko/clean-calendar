@@ -180,133 +180,130 @@ export default function DashboardPage() {
       const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       
       schedule.forEach((item: any) => {
-            const checkoutDate = parseLocalDate(item.check_out);
-            const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
+        const checkoutDate = parseLocalDate(item.check_out);
+        const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
             
-            // Count upcoming cleanings in next 7 days
-            if (checkoutDate > now && checkoutDate <= next7Days && item.status !== 'cancelled') {
-              upcomingCount++;
-            }
-            
-            // Calculate monthly cleaning costs
-            if (checkoutDate >= startOfMonth && checkoutDate <= now) {
-              const listing = listings.find((l: any) => l.id === item.listing_id);
-              if (listing) {
-                monthlyRevenue += parseFloat(listing.cleaning_fee || 0);
-              }
-            }
-            
-            // Today's cleanings
-            if (checkoutDateStr === today && item.status !== 'cancelled') {
-              todayCleanings.push({
-                id: item.id,
-                listing_name: item.listing_name,
-                cleaner_name: item.cleaner_name || 'Unassigned',
-                checkout_time: item.checkout_time || '11:00 AM',
-                status: item.status
-              });
-              
-              // Check if needs attention (no cleaner assigned for today's cleaning)
-              if (!item.cleaner_id) {
-                attentionItems.push({
-                  id: item.id,
-                  listing_name: item.listing_name,
-                  issue: 'No cleaner assigned',
-                  checkout_date: today
-                });
-              }
-            }
-            
-            // Check for unassigned future cleanings (excluding today which is handled above)
-            if (item.status !== 'cancelled' && checkoutDate > now && !item.cleaner_id && checkoutDateStr !== today) {
-              attentionItems.push({
-                id: item.id,
-                listing_name: item.listing_name,
-                issue: 'No cleaner assigned',
-                checkout_date: checkoutDateStr
-              });
-            }
-            
-            // Check for same-day turnovers that need attention
-            if (item.status !== 'cancelled' && checkoutDate >= now) {
-              const nextGuest = schedule.find((s: any) => 
-                s.listing_id === item.listing_id && 
-                s.check_in === item.check_out &&
-                s.id !== item.id
-              );
-              if (nextGuest) {
-                attentionItems.push({
-                  id: item.id,
-                  listing_name: item.listing_name,
-                  issue: 'Same-day turnover',
-                  checkout_date: checkoutDateStr
-                });
-              }
-            }
+        // Count upcoming cleanings in next 7 days
+        if (checkoutDate > now && checkoutDate <= next7Days && item.status !== 'cancelled') {
+          upcomingCount++;
+        }
+        
+        // Calculate monthly cleaning costs
+        if (checkoutDate >= startOfMonth && checkoutDate <= now) {
+          const listing = listings.find((l: any) => l.id === item.listing_id);
+          if (listing) {
+            monthlyRevenue += parseFloat(listing.cleaning_fee || 0);
+          }
+        }
+        
+        // Today's cleanings
+        if (checkoutDateStr === today && item.status !== 'cancelled') {
+          todayCleanings.push({
+            id: item.id,
+            listing_name: item.listing_name,
+            cleaner_name: item.cleaner_name || 'Unassigned',
+            checkout_time: item.checkout_time || '11:00 AM',
+            status: item.status
+          });
+          
+          // Check if needs attention (no cleaner assigned for today's cleaning)
+          if (!item.cleaner_id) {
+            attentionItems.push({
+              id: item.id,
+              listing_name: item.listing_name,
+              issue: 'No cleaner assigned',
+              checkout_date: today
+            });
+          }
+        }
+        
+        // Check for unassigned future cleanings (excluding today which is handled above)
+        if (item.status !== 'cancelled' && checkoutDate > now && !item.cleaner_id && checkoutDateStr !== today) {
+          attentionItems.push({
+            id: item.id,
+            listing_name: item.listing_name,
+            issue: 'No cleaner assigned',
+            checkout_date: checkoutDateStr
           });
         }
+        
+        // Check for same-day turnovers that need attention
+        if (item.status !== 'cancelled' && checkoutDate >= now) {
+          const nextGuest = schedule.find((s: any) => 
+            s.listing_id === item.listing_id && 
+            s.check_in === item.check_out &&
+            s.id !== item.id
+          );
+          if (nextGuest) {
+            attentionItems.push({
+              id: item.id,
+              listing_name: item.listing_name,
+              issue: 'Same-day turnover',
+              checkout_date: checkoutDateStr
+            });
+          }
+        }
+      });
 
-        // Generate recent activity
-        const activities: RecentActivity[] = [];
-        
-        // Add recent feedback (only if authenticated and response is ok)
-        if (feedbackRes.ok) {
-          const feedbackData = await feedbackRes.json();
-          feedbackData.slice(0, 3).forEach((fb: any) => {
-            if (fb.completed_at) {
-              activities.push({
-                id: `feedback-${fb.id}`,
-                type: 'feedback',
-                title: `${fb.listing_name} cleaned`,
-                description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating === 5 ? '😊 Clean' : fb.cleanliness_rating === 3 ? '😐 Normal' : '😟 Dirty'}` : ''}`,
-                timestamp: new Date(fb.completed_at),
-                icon: 'CheckCircle2'
-              });
-            }
-          });
-        }
-        
-        // Add recent sync activities (simulated based on listing updates)
-        listings.slice(0, 2).forEach((listing: any) => {
-          if (listing.last_sync_at) {
+      // Generate recent activity
+      const activities: RecentActivity[] = [];
+      
+      // Add recent feedback (only if authenticated and response is ok)
+      if (feedbackData.length > 0) {
+        feedbackData.slice(0, 3).forEach((fb: any) => {
+          if (fb.completed_at) {
             activities.push({
-              id: `sync-${listing.id}`,
-              type: 'sync',
-              title: `${listing.name} synced`,
-              description: 'Calendar synchronized successfully',
-              timestamp: new Date(listing.last_sync_at),
-              icon: 'RefreshCw'
+              id: `feedback-${fb.id}`,
+              type: 'feedback',
+              title: `${fb.listing_name} cleaned`,
+              description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating === 5 ? '😊 Clean' : fb.cleanliness_rating === 3 ? '😐 Normal' : '😟 Dirty'}` : ''}`,
+              timestamp: new Date(fb.completed_at),
+              icon: 'CheckCircle2'
             });
           }
         });
-        
-        // Add recent assignments
-        if (assignments.length > 0) {
-          const recentAssignment = assignments[0];
+      }
+      
+      // Add recent sync activities (simulated based on listing updates)
+      listings.slice(0, 2).forEach((listing: any) => {
+        if (listing.last_sync_at) {
           activities.push({
-            id: `assignment-${recentAssignment.id}`,
-            type: 'assignment',
-            title: 'Cleaner assigned',
-            description: `${recentAssignment.cleaner_name} assigned to ${recentAssignment.listing_name}`,
-            timestamp: new Date(recentAssignment.created_at),
-            icon: 'UserPlus'
+            id: `sync-${listing.id}`,
+            type: 'sync',
+            title: `${listing.name} synced`,
+            description: 'Calendar synchronized successfully',
+            timestamp: new Date(listing.last_sync_at),
+            icon: 'RefreshCw'
           });
         }
-        
-        // Sort by timestamp and limit to 5
-        activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-        
-        setStats({
-          totalListings: listings.length,
-          activeCleaners: cleaners.length,
-          upcomingCleanings: upcomingCount,
-          monthlyRevenue
+      });
+      
+      // Add recent assignments
+      if (assignments.length > 0) {
+        const recentAssignment = assignments[0];
+        activities.push({
+          id: `assignment-${recentAssignment.id}`,
+          type: 'assignment',
+          title: 'Cleaner assigned',
+          description: `${recentAssignment.cleaner_name} assigned to ${recentAssignment.listing_name}`,
+          timestamp: new Date(recentAssignment.created_at),
+          icon: 'UserPlus'
         });
-        setTodaysCleanings(todayCleanings);
-        setNeedsAttention(attentionItems.slice(0, 5)); // Limit to 5 items
-        setRecentActivity(activities.slice(0, 5));
-        console.log('Dashboard data loaded successfully');
       }
+      
+      // Sort by timestamp and limit to 5
+      activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      
+      setStats({
+        totalListings: listings.length,
+        activeCleaners: cleaners.length,
+        upcomingCleanings: upcomingCount,
+        monthlyRevenue
+      });
+      setTodaysCleanings(todayCleanings);
+      setNeedsAttention(attentionItems.slice(0, 5)); // Limit to 5 items
+      setRecentActivity(activities.slice(0, 5));
+      console.log('Dashboard data loaded successfully');
     } catch (error) {
       console.error('Dashboard loading error:', error);
       toast({
