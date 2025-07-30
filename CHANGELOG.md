@@ -1,6 +1,37 @@
 # Changelog
 
-## [Unreleased] - 2025-07-21
+## [Unreleased] - 2025-07-29
+
+### Fixed
+- Dashboard syntax errors: Fixed feedbackRes scope issue by using pre-parsed feedbackData
+- Code indentation: Corrected inconsistent indentation in schedule.forEach block
+- Parsing errors: Removed extra closing brace causing "Expression expected" errors
+- Dashboard now loads successfully in both development and production environments
+
+### Added
+- Google authentication setup guide for local development (docs/GOOGLE_AUTH_LOCAL_SETUP.md)
+- Docker troubleshooting documentation
+
+### Technical Details
+- Fixed variable scope issue where feedbackRes was accessed outside its declaration scope
+- Standardized indentation to 2 spaces in dashboard component
+- Dashboard now properly handles all API responses with graceful error handling
+
+## [Previous] - 2025-07-28
+
+### Fixed
+- Next.js 15 build error: Added Suspense boundary for useSearchParams in schedule page
+- Dashboard API authentication: Fixed 401 errors by using requireAuth() consistently
+- Dashboard loading error: Fixed response body stream already read issue
+- API error handling: Improved graceful degradation when individual APIs fail
+
+### Technical Details
+- Created schedule-content.tsx component wrapped with Suspense boundary
+- Updated cleaner feedback API route to use proper authentication
+- Fixed duplicate response body reading in dashboard data fetching
+- Added comprehensive error logging for debugging
+
+## [Previous] - 2025-07-21
 
 ### Added
 - Historical data tracking for bookings (extensions, cancellations, modifications)

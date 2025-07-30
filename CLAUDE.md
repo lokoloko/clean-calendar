@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CleanSweep Scheduler is a Next.js 15 application for managing Airbnb property cleaning schedules. It integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
-**Current Status**: Complete full-stack implementation with PostgreSQL database, SMS-based cleaner authentication, and mobile cleaner portal. All major features are implemented with real data integration and visual feedback cues.
+**Current Status**: Complete full-stack implementation with PostgreSQL database, SMS-based cleaner authentication, and mobile cleaner portal. All major features are implemented with real data integration and visual feedback cues. Dashboard is now fully functional in both development and production environments (as of 2025-07-29).
 
 **Product Goal**: Automate cleaning schedules for Airbnb hosts by parsing .ics calendar links into structured schedules and daily messages, helping hosts assign cleaners and avoid missed turnovers.
 
@@ -148,6 +148,8 @@ export function InteractiveComponent() {
 - **Production**: Use `main` branch with Supabase cloud
 - Database migrations are in `supabase/migrations/`
 - SMS authentication bypassed for testing (uses mock-token)
+- **Authentication**: Dev mode uses mock auth - click "Sign in with Google" to set dev cookie
+- **Recent Fix (2025-07-29)**: Dashboard syntax errors resolved - feedbackRes scope and indentation issues fixed
 
 ## Docker Development Setup (Alternative to Supabase CLI)
 

@@ -6,6 +6,13 @@ A modern web application for managing cleaning schedules for Airbnb properties.
 
 See [PRODUCTION_READINESS_STATUS.md](docs/PRODUCTION_READINESS_STATUS.md) for detailed progress on production deployment.
 
+### Recent Updates (2025-07-29)
+- ✅ **Dashboard Fixed**: Resolved syntax errors and parsing issues
+- ✅ **Production Ready**: Dashboard now working in both local and production environments
+- 📝 **Documentation**: Added Google authentication setup guide for local development
+- 🐛 **Bug Fixes**: Fixed feedbackRes scope issue and code indentation problems
+- See [CHANGELOG.md](CHANGELOG.md) for detailed fixes
+
 ## 📋 Features
 
 ### Core Features
@@ -41,7 +48,9 @@ See [Complete Functionality Guide](docs/FUNCTIONALITY_GUIDE.md) for detailed fea
 - **Frontend**: Next.js 15, React 18, TypeScript
 - **Styling**: Tailwind CSS, shadcn/ui components
 - **Database**: PostgreSQL (local), Supabase (production)
-- **Authentication**: Supabase Auth with Google OAuth
+- **Authentication**: 
+  - Production: Supabase Auth with Google OAuth
+  - Development: Mock authentication (dev mode) or real Google OAuth
 - **Calendar Parsing**: ical library
 - **Date Handling**: date-fns
 
@@ -163,7 +172,9 @@ See `.env.example` for all available environment variables. Key variables:
 ### Authentication Modes
 
 - **Dev Mode** (`NEXT_PUBLIC_USE_AUTH=false`): Uses mock user, no login required
-- **Production Mode** (`NEXT_PUBLIC_USE_AUTH=true`): Requires Supabase authentication
+  - Click "Sign in with Google" to set dev cookie
+  - See [Google Auth Local Setup](docs/GOOGLE_AUTH_LOCAL_SETUP.md) for details
+- **Production Mode** (`NEXT_PUBLIC_USE_AUTH=true`): Requires Supabase authentication with real Google OAuth
 
 ### Development vs Production
 
@@ -180,8 +191,10 @@ See `.env.example` for all available environment variables. Key variables:
 - [API Documentation](docs/API_DOCUMENTATION.md)
 - [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)
 - [Google OAuth Setup](docs/OAUTH_NEXT_STEPS.md)
+- [Google Auth Local Setup](docs/GOOGLE_AUTH_LOCAL_SETUP.md) - Setting up Google auth for local development
 - [Mobile Calendar Sharing Plan](docs/MOBILE_CALENDAR_SHARING_PLAN.md)
 - [Supabase Setup](docs/SUPABASE_SETUP.md)
+- [Docker Troubleshooting](docs/DOCKER_TROUBLESHOOTING.md) - Common Docker issues and solutions
 
 ## 🧪 Testing
 

@@ -267,6 +267,14 @@ export default function ScheduleContent() {
     // Filter out completed/past bookings in list view
     if (item.status === 'completed') return false;
     
+    // In list view, filter out past cleanings (checkout date before today)
+    if (viewType === 'list') {
+      const checkoutDate = parseLocalDate(item.check_out);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (checkoutDate < today) return false;
+    }
+    
     if (!date) return true;
     
     const itemDate = parseLocalDate(item.check_out);
