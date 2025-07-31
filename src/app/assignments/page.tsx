@@ -80,9 +80,10 @@ export default function AssignmentsPage() {
         cleanersRes.json()
       ]);
 
-      setAssignments(assignmentsData);
-      setListings(listingsData);
-      setCleaners(cleanersData);
+      // Extract data from response wrapper
+      setAssignments(assignmentsData.data || assignmentsData || []);
+      setListings(listingsData.data || listingsData || []);
+      setCleaners(cleanersData.data || cleanersData || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -172,7 +173,7 @@ export default function AssignmentsPage() {
                 <TableRow>
                   <TableCell colSpan={3} className="text-center">Loading...</TableCell>
                 </TableRow>
-              ) : assignments.length === 0 ? (
+              ) : !Array.isArray(assignments) || assignments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
                     No assignments yet. Click "Assign Cleaner to Listing" to create one.
@@ -230,7 +231,7 @@ export default function AssignmentsPage() {
                     <SelectValue placeholder="Select a listing" />
                   </SelectTrigger>
                   <SelectContent>
-                    {listings.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                    {Array.isArray(listings) && listings.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -244,7 +245,7 @@ export default function AssignmentsPage() {
                     <SelectValue placeholder="Select a cleaner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cleaners.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    {Array.isArray(cleaners) && cleaners.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

@@ -96,7 +96,12 @@ const parseLocalDate = (dateStr: string): Date => {
   
   // Handle both YYYY-MM-DD and YYYY-MM-DDTHH:MM:SS formats
   const datePart = dateStr.split('T')[0];
-  const [year, month, day] = datePart.split('-').map(Number);
+  const parts = datePart.split('-');
+  if (parts.length !== 3) {
+    console.error('Invalid date format:', dateStr);
+    return new Date();
+  }
+  const [year, month, day] = parts.map(Number);
   
   // Validate the date components
   if (isNaN(year) || isNaN(month) || isNaN(day)) {
@@ -212,9 +217,10 @@ export default function ScheduleContent() {
         listingsRes.json()
       ]);
 
-      setScheduleItems(scheduleData);
-      setCleaners(cleanersData);
-      setListings(listingsData);
+      // Extract data from response wrapper
+      setScheduleItems(scheduleData.data || scheduleData || []);
+      setCleaners(cleanersData.data || cleanersData || []);
+      setListings(listingsData.data || listingsData || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -782,7 +788,7 @@ export default function ScheduleContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Cleaners</SelectItem>
-                  {cleaners.map((cleaner) => (
+                  {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                     <SelectItem key={cleaner.id} value={cleaner.id}>
                       {cleaner.name}
                     </SelectItem>
@@ -807,18 +813,18 @@ export default function ScheduleContent() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          if (selectedListings.length === listings.length) {
+                          if (Array.isArray(listings) && selectedListings.length === listings.length) {
                             setSelectedListings([]);
                           } else {
-                            setSelectedListings(listings.map(l => l.id));
+                            setSelectedListings(Array.isArray(listings) ? listings.map(l => l.id) : []);
                           }
                         }}
                       >
-                        {selectedListings.length === listings.length ? 'Clear All' : 'Select All'}
+                        {Array.isArray(listings) && selectedListings.length === listings.length ? 'Clear All' : 'Select All'}
                       </Button>
                     </div>
                     <div className="border-t pt-3 space-y-2 max-h-[300px] overflow-y-auto">
-                      {listings.map((listing) => (
+                      {Array.isArray(listings) && listings.map((listing) => (
                         <label
                           key={listing.id}
                           className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded-md"
@@ -917,7 +923,7 @@ export default function ScheduleContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSchedule.map((item) => {
+                  {Array.isArray(filteredSchedule) && filteredSchedule.map((item) => {
                     const checkoutDate = parseLocalDate(item.check_out);
                     const isValidDate = !isNaN(checkoutDate.getTime());
                     
@@ -1082,7 +1088,7 @@ export default function ScheduleContent() {
                       <SelectValue placeholder="Select a property" />
                     </SelectTrigger>
                     <SelectContent>
-                      {listings.map((listing) => (
+                      {Array.isArray(listings) && listings.map((listing) => (
                         <SelectItem key={listing.id} value={listing.id}>
                           {listing.name}
                           {!listing.is_active_on_airbnb && ' (Manual)'}
@@ -1101,7 +1107,7 @@ export default function ScheduleContent() {
                       <SelectValue placeholder="Select a cleaner" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cleaners.map((cleaner) => (
+                      {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                         <SelectItem key={cleaner.id} value={cleaner.id}>
                           {cleaner.name}
                         </SelectItem>
@@ -1189,7 +1195,7 @@ export default function ScheduleContent() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Cleaners</SelectItem>
-                        {cleaners.map((cleaner) => (
+                        {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                           <SelectItem key={cleaner.id} value={cleaner.id}>
                             {cleaner.name}
                           </SelectItem>
@@ -1302,7 +1308,7 @@ export default function ScheduleContent() {
                       <SelectValue placeholder="Choose a cleaner" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cleaners.map((cleaner) => (
+                      {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                         <SelectItem key={cleaner.id} value={cleaner.id}>
                           {cleaner.name}
                         </SelectItem>
@@ -1442,7 +1448,7 @@ export default function ScheduleContent() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {dayDetailsModal.items.map((item) => {
+                  {Array.isArray(dayDetailsModal.items) && dayDetailsModal.items.map((item) => {
                     const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
                     return (
                       <div key={item.id} className={cn(
@@ -1559,7 +1565,7 @@ export default function ScheduleContent() {
                       <SelectValue placeholder="Choose a cleaner" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cleaners.map((cleaner) => (
+                      {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                         <SelectItem key={cleaner.id} value={cleaner.id}>
                           {cleaner.name}
                         </SelectItem>

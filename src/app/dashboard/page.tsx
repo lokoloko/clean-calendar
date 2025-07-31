@@ -114,7 +114,12 @@ export default function DashboardPage() {
   const parseLocalDate = (dateStr: string): Date => {
     if (!dateStr) return new Date();
     const datePart = dateStr.split('T')[0];
-    const [year, month, day] = datePart.split('-').map(Number);
+    const parts = datePart.split('-');
+    if (parts.length !== 3) {
+      console.error('Invalid date format:', dateStr);
+      return new Date();
+    }
+    const [year, month, day] = parts.map(Number);
     if (isNaN(year) || isNaN(month) || isNaN(day)) {
       console.error('Invalid date string:', dateStr);
       return new Date();
@@ -133,38 +138,43 @@ export default function DashboardPage() {
 
       const data = await response.json();
       
-      // Destructure the unified response
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format');
+      }
+      
+      // Destructure the unified response with defaults
       const {
-        listings,
-        cleaners,
-        schedule,
-        feedbackStats,
-        recentFeedback,
-        upcomingCleanings,
-        metrics
+        listings = [],
+        cleaners = [],
+        schedule = [],
+        feedbackStats = {},
+        recentFeedback = [],
+        upcomingCleanings = [],
+        metrics = {}
       } = data;
 
       console.log('API response:', response.status);
 
       console.log('Data received:', {
-        listings: listings.length,
-        cleaners: cleaners.length,
-        schedule: schedule.length,
-        recentFeedback: recentFeedback.length,
+        listings: Array.isArray(listings) ? listings.length : 0,
+        cleaners: Array.isArray(cleaners) ? cleaners.length : 0,
+        schedule: Array.isArray(schedule) ? schedule.length : 0,
+        recentFeedback: Array.isArray(recentFeedback) ? recentFeedback.length : 0,
         feedbackStats,
         metrics
       });
 
       // Store cleaners and schedule for export functionality
-      setCleaners(cleaners);
-      setScheduleItems(schedule);
+      setCleaners(Array.isArray(cleaners) ? cleaners : []);
+      setScheduleItems(Array.isArray(schedule) ? schedule : []);
       
       // Get last sync time from listings
-      if (listings.length > 0) {
+      if (Array.isArray(listings) && listings.length > 0) {
         const syncTimes = listings
           .filter((l: any) => l.last_synced_at)
           .map((l: any) => new Date(l.last_synced_at));
-        if (syncTimes.length > 0) {
+        if (Array.isArray(syncTimes) && syncTimes.length > 0) {
           setLastSyncTime(new Date(Math.max(...syncTimes.map((d: Date) => d.getTime()))));
         }
       }
@@ -179,17 +189,20 @@ export default function DashboardPage() {
       let monthlyRevenue = 0;
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       
-      schedule.forEach((item: any) => {
-        const checkoutDate = parseLocalDate(item.check_out);
-        const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
-        
-        // Calculate monthly cleaning costs
-        if (checkoutDate >= startOfMonth && checkoutDate <= now && (item.is_completed || item.feedback_id)) {
-          const listing = listings.find((l: any) => l.id === item.listing_id);
-          if (listing) {
-            monthlyRevenue += parseFloat(listing.cleaning_fee || 0);
+      // Ensure schedule is an array before iterating
+      if (Array.isArray(schedule)) {
+        schedule.forEach((item: any) => {
+          const checkoutDate = parseLocalDate(item.check_out);
+          const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
+          
+          // Calculate monthly cleaning costs
+          if (checkoutDate >= startOfMonth && checkoutDate <= now && (item.is_completed || item.feedback_id)) {
+            // Ensure listings is an array before using find
+            const listing = Array.isArray(listings) ? listings.find((l: any) => l.id === item.listing_id) : null;
+            if (listing) {
+              monthlyRevenue += parseFloat(listing.cleaning_fee || 0);
+            }
           }
-        }
         
         // Today's cleanings
         if (checkoutDateStr === today && item.status !== 'cancelled') {
@@ -224,11 +237,11 @@ export default function DashboardPage() {
         
         // Check for same-day turnovers that need attention
         if (item.status !== 'cancelled' && checkoutDate >= now) {
-          const nextGuest = schedule.find((s: any) => 
+          const nextGuest = Array.isArray(schedule) ? schedule.find((s: any) => 
             s.listing_id === item.listing_id && 
             s.check_in === item.check_out &&
             s.id !== item.id
-          );
+          ) : null;
           if (nextGuest) {
             attentionItems.push({
               id: item.id,
@@ -237,14 +250,14 @@ export default function DashboardPage() {
               checkout_date: checkoutDateStr
             });
           }
-        }
-      });
+        });
+      }
 
       // Generate recent activity
       const activities: RecentActivity[] = [];
       
       // Add recent feedback (only if authenticated and response is ok)
-      if (recentFeedback.length > 0) {
+      if (Array.isArray(recentFeedback) && recentFeedback.length > 0) {
         recentFeedback.slice(0, 3).forEach((fb: any) => {
           if (fb.completed_at) {
             activities.push({
@@ -260,7 +273,8 @@ export default function DashboardPage() {
       }
       
       // Add recent sync activities (simulated based on listing updates)
-      listings.slice(0, 2).forEach((listing: any) => {
+      if (Array.isArray(listings)) {
+        listings.slice(0, 2).forEach((listing: any) => {
         if (listing.last_sync_at) {
           activities.push({
             id: `sync-${listing.id}`,
@@ -272,14 +286,15 @@ export default function DashboardPage() {
           });
         }
       });
+      }
       
       // Sort by timestamp and limit to 5
       activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       
       setStats({
-        totalListings: metrics.totalListings,
-        activeCleaners: metrics.activeCleaners,
-        upcomingCleanings: upcomingCleanings.length,
+        totalListings: metrics.totalListings || 0,
+        activeCleaners: metrics.activeCleaners || 0,
+        upcomingCleanings: Array.isArray(upcomingCleanings) ? upcomingCleanings.length : 0,
         monthlyRevenue
       });
       setTodaysCleanings(todayCleanings);
@@ -337,25 +352,25 @@ export default function DashboardPage() {
       const checkoutDateStr = format(checkoutDateObj, 'yyyy-MM-dd');
       
       // Look for same-day turnaround
-      const sameDay = scheduleItems.find(item => {
+      const sameDay = Array.isArray(scheduleItems) ? scheduleItems.find(item => {
         if (item.listing_id !== listingId || item.id === currentBookingId) return false;
         const checkinDate = parseLocalDate(item.check_in);
         const checkinStr = !isNaN(checkinDate.getTime()) ? format(checkinDate, 'yyyy-MM-dd') : '';
         return checkinStr === checkoutDateStr;
-      });
+      }) : null;
       
       if (sameDay) {
         return 'Same day';
       }
       
       // Find next booking
-      const futureBookings = scheduleItems
+      const futureBookings = Array.isArray(scheduleItems) ? scheduleItems
         .filter(item => {
           if (item.listing_id !== listingId || item.id === currentBookingId) return false;
           const checkinDate = parseLocalDate(item.check_in);
           return !isNaN(checkinDate.getTime()) && checkinDate >= checkoutDateObj;
         })
-        .sort((a, b) => parseLocalDate(a.check_in).getTime() - parseLocalDate(b.check_in).getTime());
+        .sort((a, b) => parseLocalDate(a.check_in).getTime() - parseLocalDate(b.check_in).getTime()) : [];
       
       if (futureBookings.length > 0) {
         const nextBooking = futureBookings[0];
@@ -389,14 +404,14 @@ export default function DashboardPage() {
   };
 
   const generateExportForCleaner = (cleanerId: string, startDate: Date, endDate: Date) => {
-    const cleanerItems = scheduleItems.filter(item => {
+    const cleanerItems = Array.isArray(scheduleItems) ? scheduleItems.filter(item => {
       if (item.cleaner_id !== cleanerId) return false;
       const checkoutDate = parseLocalDate(item.check_out);
       const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       return checkoutDateStr >= startDateStr && checkoutDateStr <= endDateStr && item.status !== 'cancelled';
-    });
+    }) : [];
 
     const itemsByDate = new Map<string, ScheduleItem[]>();
     cleanerItems.forEach(item => {
@@ -610,13 +625,13 @@ export default function DashboardPage() {
                 <CalendarCheck2 className="h-5 w-5" />
                 Today's Cleanings
               </span>
-              <Badge variant="secondary">{todaysCleanings.length}</Badge>
+              <Badge variant="secondary">{Array.isArray(todaysCleanings) ? todaysCleanings.length : 0}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : todaysCleanings.length === 0 ? (
+            ) : !Array.isArray(todaysCleanings) || todaysCleanings.length === 0 ? (
               <div className="text-sm text-muted-foreground">No cleanings scheduled for today</div>
             ) : (
               <div className="space-y-3">
@@ -662,13 +677,13 @@ export default function DashboardPage() {
                 <AlertCircle className="h-5 w-5 text-orange-500" />
                 Needs Attention
               </span>
-              <Badge variant="secondary">{needsAttention.length}</Badge>
+              <Badge variant="secondary">{Array.isArray(needsAttention) ? needsAttention.length : 0}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : needsAttention.length === 0 ? (
+            ) : !Array.isArray(needsAttention) || needsAttention.length === 0 ? (
               <div className="text-sm text-muted-foreground">All good! No items need attention.</div>
             ) : (
               <div className="space-y-3">
@@ -706,7 +721,7 @@ export default function DashboardPage() {
           <CardContent>
             {loading ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : recentActivity.length === 0 ? (
+            ) : !Array.isArray(recentActivity) || recentActivity.length === 0 ? (
               <div className="text-sm text-muted-foreground">No recent activity</div>
             ) : (
               <div className="space-y-3">
@@ -805,7 +820,7 @@ export default function DashboardPage() {
                     <SelectValue placeholder="Choose a cleaner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cleaners.map((cleaner) => (
+                    {Array.isArray(cleaners) && cleaners.map((cleaner) => (
                       <SelectItem key={cleaner.id} value={cleaner.id}>
                         {cleaner.name}
                       </SelectItem>
