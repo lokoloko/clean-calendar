@@ -28,7 +28,10 @@ export const POST = withApiHandler(async (req: NextRequest) => {
   // Validate request body with Zod
   const validatedData = await parseRequestBody(req, cleanerSchema)
 
-  const cleaner = await db.createCleaner(user.id, validatedData)
+  const cleaner = await db.createCleaner({
+    userId: user.id,
+    ...validatedData
+  })
 
   return createApiResponse.created(cleaner)
 })

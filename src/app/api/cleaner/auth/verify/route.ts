@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify the code
+    // Verify the code (this also marks it as used)
     const authCode = await db.verifyAuthCode(phoneNumber, code)
     
     if (!authCode) {
@@ -23,9 +23,6 @@ export async function POST(request: Request) {
         { status: 401 }
       )
     }
-
-    // Mark code as used
-    await db.markAuthCodeUsed(authCode.id)
 
     // Get cleaner info
     const cleaner = await db.getCleanerById(authCode.cleaner_id)

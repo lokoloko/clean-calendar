@@ -20,9 +20,9 @@ export async function GET(request: Request) {
     const dateTo = searchParams.get('dateTo')
 
     // Default to today if no date range specified
-    const today = format(new Date(), 'yyyy-MM-dd')
-    const fromDate = dateFrom || today
-    const toDate = dateTo || (dateFrom ? undefined : today)
+    const today = new Date()
+    const fromDate = dateFrom ? new Date(dateFrom) : today
+    const toDate = dateTo ? new Date(dateTo) : (dateFrom ? undefined : today)
 
     const schedule = await db.getCleanerSchedule(session.cleanerId, fromDate, toDate)
 

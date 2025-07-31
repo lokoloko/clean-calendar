@@ -33,12 +33,15 @@ export async function POST(request: Request) {
     // Create the share token
     const shareToken = await db.createShareToken(user.id, {
       token,
-      name: body.name,
-      cleaner_id: body.cleanerId,
-      listing_ids: body.listingIds,
-      date_from: body.dateFrom,
-      date_to: body.dateTo,
-      expires_at: expiresAt
+      expiresAt,
+      shareType: 'specific' as const,
+      shareData: {
+        name: body.name,
+        cleaner_id: body.cleanerId,
+        listing_ids: body.listingIds,
+        date_from: body.dateFrom,
+        date_to: body.dateTo
+      }
     })
     
     // Construct the share URL

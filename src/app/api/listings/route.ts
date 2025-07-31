@@ -41,12 +41,12 @@ export const POST = withApiHandler(async (req: NextRequest) => {
     throw new ApiError(400, 'Calendar URL is required for Airbnb listings', 'ICS_URL_REQUIRED')
   }
 
-  const listing = await db.createListing(user.id, {
+  const listing = await db.createListing({
+    userId: user.id,
     name,
-    ics_url: is_active_on_airbnb ? ics_url : null,
-    cleaning_fee,
+    icsUrl: is_active_on_airbnb ? ics_url : null,
     timezone,
-    is_active_on_airbnb
+    isActiveOnAirbnb: is_active_on_airbnb
   })
 
     // Check if there are cleaners before trying to sync

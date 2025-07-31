@@ -93,6 +93,42 @@ export const db = {
     return result.rows[0]
   },
   
+  async createOrUpdateProfile(userId: string, data: {
+    email?: string
+    name?: string
+    avatar_url?: string
+  }) {
+    const fields = []
+    const values = []
+    let paramCount = 1
+    
+    values.push(userId)
+    
+    if (data.email) {
+      fields.push(`email = $${++paramCount}`)
+      values.push(data.email)
+    }
+    if (data.name) {
+      fields.push(`name = $${++paramCount}`)
+      values.push(data.name)
+    }
+    if (data.avatar_url) {
+      fields.push(`avatar_url = $${++paramCount}`)
+      values.push(data.avatar_url)
+    }
+    
+    const updateClause = fields.length > 0 ? `DO UPDATE SET ${fields.join(', ')}` : 'DO NOTHING'
+    
+    const result = await pool.query(
+      `INSERT INTO public.profiles (id, email, name, avatar_url) 
+       VALUES ($1, $2, $3, $4) 
+       ON CONFLICT (id) ${updateClause}
+       RETURNING *`,
+      [userId, data.email || null, data.name || null, data.avatar_url || null]
+    )
+    return result.rows[0]
+  },
+  
   async getListings(userId: string, includeInactive = false) {
     const query = includeInactive 
       ? 'SELECT * FROM public.listings WHERE user_id = $1 ORDER BY created_at DESC'
@@ -490,6 +526,186 @@ export const db = {
        JOIN public.cleaners c ON cs.cleaner_id = c.id
        WHERE cs.session_token = $1 
        AND cs.expires_at > NOW()`,
+      [token]
+    )
+    return result.rows[0]
+  },
+  
+  async updateSessionActivity(sessionId: string) {
+    const result = await pool.query(
+      `UPDATE public.cleaner_sessions 
+       SET last_activity = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [sessionId]
+    )
+    return result.rows[0]
+  },
+  
+  async getCleanerSchedule(cleanerId: string, fromDate?: Date, toDate?: Date) {
+    let query = `
+      SELECT s.*, 
+             l.name as listing_name, 
+             l.timezone as listing_timezone,
+             l.check_in_time,
+             l.check_out_time,
+             cf.id as feedback_id,
+             cf.cleanliness_rating,
+             cf.notes as feedback_notes,
+             cf.completed_at as feedback_completed_at
+      FROM public.schedule_items s
+      JOIN public.listings l ON s.listing_id = l.id
+      LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
+      WHERE s.cleaner_id = $1`
+    
+    const params: any[] = [cleanerId]
+    let paramCount = 2
+    
+    if (fromDate) {
+      query += ` AND s.check_out >= $${paramCount++}`
+      params.push(fromDate)
+    }
+    
+    if (toDate) {
+      query += ` AND s.check_out <= $${paramCount++}`
+      params.push(toDate)
+    }
+    
+    query += ' ORDER BY s.check_out ASC'
+    
+    const result = await pool.query(query, params)
+    return result.rows
+  },
+  
+  async createCleanerFeedback(data: {
+    scheduleItemId: string
+    cleanerId: string
+    listingId: string
+    cleanlinessRating: 'clean' | 'normal' | 'dirty'
+    notes?: string
+    completedAt: Date
+  }) {
+    const result = await pool.query(
+      `INSERT INTO public.cleaner_feedback 
+       (schedule_item_id, cleaner_id, listing_id, cleanliness_rating, notes, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (schedule_item_id) 
+       DO UPDATE SET 
+         cleanliness_rating = $4,
+         notes = $5,
+         completed_at = $6,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [
+        data.scheduleItemId,
+        data.cleanerId,
+        data.listingId,
+        data.cleanlinessRating,
+        data.notes || null,
+        data.completedAt
+      ]
+    )
+    return result.rows[0]
+  },
+  
+  async createShareToken(userId: string, data: {
+    token: string
+    expiresAt: Date
+    shareType: 'schedule' | 'specific'
+    shareData?: any
+  }) {
+    const result = await pool.query(
+      `INSERT INTO public.share_tokens 
+       (user_id, token, expires_at, share_type, share_data)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [userId, data.token, data.expiresAt, data.shareType, data.shareData || null]
+    )
+    return result.rows[0]
+  },
+  
+  async updateShareTokenView(tokenId: string) {
+    const result = await pool.query(
+      `UPDATE public.share_tokens 
+       SET view_count = view_count + 1,
+           last_viewed_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [tokenId]
+    )
+    return result.rows[0]
+  },
+  
+  async getSchedule(userId: string) {
+    const result = await pool.query(
+      `SELECT s.*, 
+             l.name as listing_name, 
+             l.timezone as listing_timezone,
+             c.name as cleaner_name,
+             c.phone as cleaner_phone,
+             cf.id as feedback_id,
+             cf.cleanliness_rating,
+             cf.notes as feedback_notes
+      FROM public.schedule_items s
+      JOIN public.listings l ON s.listing_id = l.id
+      JOIN public.cleaners c ON s.cleaner_id = c.id
+      LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
+      WHERE l.user_id = $1 
+        AND s.check_out >= CURRENT_DATE - INTERVAL '30 days'
+      ORDER BY s.check_out DESC`,
+      [userId]
+    )
+    return result.rows
+  },
+  
+  async getAllSchedule(userId: string) {
+    const result = await pool.query(
+      `SELECT s.*, 
+             l.name as listing_name, 
+             l.timezone as listing_timezone,
+             c.name as cleaner_name,
+             c.phone as cleaner_phone,
+             cf.id as feedback_id,
+             cf.cleanliness_rating,
+             cf.notes as feedback_notes
+      FROM public.schedule_items s
+      JOIN public.listings l ON s.listing_id = l.id
+      JOIN public.cleaners c ON s.cleaner_id = c.id
+      LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
+      WHERE l.user_id = $1
+      ORDER BY s.check_out DESC`,
+      [userId]
+    )
+    return result.rows
+  },
+  
+  async getShareTokens(userId: string) {
+    const result = await pool.query(
+      `SELECT * FROM public.share_tokens 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    )
+    return result.rows
+  },
+  
+  async deleteShareToken(tokenId: string, userId: string) {
+    const result = await pool.query(
+      `DELETE FROM public.share_tokens 
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [tokenId, userId]
+    )
+    return result.rows[0]
+  },
+  
+  async getShareToken(token: string) {
+    const result = await pool.query(
+      `SELECT st.*, p.email as user_email
+       FROM public.share_tokens st
+       JOIN public.profiles p ON st.user_id = p.id
+       WHERE st.token = $1 
+       AND st.expires_at > NOW()`,
       [token]
     )
     return result.rows[0]
