@@ -59,7 +59,7 @@ if (process.env.NODE_ENV === 'development') {
   // Wrap query method to add timing
   const originalQuery = pool.query.bind(pool)
   
-  pool.query = async function(...args: any[]) {
+  (pool as any).query = async function(...args: any[]) {
     const queryId = ++queryCount
     const startTime = Date.now()
     const query = typeof args[0] === 'string' ? args[0] : args[0].text
@@ -68,7 +68,7 @@ if (process.env.NODE_ENV === 'development') {
     logger.debug(`Query #${queryId} started`, { query: queryPreview })
     
     try {
-      const result = await originalQuery(...args)
+      const result = await (originalQuery as any)(...args)
       const duration = Date.now() - startTime
       
       if (duration > slowQueryThreshold) {

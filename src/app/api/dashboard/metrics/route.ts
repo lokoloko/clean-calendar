@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       })
       .reduce((sum, item: any) => {
         const listing = listings.find((l: any) => l.id === item.listing_id)
-        return sum + parseFloat(listing?.cleaning_fee || '0')
+        return sum + (listing?.cleaningFee || 0)
       }, 0)
 
     // Get last sync time from listings
