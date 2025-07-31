@@ -1,25 +1,29 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-server';
+import { getCurrentUser } from '@/lib/auth-server';
 import { getSubscriptionInfo } from '@/lib/subscription';
+import { handleApiError, ApiResponses } from '@/lib/api-errors';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      throw ApiResponses.unauthorized();
+    }
+    
     const subscriptionInfo = await getSubscriptionInfo(user.id);
     
     if (!subscriptionInfo) {
-      return NextResponse.json(
-        { error: 'Unable to load subscription information' },
-        { status: 500 }
-      );
+      logger.error('Unable to load subscription information', { userId: user.id });
+      throw ApiResponses.internalError('Unable to load subscription information');
     }
     
     return NextResponse.json(subscriptionInfo);
   } catch (error) {
-    console.error('Error fetching subscription info:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch subscription info' },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      route: '/api/subscription',
+      method: 'GET'
+    });
   }
 }
