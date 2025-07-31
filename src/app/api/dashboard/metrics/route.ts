@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // Process today's cleanings
-    const todayCleanings = todaySchedule.map(item => ({
+    const todayCleanings = todaySchedule.map((item: any) => ({
       id: item.id,
       listing_name: item.listing_name || 'Unknown',
       cleaner_name: item.cleaner_name || 'Unassigned',
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
 
     // Process attention items (cleanings without cleaners)
     const needsAttention = weekSchedule
-      .filter(item => !item.cleaner_id && item.status !== 'cancelled')
-      .map(item => ({
+      .filter((item: any) => !item.cleaner_id && item.status !== 'cancelled')
+      .map((item: any) => ({
         id: item.id,
         listing_name: item.listing_name || 'Unknown',
         issue: 'No cleaner assigned',
@@ -64,19 +64,19 @@ export async function GET(request: NextRequest) {
 
     // Calculate monthly revenue from completed cleanings
     const monthlyRevenue = monthSchedule
-      .filter(item => {
+      .filter((item: any) => {
         const itemDate = new Date(item.date)
         return itemDate <= now && item.status !== 'cancelled'
       })
-      .reduce((sum, item) => {
-        const listing = listings.find(l => l.id === item.listing_id)
+      .reduce((sum, item: any) => {
+        const listing = listings.find((l: any) => l.id === item.listing_id)
         return sum + parseFloat(listing?.cleaning_fee || '0')
       }, 0)
 
     // Get last sync time from listings
     const lastSyncTime = listings
-      .filter(l => l.last_sync_at)
-      .map(l => new Date(l.last_sync_at))
+      .filter((l: any) => l.last_sync_at)
+      .map((l: any) => new Date(l.last_sync_at))
       .sort((a, b) => b.getTime() - a.getTime())[0] || null
 
     // Build recent activity
@@ -96,9 +96,9 @@ export async function GET(request: NextRequest) {
 
     // Add recent feedback
     const recentFeedback = todaySchedule
-      .filter(item => item.cleanliness_rating)
+      .filter((item: any) => item.cleanliness_rating)
       .slice(0, 3)
-      .map(item => ({
+      .map((item: any) => ({
         id: 'feedback-' + item.id,
         type: 'feedback',
         title: 'Feedback Received',
@@ -114,9 +114,9 @@ export async function GET(request: NextRequest) {
 
     // Add completed cleanings from today
     const completedToday = todaySchedule
-      .filter(item => item.cleaner_id)
+      .filter((item: any) => item.cleaner_id)
       .slice(0, 3)
-      .map(item => ({
+      .map((item: any) => ({
         id: 'completed-' + item.id,
         type: 'cleaning_completed',
         title: 'Cleaning Scheduled',
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       stats: {
         totalListings: listings.length,
         activeCleaners: cleaners.length,
-        upcomingCleanings: weekSchedule.filter(item => item.status !== 'cancelled').length,
+        upcomingCleanings: weekSchedule.filter((item: any) => item.status !== 'cancelled').length,
         monthlyRevenue: Math.round(monthlyRevenue)
       },
       todayCleanings: todayCleanings.slice(0, 5),
