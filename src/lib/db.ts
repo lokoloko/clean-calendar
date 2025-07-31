@@ -419,6 +419,82 @@ export const db = {
     return result.rows[0]
   },
   
+  // Cleaner authentication methods
+  async getCleanerByPhone(userId: string, phoneNumber: string) {
+    const result = await pool.query(
+      'SELECT * FROM public.cleaners WHERE user_id = $1 AND phone = $2',
+      [userId, phoneNumber]
+    )
+    return result.rows[0]
+  },
+  
+  async getCleanerById(cleanerId: string) {
+    const result = await pool.query(
+      'SELECT * FROM public.cleaners WHERE id = $1',
+      [cleanerId]
+    )
+    return result.rows[0]
+  },
+  
+  async getRecentAuthCode(cleanerId: string) {
+    const result = await pool.query(
+      `SELECT * FROM public.cleaner_auth_codes 
+       WHERE cleaner_id = $1 
+       AND expires_at > NOW() 
+       AND used = false
+       ORDER BY created_at DESC 
+       LIMIT 1`,
+      [cleanerId]
+    )
+    return result.rows[0]
+  },
+  
+  async createAuthCode(cleanerId: string, phoneNumber: string, code: string, expiresAt: Date) {
+    const result = await pool.query(
+      `INSERT INTO public.cleaner_auth_codes (cleaner_id, phone_number, code, expires_at)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [cleanerId, phoneNumber, code, expiresAt]
+    )
+    return result.rows[0]
+  },
+  
+  async verifyAuthCode(phoneNumber: string, code: string) {
+    const result = await pool.query(
+      `UPDATE public.cleaner_auth_codes 
+       SET used = true 
+       WHERE phone_number = $1 
+       AND code = $2 
+       AND expires_at > NOW() 
+       AND used = false
+       RETURNING *`,
+      [phoneNumber, code]
+    )
+    return result.rows[0]
+  },
+  
+  async createCleanerSession(cleanerId: string, token: string, deviceInfo: any, expiresAt: Date) {
+    const result = await pool.query(
+      `INSERT INTO public.cleaner_sessions (cleaner_id, session_token, device_info, expires_at)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [cleanerId, token, deviceInfo, expiresAt]
+    )
+    return result.rows[0]
+  },
+  
+  async getCleanerSession(token: string) {
+    const result = await pool.query(
+      `SELECT cs.*, c.* 
+       FROM public.cleaner_sessions cs
+       JOIN public.cleaners c ON cs.cleaner_id = c.id
+       WHERE cs.session_token = $1 
+       AND cs.expires_at > NOW()`,
+      [token]
+    )
+    return result.rows[0]
+  },
+  
   // Pool health check
   async checkHealth() {
     try {

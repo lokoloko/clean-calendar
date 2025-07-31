@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { TrialBanner } from "@/components/trial-banner";
 
 interface DashboardStats {
   totalListings: number;
@@ -516,9 +515,6 @@ export default function DashboardPage() {
   
   return (
     <div className="flex flex-col gap-8">
-      {/* Trial Banner */}
-      <TrialBanner />
-      
       {/* Page Header Component */}
       <PageHeader title="Dashboard">
         <div className="flex gap-2 items-center">
