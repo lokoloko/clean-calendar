@@ -1,11 +1,50 @@
-import { Pool } from 'pg'
+import { Pool, PoolClient } from 'pg'
+import { logger } from './logger'
 
+// Optimized connection pool configuration
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/cleansweep',
+  // Connection pool settings
+  max: process.env.NODE_ENV === 'production' ? 20 : 5,
+  min: process.env.NODE_ENV === 'production' ? 2 : 0,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+  // Query timeouts
+  statement_timeout: 30000,
+  query_timeout: 30000,
+})
+
+// Monitor pool health
+pool.on('error', (err) => {
+  logger.error('Database pool error', err)
+})
+
+pool.on('connect', () => {
+  logger.debug('Database connection established')
+})
+
+pool.on('remove', () => {
+  logger.debug('Database connection removed')
 })
 
 export const db = {
   query: (text: string, params?: any[]) => pool.query(text, params),
+  
+  // Transaction support
+  async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const result = await callback(client)
+      await client.query('COMMIT')
+      return result
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  },
   
   // Helper methods for common operations
   async getUser(userId: string) {

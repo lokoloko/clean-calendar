@@ -125,35 +125,34 @@ export default function DashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       console.log('Fetching dashboard data...');
-      const [listingsRes, cleanersRes, scheduleRes, assignmentsRes, feedbackRes] = await Promise.all([
-        fetch('/api/listings'),
-        fetch('/api/cleaners'),
-        fetch('/api/schedule'),
-        fetch('/api/assignments'),
-        fetch('/api/cleaner/feedback')
-      ]);
+      const response = await fetch('/api/dashboard/metrics');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard metrics');
+      }
 
-      console.log('API responses:', {
-        listings: listingsRes.status,
-        cleaners: cleanersRes.status,
-        schedule: scheduleRes.status,
-        assignments: assignmentsRes.status,
-        feedback: feedbackRes.status
-      });
+      const data = await response.json();
+      
+      // Destructure the unified response
+      const {
+        listings,
+        cleaners,
+        schedule,
+        feedbackStats,
+        recentFeedback,
+        upcomingCleanings,
+        metrics
+      } = data;
 
-      // Process the responses regardless of status for better debugging
-      const listings = listingsRes.ok ? await listingsRes.json() : [];
-      const cleaners = cleanersRes.ok ? await cleanersRes.json() : [];
-      const schedule = scheduleRes.ok ? await scheduleRes.json() : [];
-      const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
-      const feedbackData = feedbackRes.ok ? await feedbackRes.json() : [];
+      console.log('API response:', response.status);
 
       console.log('Data received:', {
         listings: listings.length,
         cleaners: cleaners.length,
         schedule: schedule.length,
-        assignments: assignments.length,
-        feedback: feedbackData.length
+        recentFeedback: recentFeedback.length,
+        feedbackStats,
+        metrics
       });
 
       // Store cleaners and schedule for export functionality
@@ -163,34 +162,29 @@ export default function DashboardPage() {
       // Get last sync time from listings
       if (listings.length > 0) {
         const syncTimes = listings
-          .filter((l: any) => l.last_sync_at)
-          .map((l: any) => new Date(l.last_sync_at));
+          .filter((l: any) => l.last_synced_at)
+          .map((l: any) => new Date(l.last_synced_at));
         if (syncTimes.length > 0) {
           setLastSyncTime(new Date(Math.max(...syncTimes.map((d: Date) => d.getTime()))));
         }
       }
       
-      // Calculate upcoming cleanings and today's cleanings
-      let upcomingCount = 0;
-      let monthlyRevenue = 0;
+      // Use metrics from API
       const todayCleanings: TodayCleaning[] = [];
       const attentionItems: NeedsAttention[] = [];
       const now = new Date();
       const today = format(now, 'yyyy-MM-dd');
+      
+      // Calculate monthly revenue from completed cleanings
+      let monthlyRevenue = 0;
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       
       schedule.forEach((item: any) => {
         const checkoutDate = parseLocalDate(item.check_out);
         const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
-            
-        // Count upcoming cleanings in next 7 days
-        if (checkoutDate > now && checkoutDate <= next7Days && item.status !== 'cancelled') {
-          upcomingCount++;
-        }
         
         // Calculate monthly cleaning costs
-        if (checkoutDate >= startOfMonth && checkoutDate <= now) {
+        if (checkoutDate >= startOfMonth && checkoutDate <= now && (item.is_completed || item.feedback_id)) {
           const listing = listings.find((l: any) => l.id === item.listing_id);
           if (listing) {
             monthlyRevenue += parseFloat(listing.cleaning_fee || 0);
@@ -250,14 +244,14 @@ export default function DashboardPage() {
       const activities: RecentActivity[] = [];
       
       // Add recent feedback (only if authenticated and response is ok)
-      if (feedbackData.length > 0) {
-        feedbackData.slice(0, 3).forEach((fb: any) => {
+      if (recentFeedback.length > 0) {
+        recentFeedback.slice(0, 3).forEach((fb: any) => {
           if (fb.completed_at) {
             activities.push({
               id: `feedback-${fb.id}`,
               type: 'feedback',
               title: `${fb.listing_name} cleaned`,
-              description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating === 5 ? '😊 Clean' : fb.cleanliness_rating === 3 ? '😐 Normal' : '😟 Dirty'}` : ''}`,
+              description: `${fb.cleaner_name} completed cleaning${fb.cleanliness_rating ? ` - ${fb.cleanliness_rating === 'clean' ? '😊 Clean' : fb.cleanliness_rating === 'normal' ? '😐 Normal' : '😟 Dirty'}` : ''}`,
               timestamp: new Date(fb.completed_at),
               icon: 'CheckCircle2'
             });
@@ -279,26 +273,13 @@ export default function DashboardPage() {
         }
       });
       
-      // Add recent assignments
-      if (assignments.length > 0) {
-        const recentAssignment = assignments[0];
-        activities.push({
-          id: `assignment-${recentAssignment.id}`,
-          type: 'assignment',
-          title: 'Cleaner assigned',
-          description: `${recentAssignment.cleaner_name} assigned to ${recentAssignment.listing_name}`,
-          timestamp: new Date(recentAssignment.created_at),
-          icon: 'UserPlus'
-        });
-      }
-      
       // Sort by timestamp and limit to 5
       activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       
       setStats({
-        totalListings: listings.length,
-        activeCleaners: cleaners.length,
-        upcomingCleanings: upcomingCount,
+        totalListings: metrics.totalListings,
+        activeCleaners: metrics.activeCleaners,
+        upcomingCleanings: upcomingCleanings.length,
         monthlyRevenue
       });
       setTodaysCleanings(todayCleanings);

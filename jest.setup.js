@@ -6,6 +6,44 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:9002'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-key'
 process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5433/cleansweep_test'
 
+// Polyfill for Request/Response in Node.js environment
+if (typeof Request === 'undefined') {
+  global.Request = class Request {
+    constructor(input, init) {
+      this.url = input
+      this.method = init?.method || 'GET'
+      this.headers = new Map(Object.entries(init?.headers || {}))
+      this.body = init?.body
+    }
+  }
+}
+
+if (typeof Response === 'undefined') {
+  global.Response = class Response {
+    constructor(body, init) {
+      this.body = body
+      this.status = init?.status || 200
+      this.headers = new Map(Object.entries(init?.headers || {}))
+    }
+    
+    async json() {
+      return JSON.parse(this.body)
+    }
+  }
+}
+
+// Mock crypto.randomUUID if not available
+if (!global.crypto) {
+  global.crypto = {}
+}
+if (!global.crypto.randomUUID) {
+  let counter = 0
+  global.crypto.randomUUID = () => {
+    counter++
+    return `test-uuid-${counter}-${Date.now()}`
+  }
+}
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter() {
