@@ -250,7 +250,8 @@ export default function DashboardPage() {
               checkout_date: checkoutDateStr
             });
           }
-        });
+        }
+      });
       }
 
       // Generate recent activity
