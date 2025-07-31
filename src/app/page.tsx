@@ -517,7 +517,21 @@ export default function LandingPage() {
        <div className="sticky bottom-0 w-full bg-background/95 p-4 border-t supports-[backdrop-filter]:bg-background/60 backdrop-blur">
           <div className="container flex items-center justify-center gap-4">
              <span className="font-semibold hidden sm:inline">Ready to get started?</span>
-             <Button asChild><Link href="/dashboard">Paste Your Calendar</Link></Button>
+             <Button 
+               onClick={() => {
+                 // Scroll to the hero section where the calendar input is
+                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                 // Focus on the calendar input after a short delay for the scroll
+                 setTimeout(() => {
+                   const input = document.querySelector('input[type="url"]') as HTMLInputElement;
+                   if (input) {
+                     input.focus();
+                   }
+                 }, 500);
+               }}
+             >
+               Paste Your Calendar
+             </Button>
           </div>
        </div>
     </div>

@@ -440,22 +440,34 @@ This plan takes CleanSweep from development to production-ready in 6 days (expan
 
 ## Post-Launch Roadmap
 
-### Week 2: Payments
+### Week 1-2: Monorepo Preparation
+- [ ] **Migrate to monorepo structure** (1-2 hours)
+  - Move current app to `apps/cleaning`
+  - Set up workspace configuration
+  - Update deployment settings
+  - See [Monorepo Migration Plan](./MONOREPO_MIGRATION_PLAN.md) for details
+- [ ] **Why do this early**:
+  - Project is 55% complete - ideal time for infrastructure changes
+  - Before adding payment systems and complex features
+  - Sets foundation for analytics app and future products
+  - Minimal disruption while codebase is manageable
+
+### Week 3: Payments
 - [ ] Integrate Stripe
 - [ ] Enable paid upgrades
 - [ ] Set up billing portal
 
-### Week 3: Feedback System
+### Week 4: Feedback System
 - [ ] Automated feedback reminders
 - [ ] Access code verification
 - [ ] Feedback analytics
 
-### Week 4: Enhancements
+### Month 2: Enhancements
 - [ ] WhatsApp integration
 - [ ] AI auto-assignment
 - [ ] Advanced reporting
 
-### Month 2-3: Multi-App Architecture (GoStudioM)
+### Month 3+: Multi-App Expansion (GoStudioM)
 
 #### Architecture Overview
 Transform CleanSweep into the first app in a multi-product ecosystem:
