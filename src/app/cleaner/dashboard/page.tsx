@@ -183,10 +183,10 @@ export default function CleanerDashboard() {
   const progressPercentage = todayStats.total > 0 ? (todayStats.completed / todayStats.total) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 safe-area-top safe-area-bottom">
+      {/* Mobile-first Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-blue-100 p-2 rounded-full">
@@ -199,21 +199,23 @@ export default function CleanerDashboard() {
                 <p className="text-sm text-gray-600">Cleaner Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={refreshing}
+                className="min-h-touch min-w-touch p-2"
               >
-                <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                <RefreshCw className={cn("h-5 w-5", refreshing && "animate-spin")} />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
+                className="min-h-touch min-w-touch p-2"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -221,41 +223,57 @@ export default function CleanerDashboard() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* Today's Progress */}
-        <Card>
+        {/* Today's Progress - Enhanced for mobile */}
+        <Card className="shadow-md">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-lg">
               <span>Today's Progress</span>
               <Calendar className="h-5 w-5 text-gray-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl font-bold text-gray-900">
-                {todayStats.completed}/{todayStats.total}
-              </span>
-              <span className="text-sm text-gray-600">
-                {Math.round(progressPercentage)}% complete
-              </span>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <span className="text-3xl font-bold text-gray-900">
+                  {todayStats.completed}
+                </span>
+                <span className="text-xl text-gray-500">/{todayStats.total}</span>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600">
+                  {Math.round(progressPercentage)}%
+                </div>
+                <div className="text-sm text-gray-600">complete</div>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-3">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300 relative"
                 style={{ width: `${progressPercentage}%` }}
-              />
+              >
+                {progressPercentage > 0 && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-sm" />
+                )}
+              </div>
             </div>
+            {todayStats.total > 0 && todayStats.completed < todayStats.total && (
+              <p className="text-sm text-gray-600 mt-3">
+                {todayStats.total - todayStats.completed} cleaning{todayStats.total - todayStats.completed > 1 ? 's' : ''} remaining today
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs - Touch optimized */}
         <div className="flex bg-white rounded-lg p-1 shadow-sm">
           <button
             onClick={() => setSelectedDate('today')}
             className={cn(
-              "flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors",
+              "flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all",
+              "min-h-touch active:scale-95", // Touch-friendly size
               selectedDate === 'today' 
                 ? "bg-blue-100 text-blue-700" 
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 hover:text-gray-700 active:bg-gray-100"
             )}
           >
             Today
@@ -263,10 +281,11 @@ export default function CleanerDashboard() {
           <button
             onClick={() => setSelectedDate('week')}
             className={cn(
-              "flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors",
+              "flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all",
+              "min-h-touch active:scale-95",
               selectedDate === 'week' 
                 ? "bg-blue-100 text-blue-700" 
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 hover:text-gray-700 active:bg-gray-100"
             )}
           >
             This Week
@@ -274,10 +293,11 @@ export default function CleanerDashboard() {
           <button
             onClick={() => setSelectedDate('all')}
             className={cn(
-              "flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors",
+              "flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all",
+              "min-h-touch active:scale-95",
               selectedDate === 'all' 
                 ? "bg-blue-100 text-blue-700" 
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-500 hover:text-gray-700 active:bg-gray-100"
             )}
           >
             All
@@ -303,7 +323,8 @@ export default function CleanerDashboard() {
               <Card 
                 key={item.id}
                 className={cn(
-                  "cursor-pointer hover:shadow-md transition-shadow",
+                  "cursor-pointer hover:shadow-md transition-all duration-200",
+                  "active:scale-[0.98] active:shadow-sm", // Touch feedback
                   !item.feedback && !item.isCompleted && "ring-2 ring-orange-200 bg-orange-50/30"
                 )}
                 onClick={() => router.push(`/cleaner/cleaning/${item.id}`)}
@@ -327,7 +348,7 @@ export default function CleanerDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={cn("text-xs", getStatusColor(item))}>
+                      <Badge className={cn("text-xs px-2 py-1", getStatusColor(item))}>
                         {getStatusText(item)}
                       </Badge>
                       {item.isExtended && (
@@ -368,18 +389,21 @@ export default function CleanerDashboard() {
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-orange-200">
+                      <div className="flex flex-col space-y-2">
                         <div className="flex items-center text-orange-600">
-                          <Star className="h-4 w-4 mr-1" />
-                          <span className="text-xs font-medium">Rate cleanliness</span>
+                          <Star className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-medium">Rate cleanliness</span>
                         </div>
                         <div className="flex items-center text-blue-600">
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          <span className="text-xs">Add notes</span>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          <span className="text-sm">Add notes</span>
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-orange-600 mr-1">Action needed</span>
+                        <ChevronRight className="h-5 w-5 text-orange-600" />
+                      </div>
                     </div>
                   )}
 

@@ -13,8 +13,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 // Page for configuring application settings.
 export default function SettingsPage() {
@@ -22,6 +24,7 @@ export default function SettingsPage() {
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const { toast } = useToast();
   
   // Settings state
@@ -39,6 +42,7 @@ export default function SettingsPage() {
   // Load settings on mount
   useEffect(() => {
     loadSettings();
+    loadSubscriptionInfo();
   }, []);
 
   const loadSettings = async () => {
@@ -61,6 +65,18 @@ export default function SettingsPage() {
       // Error loading settings, use defaults
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSubscriptionInfo = async () => {
+    try {
+      const res = await fetch('/api/subscription');
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionInfo(data);
+      }
+    } catch (error) {
+      console.error('Error loading subscription info:', error);
     }
   };
 
@@ -258,20 +274,38 @@ export default function SettingsPage() {
               <form className="grid gap-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="sms-provider">SMS Provider</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="sms-provider">SMS Provider</Label>
+                      {subscriptionInfo?.tier === 'free' && (
+                        <Badge variant="secondary" className="text-xs gap-1">
+                          <Lock className="h-3 w-3" />
+                          Starter/Pro only
+                        </Badge>
+                      )}
+                    </div>
                     <Select 
                       value={settings.sms_provider}
                       onValueChange={(value) => setSettings({...settings, sms_provider: value})}
+                      disabled={subscriptionInfo?.tier === 'free'}
                     >
                       <SelectTrigger id="sms-provider" className="w-full md:w-[300px]">
                         <SelectValue placeholder="Select provider" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="twilio">Twilio</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
                         <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="twilio" disabled={!subscriptionInfo?.features?.sms}>
+                          SMS (Twilio) {!subscriptionInfo?.features?.sms && '- Starter/Pro'}
+                        </SelectItem>
+                        <SelectItem value="whatsapp" disabled={!subscriptionInfo?.features?.whatsapp}>
+                          WhatsApp {!subscriptionInfo?.features?.whatsapp && '- Pro only'}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    {subscriptionInfo?.tier === 'free' && (
+                      <p className="text-sm text-muted-foreground">
+                        Upgrade to <Link href="/billing/upgrade" className="underline">Starter or Pro</Link> to enable SMS notifications
+                      </p>
+                    )}
                   </div>
                 </div>
 

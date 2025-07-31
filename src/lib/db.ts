@@ -16,6 +16,11 @@ export const db = {
     return result.rows[0]
   },
 
+  // Alias for getUser to match subscription service expectations
+  async getProfile(userId: string) {
+    return this.getUser(userId)
+  },
+
   async createOrUpdateProfile(userId: string, data: { email?: string; name?: string; avatar_url?: string }) {
     const result = await pool.query(
       `INSERT INTO public.profiles (id, email, name, avatar_url, created_at, updated_at) 

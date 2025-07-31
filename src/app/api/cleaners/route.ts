@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
+import { canCreateCleaner } from '@/lib/subscription'
 
 export async function GET() {
   try {
@@ -19,6 +20,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+    
+    // Check if user can create more cleaners
+    const canCreate = await canCreateCleaner(user.id)
+    if (!canCreate.allowed) {
+      return NextResponse.json(
+        { 
+          error: canCreate.reason,
+          limit: canCreate.limit,
+          current: canCreate.current,
+          upgradeUrl: '/billing/upgrade?feature=cleaners'
+        },
+        { status: 403 }
+      )
+    }
+    
     const body = await request.json()
     const { name, phone, email } = body
 

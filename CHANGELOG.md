@@ -1,6 +1,43 @@
 # Changelog
 
-## [Unreleased] - 2025-07-29
+## [Unreleased] - 2025-07-31
+
+### Added
+- Comprehensive production readiness documentation (55% complete)
+- Performance optimization with 17 database indexes
+- Database connection pooling with configurable settings
+- Query result caching using Next.js unstable_cache
+- Mobile-first responsive design implementation
+- Touch gesture support for mobile devices
+- Responsive table component that converts to cards on mobile
+- RLS performance optimization migration (022)
+- Missing user_settings table migration (021)
+
+### Fixed
+- Fixed 14 RLS policies with inefficient auth.uid() calls
+- Consolidated overlapping policies on schedule_items table
+- Created missing user_settings table in production
+- Fixed missing update_updated_at_column() function
+
+### Security
+- Enabled leaked password protection via HaveIBeenPwned
+- Reduced OTP expiry time to 1 hour (3600 seconds)
+- All 11 database tables now have optimized RLS policies
+
+### Performance
+- RLS policies now use cached auth checks with (SELECT auth.uid())
+- Dashboard API consolidated into single optimized endpoint
+- Implemented caching with different TTLs per data type
+- Added connection pooling to prevent database connection exhaustion
+- Mobile-optimized cleaner dashboard with enhanced touch targets
+
+### Documentation
+- Updated production launch plan to reflect 55% completion
+- Created comprehensive README.md for project root
+- Updated CLAUDE.md with recent fixes and optimizations
+- Added performance analysis documentation
+
+## [Previous] - 2025-07-29
 
 ### Fixed
 - Dashboard syntax errors: Fixed feedbackRes scope issue by using pre-parsed feedbackData

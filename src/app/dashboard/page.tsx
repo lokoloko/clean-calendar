@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { TrialBanner } from "@/components/trial-banner";
 
 interface DashboardStats {
   totalListings: number;
@@ -518,6 +519,9 @@ export default function DashboardPage() {
   
   return (
     <div className="flex flex-col gap-8">
+      {/* Trial Banner */}
+      <TrialBanner />
+      
       {/* Page Header Component */}
       <PageHeader title="Dashboard">
         <div className="flex gap-2 items-center">
@@ -550,19 +554,19 @@ export default function DashboardPage() {
         </div>
       </PageHeader>
       
-      {/* Grid for displaying key metric cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Grid for displaying key metric cards - Mobile optimized */}
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
         {/* Reusable card for displaying total listings */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="hover:shadow-md transition-shadow touch:active:scale-95">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-6 pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">
               Total Listings
             </CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
+            <Home className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : stats.totalListings}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{loading ? "..." : stats.totalListings}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">
               properties being managed
             </p>
           </CardContent>
@@ -615,8 +619,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Today's Cleanings and Needs Attention Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Today's Cleanings and Needs Attention Grid - Stack on mobile */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Today's Cleanings */}
         <Card>
           <CardHeader>

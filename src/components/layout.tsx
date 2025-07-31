@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { TrialBanner } from '@/components/trial-banner';
 
 // Navigation items for the sidebar.
 const navItems = [
@@ -98,7 +99,22 @@ function AppSidebar() {
       </SidebarContent>
       {/* Sidebar footer */}
       <SidebarFooter className='group-data-[collapsible=icon]:hidden'>
-        {/* Footer content can be added here if needed */}
+        <div className="border-t pt-4 pb-2">
+          <div className="flex flex-col gap-1 px-2 text-xs text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/cookies" className="hover:text-foreground transition-colors">
+              Cookie Policy
+            </Link>
+          </div>
+          <div className="px-2 mt-3 text-xs text-muted-foreground">
+            © 2025 CleanSweep. All rights reserved.
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
@@ -197,7 +213,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarInset className={cn("transition-all duration-300 ease-in-out flex flex-col min-h-screen")}>
         <AppHeader />
-        <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto">
+          <TrialBanner />
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

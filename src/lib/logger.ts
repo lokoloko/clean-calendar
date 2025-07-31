@@ -1,172 +1,96 @@
 /**
- * Simple logging utility for production
- * In production, these logs can be sent to a service like Datadog, CloudWatch, etc.
+ * Simple structured logging wrapper
+ * In production, this could be replaced with Winston, Pino, or other logging libraries
  */
 
-import { env } from './env'
-
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
-  userId?: string
-  requestId?: string
-  action?: string
-  metadata?: Record<string, any>
+  [key: string]: any;
 }
 
 class Logger {
-  private context: LogContext = {}
-
-  private shouldLog(level: LogLevel): boolean {
-    if (env.isProduction) {
-      // In production, only log info and above
-      return ['info', 'warn', 'error'].includes(level)
+  private isDevelopment = process.env.NODE_ENV === 'development';
+  private baseContext: LogContext = {};
+  
+  constructor(baseContext?: LogContext) {
+    if (baseContext) {
+      this.baseContext = baseContext;
     }
-    // In development, log everything
-    return true
   }
-
-  private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
-    const timestamp = new Date().toISOString()
-    const logContext = { ...this.context, ...context }
-    
-    if (env.isDevelopment) {
-      // Pretty print for development
-      return `[${timestamp}] ${level.toUpperCase()}: ${message}`
-    }
-    
-    // JSON format for production (easier to parse)
-    return JSON.stringify({
+  
+  private log(level: LogLevel, message: string, context?: LogContext) {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
       timestamp,
       level,
       message,
-      ...logContext,
-      environment: env.NODE_ENV,
-    })
-  }
+      ...this.baseContext,
+      ...context
+    };
 
-  private log(level: LogLevel, message: string, context?: LogContext) {
-    if (!this.shouldLog(level)) return
-
-    const formattedMessage = this.formatMessage(level, message, context)
-
-    switch (level) {
-      case 'debug':
-        console.debug(formattedMessage)
-        break
-      case 'info':
-        console.info(formattedMessage)
-        break
-      case 'warn':
-        console.warn(formattedMessage)
-        break
-      case 'error':
-        console.error(formattedMessage)
-        break
+    if (this.isDevelopment) {
+      // In development, use console with colors
+      const color = {
+        debug: '\x1b[36m', // cyan
+        info: '\x1b[32m',  // green
+        warn: '\x1b[33m',  // yellow
+        error: '\x1b[31m'  // red
+      }[level];
+      const reset = '\x1b[0m';
+      
+      console.log(`${color}[${level.toUpperCase()}]${reset} ${message}`, context || '');
+    } else {
+      // In production, output structured JSON
+      console.log(JSON.stringify(logEntry));
     }
-
-    // In production, you would send to external service here
-    if (env.isProduction && level === 'error') {
-      // Example: Send to Sentry, Datadog, etc.
-      // sendToErrorTracking(message, context)
-    }
-  }
-
-  setContext(context: LogContext) {
-    this.context = { ...this.context, ...context }
-    return this
   }
 
   debug(message: string, context?: LogContext) {
-    this.log('debug', message, context)
+    if (this.isDevelopment) {
+      this.log('debug', message, context);
+    }
   }
 
   info(message: string, context?: LogContext) {
-    this.log('info', message, context)
+    this.log('info', message, context);
   }
 
   warn(message: string, context?: LogContext) {
-    this.log('warn', message, context)
+    this.log('warn', message, context);
   }
 
   error(message: string, error?: Error | unknown, context?: LogContext) {
-    const errorContext: LogContext = { ...context }
+    const errorContext: LogContext = { ...context };
     
     if (error instanceof Error) {
-      errorContext.metadata = {
-        ...errorContext.metadata,
-        error: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        }
-      }
+      errorContext.error = {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      };
     } else if (error) {
-      errorContext.metadata = {
-        ...errorContext.metadata,
-        error: String(error)
-      }
+      errorContext.error = error;
     }
+    
+    this.log('error', message, errorContext);
+  }
 
-    this.log('error', message, errorContext)
+  // Helper for API route logging
+  api(method: string, path: string, context?: LogContext) {
+    this.info(`API ${method} ${path}`, context);
+  }
+
+  // Helper for database query logging
+  db(operation: string, table: string, context?: LogContext) {
+    this.debug(`DB ${operation} ${table}`, context);
   }
 
   // Create a child logger with additional context
   child(context: LogContext): Logger {
-    const childLogger = new Logger()
-    childLogger.context = { ...this.context, ...context }
-    return childLogger
+    return new Logger({ ...this.baseContext, ...context });
   }
 }
 
 // Export singleton instance
-export const logger = new Logger()
-
-// Export factory for creating loggers with context
-export function createLogger(context: LogContext): Logger {
-  return new Logger().setContext(context)
-}
-
-// Middleware helper for API routes
-export function withLogging(
-  handler: (req: Request, context?: any) => Promise<Response>
-) {
-  return async (req: Request, context?: any) => {
-    const requestId = crypto.randomUUID()
-    const start = Date.now()
-    const url = new URL(req.url)
-    
-    const requestLogger = createLogger({
-      requestId,
-      action: `${req.method} ${url.pathname}`,
-    })
-
-    requestLogger.info('Request started', {
-      metadata: {
-        method: req.method,
-        path: url.pathname,
-        query: Object.fromEntries(url.searchParams),
-      }
-    })
-
-    try {
-      const response = await handler(req, context)
-      
-      requestLogger.info('Request completed', {
-        metadata: {
-          duration: Date.now() - start,
-          status: response.status,
-        }
-      })
-
-      return response
-    } catch (error) {
-      requestLogger.error('Request failed', error, {
-        metadata: {
-          duration: Date.now() - start,
-        }
-      })
-      throw error
-    }
-  }
-}
+export const logger = new Logger();

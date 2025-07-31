@@ -1,183 +1,196 @@
-# Supabase CLI
+# CleanSweep Scheduler
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+> The easiest way to manage Airbnb cleaning schedules. Save 5+ hours per week. Never miss a turnover.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+## Overview
 
-This repository contains all the functionality for Supabase CLI.
+CleanSweep Scheduler is a Next.js 15 application that automates cleaning schedule management for Airbnb property managers. It integrates with Airbnb calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+## 🚀 Quick Start
 
-## Getting started
+### Prerequisites
+- Node.js 18+
+- PostgreSQL (via Supabase)
+- Supabase CLI
 
-### Install the CLI
-
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+### Installation
 
 ```bash
-npm i supabase --save-dev
+# Clone the repository
+git clone https://github.com/yourusername/clean-calendar.git
+cd clean-calendar
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+
+# Start Supabase locally
+supabase start
+
+# Run database migrations
+supabase db push
+
+# Start development server
+npm run dev
 ```
 
-To install the beta release channel:
+Visit `http://localhost:9002` to see the app.
+
+## 🏗️ Tech Stack
+
+- **Framework**: Next.js 15.3.3 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: Supabase Auth + Custom SMS auth for cleaners
+- **AI**: Google Genkit for schedule optimization
+- **Hosting**: Vercel
+
+## 📱 Key Features
+
+### For Property Managers
+- **Automated Calendar Sync**: Syncs with Airbnb ICS feeds every 3 hours
+- **Smart Cleaner Assignment**: Link cleaners to specific properties
+- **Multiple Schedule Views**: List, weekly, and monthly calendar views
+- **Manual Scheduling**: Support for non-Airbnb properties
+- **Share Links**: Secure schedule sharing with cleaners
+- **Export Functionality**: Text-based schedules for SMS/WhatsApp
+
+### For Cleaners
+- **Mobile Portal**: SMS-based authentication system
+- **Today's Schedule**: Clear view of daily cleaning tasks
+- **Feedback System**: Rate cleanliness after each cleaning
+- **Offline Support**: Works on any device with a browser
+
+## 🔒 Security & Performance
+
+### Security Features
+- Row Level Security (RLS) on all tables
+- Secure cleaner authentication via SMS
+- Session management with 30-day expiry
+- Feature gating by subscription tier
+- Leaked password protection enabled
+
+### Performance Optimizations
+- Database connection pooling
+- Query result caching with Next.js
+- 17 performance indexes on common queries
+- Optimized RLS policies for auth checks
+- Mobile-first responsive design
+
+## 💰 Subscription Tiers
+
+### Free ($0/month)
+- 1 Airbnb listing
+- Email notifications only
+- Basic schedule view
+
+### Starter ($9/month)
+- Up to 3 listings
+- SMS & email notifications
+- All schedule views
+- 30-day free trial
+
+### Pro ($29/month)
+- Unlimited listings
+- SMS, WhatsApp & email
+- Cleaner portal access
+- Advanced analytics
+
+## 🚦 Production Status
+
+**Current Progress**: 55% Complete
+
+### ✅ Completed
+- Security infrastructure (RLS, auth)
+- Database schema and migrations
+- Core functionality (CRUD operations)
+- Calendar synchronization
+- Mobile optimization
+- Performance optimization
+- Legal pages (Privacy, Terms, Cookies)
+
+### 🔄 In Progress
+- Content & branding (screenshots needed)
+- Testing & deployment setup
+
+### ⏳ Pending
+- Notification system (requires Twilio/SendGrid)
+- Payment integration (Stripe)
+- Production deployment
+
+## 📚 Documentation
+
+- [Production Launch Plan](./docs/PRODUCTION_LAUNCH_PLAN.md)
+- [API Documentation](./docs/API_DOCUMENTATION.md)
+- [Functionality Guide](./docs/FUNCTIONALITY_GUIDE.md)
+- [Branch Strategy](./docs/BRANCH_STRATEGY.md)
+- [Performance Analysis](./docs/SUPABASE_PERFORMANCE_ANALYSIS.md)
+
+## 🛠️ Development
+
+### Essential Commands
 
 ```bash
-npm i supabase@beta --save-dev
+# Development
+npm run dev              # Start dev server on port 9002
+npm run build           # Build for production
+npm run lint            # Run linter
+npm run typecheck       # Check TypeScript types
+
+# Database
+supabase start          # Start local Supabase
+supabase db push        # Apply migrations
+supabase db reset       # Reset database
+
+# Testing
+npm test                # Run tests
+npm run test:e2e        # Run E2E tests
 ```
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+### Environment Variables
 
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
+Create `.env.local` with:
 
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+```env
+# Supabase
+DATABASE_URL=postgresql://postgres:postgres@localhost:54321/postgres
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-<details>
-  <summary><b>macOS</b></summary>
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:9002
+CRON_SECRET=your-cron-secret
 
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
-
-```bash
-supabase bootstrap
+# Future: Notifications
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+SENDGRID_API_KEY=
 ```
 
-Or using npx:
+## 🤝 Contributing
 
-```bash
-npx supabase bootstrap
-```
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+## 📄 License
 
-## Docs
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+## 🙏 Acknowledgments
 
-## Breaking changes
+- Built with [Next.js](https://nextjs.org/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Database powered by [Supabase](https://supabase.com/)
+- Deployed on [Vercel](https://vercel.com/)
 
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+---
 
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+**Status**: Pre-launch (Production readiness: 55%)
 
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
-```
+*Last updated: July 31, 2025*

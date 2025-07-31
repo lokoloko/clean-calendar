@@ -132,10 +132,10 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h1 className="text-4xl font-headline font-bold tracking-tighter sm:text-5xl md:text-6xl">
-                Turn Airbnb bookings into cleaner schedules — automatically.
+                The easiest way to manage Airbnb cleaning schedules
               </h1>
               <p className="text-muted-foreground md:text-xl">
-                Paste your calendar link and get a personalized cleaner schedule in seconds.
+                Save 5+ hours per week. Never miss a turnover. Keep your cleaners and guests happy.
               </p>
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -428,23 +428,31 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-headline font-bold">Trusted by Hosts Like You</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Reusable card for testimonial */}
             <Card>
               <CardContent className="pt-6">
                 <p className="italic">
-                  "This saved me 5 hours a week — no more spreadsheets."
+                  "Saved me 5 hours a week coordinating cleaners. No more spreadsheets, missed cleanings, or confused cleaners. This just works."
                 </p>
-                <p className="text-right font-semibold mt-4">— Sarah, Superhost</p>
+                <p className="text-right font-semibold mt-4">— Maria S., 6 properties</p>
               </CardContent>
             </Card>
             {/* Reusable card for testimonial */}
             <Card>
               <CardContent className="pt-6">
                 <p className="italic">
-                  "My cleaner actually said thanks. She gets her list every morning like clockwork."
+                  "My cleaners love getting their schedule via SMS. No more double bookings or last-minute confusion. Worth every penny."
                 </p>
-                <p className="text-right font-semibold mt-4">— James, Property Manager</p>
+                <p className="text-right font-semibold mt-4">— David L., 12 properties</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="italic">
+                  "No more missed cleanings or angry guests. The automated sync means I can focus on hosting, not scheduling."
+                </p>
+                <p className="text-right font-semibold mt-4">— Lisa P., 4 properties</p>
               </CardContent>
             </Card>
           </div>
@@ -489,14 +497,17 @@ export default function LandingPage() {
       
       {/* Footer section */}
       <footer className="border-t">
-        <div className="container py-6 flex items-center justify-between">
-           <p className="text-sm text-muted-foreground">&copy; 2024 CleanSweep. All rights reserved.</p>
+        <div className="container py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+           <p className="text-sm text-muted-foreground">&copy; 2025 CleanSweep. All rights reserved.</p>
            <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-                <Link href="#">Terms of Service</Link>
+                <Link href="/terms">Terms of Service</Link>
             </Button>
              <Button variant="ghost" size="sm" asChild>
-                <Link href="#">Privacy Policy</Link>
+                <Link href="/privacy">Privacy Policy</Link>
+            </Button>
+             <Button variant="ghost" size="sm" asChild>
+                <Link href="/cookies">Cookie Policy</Link>
             </Button>
            </div>
         </div>

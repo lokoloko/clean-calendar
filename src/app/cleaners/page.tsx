@@ -48,6 +48,7 @@ export default function CleanersPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCleaner, setEditingCleaner] = useState<Cleaner | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -61,9 +62,10 @@ export default function CleanersPage() {
 
   const fetchData = async () => {
     try {
-      const [cleanersRes, assignmentsRes] = await Promise.all([
+      const [cleanersRes, assignmentsRes, subscriptionRes] = await Promise.all([
         fetch('/api/cleaners'),
-        fetch('/api/assignments')
+        fetch('/api/assignments'),
+        fetch('/api/subscription')
       ]);
 
       if (!cleanersRes.ok || !assignmentsRes.ok) {
@@ -77,6 +79,11 @@ export default function CleanersPage() {
 
       setCleaners(cleanersData);
       setAssignments(assignmentsData);
+      
+      if (subscriptionRes.ok) {
+        const subscriptionData = await subscriptionRes.json();
+        setSubscriptionInfo(subscriptionData);
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -193,9 +200,24 @@ export default function CleanersPage() {
     <AppLayout>
       <div className="flex flex-col gap-8">
         <PageHeader title="Cleaners Directory">
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Cleaner
-          </Button>
+          <div className="flex items-center gap-4">
+            {subscriptionInfo && (
+              <p className="text-sm text-muted-foreground">
+                {cleaners.length} of {subscriptionInfo.usage?.cleaners?.limit === 999 ? 'unlimited' : subscriptionInfo.usage?.cleaners?.limit} cleaners
+              </p>
+            )}
+            {subscriptionInfo && cleaners.length >= subscriptionInfo.usage?.cleaners?.limit && subscriptionInfo.usage?.cleaners?.limit !== 999 && (
+              <Link href="/billing/upgrade?feature=cleaners">
+                <Button variant="outline">Upgrade for more</Button>
+              </Link>
+            )}
+            <Button 
+              onClick={() => setIsModalOpen(true)}
+              disabled={subscriptionInfo && cleaners.length >= subscriptionInfo.usage?.cleaners?.limit && subscriptionInfo.usage?.cleaners?.limit !== 999}
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add Cleaner
+            </Button>
+          </div>
         </PageHeader>
         
         <div className="border rounded-xl shadow-sm">

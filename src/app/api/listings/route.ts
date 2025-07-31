@@ -1,12 +1,20 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
+import { canCreateListing, getSubscriptionInfo } from '@/lib/subscription'
 
 export async function GET() {
   try {
     const user = await requireAuth()
-    const listings = await db.getListings(user.id)
-    return NextResponse.json(listings)
+    const [listings, subscriptionInfo] = await Promise.all([
+      db.getListings(user.id),
+      getSubscriptionInfo(user.id)
+    ])
+    
+    return NextResponse.json({
+      listings,
+      subscription: subscriptionInfo
+    })
   } catch (error) {
     console.error('Error fetching listings:', error)
     return NextResponse.json(
@@ -19,6 +27,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+    
+    // Check if user can create more listings
+    const canCreate = await canCreateListing(user.id)
+    if (!canCreate.allowed) {
+      return NextResponse.json(
+        { 
+          error: canCreate.reason,
+          limit: canCreate.limit,
+          current: canCreate.current,
+          upgradeUrl: '/billing/upgrade?feature=listings'
+        },
+        { status: 403 }
+      )
+    }
+    
     const body = await request.json()
     const { name, ics_url, cleaning_fee, timezone, is_active_on_airbnb } = body
 

@@ -77,6 +77,7 @@ export default function ListingsContent() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingListing, setDeletingListing] = useState<Listing | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     ics_url: '',
@@ -108,7 +109,10 @@ export default function ListingsContent() {
 
       if (listingsRes.ok) {
         const data = await listingsRes.json();
-        setListings(data);
+        setListings(data.listings || data);
+        if (data.subscription) {
+          setSubscriptionInfo(data.subscription);
+        }
       }
 
       if (cleanersRes.ok) {
@@ -388,11 +392,29 @@ export default function ListingsContent() {
     <AppLayout>
       <div className="flex flex-col gap-8">
         <div className="flex items-center justify-between">
-          <PageHeader title="Listings" />
-          <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Listing
-          </Button>
+          <div>
+            <PageHeader title="Listings" />
+            {subscriptionInfo && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {listings.length} of {subscriptionInfo.usage?.listings?.limit === 999 ? 'unlimited' : subscriptionInfo.usage?.listings?.limit} listings
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {subscriptionInfo && listings.length >= subscriptionInfo.usage?.listings?.limit && subscriptionInfo.usage?.listings?.limit !== 999 && (
+              <Link href="/billing/upgrade?feature=listings">
+                <Button variant="outline">Upgrade for more</Button>
+              </Link>
+            )}
+            <Button 
+              onClick={() => setIsAddModalOpen(true)} 
+              className="gap-2"
+              disabled={subscriptionInfo && listings.length >= subscriptionInfo.usage?.listings?.limit && subscriptionInfo.usage?.listings?.limit !== 999}
+            >
+              <Plus className="h-4 w-4" />
+              Add Listing
+            </Button>
+          </div>
         </div>
 
         {loading ? (
