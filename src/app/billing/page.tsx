@@ -10,7 +10,6 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Check, Sparkles, Zap, Crown } from 'lucide-react';
 import Link from 'next/link';
-import { getSubscriptionInfo, formatTierName } from '@/lib/subscription';
 
 const TIER_ICONS = {
   free: null,
@@ -23,6 +22,10 @@ const TIER_COLORS = {
   starter: 'default',
   pro: 'default'
 } as const;
+
+const formatTierName = (tier: string): string => {
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+};
 
 export default function BillingPage() {
   const { user } = useAuth();
@@ -37,7 +40,11 @@ export default function BillingPage() {
 
   const loadSubscriptionInfo = async () => {
     try {
-      const info = await getSubscriptionInfo(user!.id);
+      const response = await fetch('/api/subscription');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription info');
+      }
+      const info = await response.json();
       setSubscriptionInfo(info);
     } catch (error) {
       console.error('Error loading subscription info:', error);
