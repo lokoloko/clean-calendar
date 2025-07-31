@@ -4,16 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CleanSweep Scheduler is a Next.js 15 application for managing Airbnb property cleaning schedules. It integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
+GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cleaning schedules. It integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
 **Current Status**: Production-ready at 55% completion. Security and performance fully optimized with RLS policies, database indexes, and mobile-first design. Core functionality complete, awaiting external services for notifications and final deployment configuration.
 
-**Recent Session (2025-07-31)**:
-- Fixed all Vercel build errors (pg module in client code, TypeScript errors)
-- Updated Airbnb calendar instructions to match new UI flow
-- All fixes deployed to production successfully
-- Docker environment experiencing connectivity issues - system restart recommended
-- **UNCOMMITTED CHANGES**: Updated Airbnb instructions in src/app/page.tsx (step 3: "Connect another calendar" > "Connect another website")
+**Recent Session (2025-11-01)**:
+- Complete rebrand from CleanSweep to GoStudioM across entire codebase
+- Restructured pricing to 4 tiers (Free/Starter/Pro/Enterprise) with annual billing
+- Made legal pages publicly accessible (removed auth requirement)
+- Improved homepage copy with founder story and clearer value proposition
+- Fixed HTML hydration errors in pricing section
+- Created media requirements documentation for screenshots/videos
+- Local Docker environment working properly
 
 **Product Goal**: Automate cleaning schedules for Airbnb hosts by parsing .ics calendar links into structured schedules and daily messages, helping hosts assign cleaners and avoid missed turnovers.
 

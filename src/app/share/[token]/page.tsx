@@ -359,7 +359,7 @@ export default function SharedSchedulePage({ params }: Props) {
 
           {/* Footer */}
           <div className="text-center text-sm text-muted-foreground">
-            Powered by CleanSweep Scheduler
+            Powered by GoStudioM Scheduler
           </div>
         </div>
       </div>

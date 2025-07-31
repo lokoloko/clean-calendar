@@ -72,7 +72,7 @@ function AppSidebar() {
                 <Sparkles className="h-6 w-6 text-primary" />
             </Button>
             <span className="text-lg font-semibold font-headline group-data-[collapsible=icon]:hidden">
-                CleanSweep
+                GoStudioM
             </span>
         </Link>
       </SidebarHeader>
@@ -112,7 +112,7 @@ function AppSidebar() {
             </Link>
           </div>
           <div className="px-2 mt-3 text-xs text-muted-foreground">
-            © 2025 CleanSweep. All rights reserved.
+            © 2025 GoStudioM. All rights reserved.
           </div>
         </div>
       </SidebarFooter>

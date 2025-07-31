@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Image from 'next/image';
-import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check, HelpCircle, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, MessageSquareText, Users, CalendarPlus, Check, X, HelpCircle, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context';
@@ -88,10 +88,10 @@ export default function LandingPage() {
     await signInWithGoogle();
   };
   const benefits = [
-    'Save hours every week',
-    'Stop manually texting your cleaners',
-    'Assign backups in seconds',
-    'Never miss a checkout again',
+    'Save hours preparing schedules and messaging cleaners',
+    'Cleaners check their own schedules - no more texts',
+    'Instant notifications when bookings change',
+    'Complete visibility - see who\'s cleaning what, when',
   ];
 
   return (
@@ -116,11 +116,11 @@ export default function LandingPage() {
               <path d="M12.5 5.25a.75.75 0 0 0-1.5 0v3.313a2.52 2.52 0 0 0-3.322 3.322A4.5 4.5 0 0 0 12 19.5a4.5 4.5 0 0 0 4.322-5.615 2.52 2.52 0 0 0-3.322-3.322V5.25Z" />
               <path d="M21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12c0 4.22 2.67 7.854 6.375 9.172.441.082.625-.19.625-.422v-1.655c-2.924.634-3.543-1.223-3.725-1.638-.075-.165-.424-.68-.748-.823-.27-.12-.674-.524-.025-.533.614-.01.99.567 1.138.78.69 1.202 1.815 1.025 2.256.782.075-.607.27-1.025.498-1.26-2.212-.25-4.537-1.107-4.537-4.924 0-1.088.388-1.98.975-2.678-.1-.25-.425-1.26.1-2.64 0 0 .837-.262 2.75 1.025A9.623 9.623 0 0 1 12 6.75c.825 0 1.667.112 2.438.337 1.912-1.287 2.75-1.025 2.75-1.025.525 1.38.2 2.39.1 2.64.587.698.975 1.59.975 2.678 0 3.829-2.325 4.674-4.537 4.924.288.25.538.737.538 1.487v2.187c0 .237.187.512.625.425C19.08 19.854 21.75 16.22 21.75 12Z" />
             </svg>
-            <span className="font-headline text-lg font-semibold">CleanSweep</span>
+            <span className="font-headline text-lg font-semibold">GoStudioM</span>
           </Link>
           <div className="flex items-center gap-2">
             <Button onClick={signInWithGoogle}>
-              Sign in with Google
+              Sign in
             </Button>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function LandingPage() {
                           </li>
                           <li className="flex gap-2">
                             <span className="font-semibold text-primary">3.</span>
-                            <span>Click <strong>Connect another calendar</strong>, then go to <strong>Connect another website</strong></span>
+                            <span>Scroll to the bottom of the right panel, then click <strong>Connect another calendar</strong>, then go to <strong>Connect another website</strong></span>
                           </li>
                           <li className="flex gap-2">
                             <span className="font-semibold text-primary">4.</span>
@@ -271,7 +271,7 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Paste your Airbnb iCal link — no login needed.
+                    Paste your Airbnb iCal link and we'll sync your bookings automatically. No guest names or private data.
                   </p>
                 </CardContent>
               </Card>
@@ -298,12 +298,12 @@ export default function LandingPage() {
                     <div className="bg-primary/10 p-3 rounded-full">
                       <MessageSquareText className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="font-headline">3. Get Weekly Schedule &amp; Reminders</CardTitle>
+                    <CardTitle className="font-headline">3. Share Schedule</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Cleaners receive automated schedules and reminders. You relax.
+                    Export and paste schedules to cleaners or automatically send via email/SMS/WhatsApp.
                   </p>
                 </CardContent>
               </Card>
@@ -311,27 +311,28 @@ export default function LandingPage() {
           </div>
         </section>
         
-        {/* Pricing section with three tiers */}
+        {/* Pricing section with four tiers */}
         <section className="container py-12 md:py-24">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-headline font-bold">Simple, fair pricing.</h2>
-            <p className="text-muted-foreground mt-2">Start free, upgrade anytime.</p>
+            <p className="text-muted-foreground mt-2">Start free, upgrade anytime. Save 20% with annual billing.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Reusable card for pricing plan */}
+          <div className="grid md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {/* Free tier */}
             <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle>Free</CardTitle>
-                <CardDescription>
-                  <span className="text-4xl font-bold">$0</span>/month
-                </CardDescription>
+                <div>
+                  <span className="text-4xl font-bold">$0</span>
+                  <span className="text-muted-foreground">/month</span>
+                </div>
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 1 Airbnb listing</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Preview calendar instantly</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Basic cleaning schedule</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Email notifications</li>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> 1 Airbnb listing</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> View imported bookings</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Export schedules</li>
+                  <li className="flex items-center gap-2"><X className="h-4 w-4 text-muted-foreground" /> No automated notifications</li>
                 </ul>
               </CardContent>
               <CardFooter>
@@ -339,53 +340,93 @@ export default function LandingPage() {
               </CardFooter>
             </Card>
 
-            {/* Reusable card for pricing plan - highlighted as "Most Popular" */}
+            {/* Starter tier */}
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle>Starter</CardTitle>
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-4xl font-bold">$9</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    or $86/year <Badge variant="secondary" className="ml-1 text-xs">Save 20%</Badge>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">21-day free trial</p>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Up to 3 listings</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Email notifications</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Export schedules</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Basic mobile calendar for cleaners</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" asChild><Link href="/dashboard">Start Trial</Link></Button>
+              </CardFooter>
+            </Card>
+
+            {/* Pro tier - Most Popular */}
             <Card className="flex flex-col border-primary shadow-lg relative">
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
               <CardHeader>
-                <CardTitle>Starter</CardTitle>
-                <CardDescription>
-                  <span className="text-4xl font-bold">$9</span>/month
-                </CardDescription>
+                <CardTitle>Pro</CardTitle>
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-4xl font-bold">$29</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    or $278/year <Badge variant="secondary" className="ml-1 text-xs">Save 20%</Badge>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">21-day free trial</p>
+                </div>
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Up to 3 listings</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> SMS & email notifications</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Cleaner assignment</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Weekly schedule export</li>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Up to 10 listings</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Email & SMS notifications</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Full cleaner portal with feedback</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Schedule sharing links</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Weekly analytics</li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" asChild><Link href="/dashboard">Get Started</Link></Button>
+                <Button className="w-full" asChild><Link href="/dashboard">Start Trial</Link></Button>
               </CardFooter>
             </Card>
             
-            {/* Reusable card for pricing plan */}
+            {/* Enterprise tier */}
             <Card className="flex flex-col">
               <CardHeader>
-                <CardTitle>Pro</CardTitle>
-                <CardDescription>
-                  <span className="text-4xl font-bold">$29</span>/month
-                </CardDescription>
+                <CardTitle>Enterprise</CardTitle>
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-4xl font-bold">$49</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    or $470/year <Badge variant="secondary" className="ml-1 text-xs">Save 20%</Badge>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">21-day free trial</p>
+                </div>
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> 10+ listings</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> SMS, WhatsApp, and email</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Cleaner dashboard</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Smart auto-assignment</li>
-                  <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Daily alerts & insights</li>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Unlimited listings</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Email, SMS & WhatsApp</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Full cleaner portal with feedback</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Advanced analytics</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Priority support</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> API access <span className="text-xs text-muted-foreground">(coming soon)</span></li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="outline" asChild><Link href="/dashboard">Upgrade to Pro</Link></Button>
+                <Button className="w-full" variant="outline" asChild><Link href="/dashboard">Start Trial</Link></Button>
               </CardFooter>
             </Card>
-          </div>
-          {/* Optional Add-ons section */}
-          <div className="mt-12 text-center text-sm text-muted-foreground">
-              <p><span className="font-bold">Optional Add-ons:</span> SMS pack: +$5/mo | WhatsApp support: included in Pro | Setup help: $99 one-time</p>
           </div>
         </section>
 
@@ -407,7 +448,7 @@ export default function LandingPage() {
               <div className="space-y-6">
                 <h2 className="text-3xl font-headline font-bold">Never Miss a Cleaning Again</h2>
                 <p className="text-muted-foreground">
-                  Our platform provides immediate, real-world benefits that give you your time back.
+                  Automate your cleaning coordination and eliminate the back-and-forth.
                 </p>
                 {/* Loop to render benefits list */}
                 <ul className="space-y-4">
@@ -481,13 +522,25 @@ export default function LandingPage() {
               <AccordionItem value="item-3">
                 <AccordionTrigger className="text-lg">Is this free?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  Yes, you can generate your first few schedules for free to see how it works. We offer simple, affordable plans for hosts managing multiple properties.
+                  Yes! The free plan supports 1 Airbnb listing. After signing in, you can view and edit your imported bookings and export schedules to share manually. Paid plans add automated notifications and support for multiple properties.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-4">
-                <AccordionTrigger className="text-lg">How do cleaners get messages?</AccordionTrigger>
+                <AccordionTrigger className="text-lg">How do cleaners get their schedules?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  Cleaners receive their daily schedule via SMS text message at a time you choose. No app download is required for them.
+                  You choose! Export schedules to copy/paste anywhere, or upgrade for automatic delivery via email, SMS, or WhatsApp. Cleaners can also access a mobile-friendly portal to view their assignments and provide feedback.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-5">
+                <AccordionTrigger className="text-lg">Who built this and why?</AccordionTrigger>
+                <AccordionContent className="text-base text-muted-foreground">
+                  I've been an Airbnb Superhost for over 10 years. Over that time, I built a handful of small tools to help me stay organized, automate tasks, and work better as a host — mostly for myself.
+                  <br /><br />
+                  Now, I'm releasing them publicly — one by one — as I make each tool scalable and simple enough for other hosts to use too.
+                  <br /><br />
+                  GoStudioM, my platform where these tools live. It's not a bloated corporate product — it's a host-built toolkit focused on real-world hosting needs.
+                  <br /><br />
+                  This is just the start. I've got more tools coming. Stay tuned.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -498,7 +551,7 @@ export default function LandingPage() {
       {/* Footer section */}
       <footer className="border-t">
         <div className="container py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-           <p className="text-sm text-muted-foreground">&copy; 2025 CleanSweep. All rights reserved.</p>
+           <p className="text-sm text-muted-foreground">&copy; 2025 GoStudioM. All rights reserved.</p>
            <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
                 <Link href="/terms">Terms of Service</Link>

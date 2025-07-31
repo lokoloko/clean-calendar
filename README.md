@@ -1,10 +1,10 @@
-# CleanSweep Scheduler
+# GoStudioM Scheduler
 
 > The easiest way to manage Airbnb cleaning schedules. Save 5+ hours per week. Never miss a turnover.
 
 ## Overview
 
-CleanSweep Scheduler is a Next.js 15 application that automates cleaning schedule management for Airbnb property managers. It integrates with Airbnb calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
+GoStudioM Scheduler is a Next.js 15 application that automates cleaning schedule management for Airbnb property managers. It integrates with Airbnb calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
 ## 🚀 Quick Start
 

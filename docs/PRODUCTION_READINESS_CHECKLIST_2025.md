@@ -1,10 +1,10 @@
-# 🚀 CleanSweep Production Readiness Checklist (Updated 2025-07-30)
+# 🚀 GoStudioM Production Readiness Checklist (Updated 2025-11-01)
 
 ## Current State Assessment
 
 ### ✅ What's Complete:
 - **Security**: RLS enabled on all tables with policies
-- **Subscription System**: Tiers (Free/Starter/Pro) with 30-day trial
+- **Subscription System**: 4 Tiers (Free/Starter/Pro/Enterprise) with 21-day trial
 - **Authentication**: Google OAuth + cleaner SMS auth
 - **Core Features**: All MVP features implemented
 - **Database**: PostgreSQL with proper migrations
@@ -13,6 +13,10 @@
 - **Calendar Views**: List, weekly, monthly views
 - **Export**: Text-based schedule exports
 - **Share Links**: Secure token-based sharing
+- **Pricing**: Updated to 4-tier model with annual billing options
+- **Branding**: Completely rebranded from CleanSweep to GoStudioM
+- **Legal Pages**: Terms, Privacy, and Cookie policies now public (no auth required)
+- **Homepage**: Updated with personal founder story and improved copy
 
 ### ⚠️ What Needs Configuration:
 1. **Auth Settings** (Supabase Dashboard):
@@ -24,21 +28,27 @@
    - Twilio account setup (Day 2)
    - Payment processor prep (Stripe - post-launch)
 
-3. **Content Updates** (Day 4):
-   - Replace placeholder images
-   - Update testimonials
-   - Create legal pages
+3. **Content Updates** (In Progress):
+   - Replace placeholder images (Media requirements documented)
+   - Logo design (in progress)
+   - ✅ Legal pages created and made public
+   - ✅ Updated testimonials with realistic examples
 
 ## Pre-Launch Checklist
 
 ### ✅ Already Complete (Day 1)
 - [x] Database security (RLS on all tables)
-- [x] Subscription infrastructure
+- [x] Subscription infrastructure (4 tiers: Free/Starter/Pro/Enterprise)
 - [x] Feature gates in API and UI
-- [x] Trial system (30-day starter)
+- [x] Trial system (21-day trial for paid tiers)
 - [x] Billing pages (ready for Stripe)
 - [x] TypeScript errors resolved
 - [x] SECURITY DEFINER views fixed
+- [x] Pricing updated with annual billing options (20% discount)
+- [x] Complete rebrand to GoStudioM
+- [x] Legal pages created (Terms, Privacy, Cookie Policy)
+- [x] Homepage copy improved with founder story
+- [x] Media requirements documented
 
 ### 🔧 Manual Configuration Required
 
@@ -188,13 +198,47 @@ All migrations already created and tested:
 - [ ] Calendar syncs working
 - [ ] Positive user feedback
 
+## Subscription Tiers (Updated July 31, 2025)
+
+### Free ($0/month)
+- 1 Airbnb listing
+- View imported bookings
+- Export schedules (copy/paste)
+- No automated notifications
+
+### Starter ($9/month or $86/year)
+- 21-day free trial
+- Up to 3 listings
+- Email notifications
+- Export schedules
+- Basic mobile calendar for cleaners (read-only)
+
+### Pro ($29/month or $278/year)
+- 21-day free trial
+- Up to 10 listings
+- Email & SMS notifications
+- Full cleaner portal with feedback
+- Schedule sharing links
+- Weekly analytics
+
+### Enterprise ($49/month or $470/year)
+- 21-day free trial
+- Unlimited listings
+- Email, SMS & WhatsApp notifications
+- Full cleaner portal with feedback
+- Advanced analytics
+- Priority support
+- API access (future)
+
 ## Known Issues / TODOs
 
 ### Minor (Post-Launch)
 - Settings page save functionality
 - Multi-user support enhancement
-- WhatsApp integration (Pro tier)
-- Advanced analytics
+- WhatsApp integration (requires Twilio Business setup)
+- Advanced analytics dashboard
+- Basic mobile calendar for Starter tier
+- Annual billing implementation in Stripe
 
 ### Already Fixed
 - ✅ DEV_USER_ID removed
@@ -202,6 +246,18 @@ All migrations already created and tested:
 - ✅ TypeScript errors resolved
 - ✅ RLS policies implemented
 - ✅ Feature gates working
+
+### Recent Updates (November 1, 2025)
+- ✅ Complete rebrand: CleanSweep → GoStudioM
+- ✅ Pricing restructure: 4 tiers with annual options
+- ✅ Homepage improvements:
+  - Clearer value proposition
+  - Personal founder story in FAQ
+  - Updated Airbnb instructions
+  - Improved benefits copy
+- ✅ Legal pages made public (no auth required)
+- ✅ Media requirements documented
+- ✅ Fixed HTML hydration errors
 
 ## Cost Estimates (Monthly)
 

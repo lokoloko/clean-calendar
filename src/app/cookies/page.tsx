@@ -1,12 +1,31 @@
 'use client';
 
-import { AppLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function CookiesPage() {
   return (
-    <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      {/* Simple header */}
+      <header className="border-b">
+        <div className="container flex h-16 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
+              <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" strokeWidth="2" className="text-primary"/>
+              <path d="M9 11L11 13L15 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"/>
+              <circle cx="18" cy="6" r="3" fill="currentColor" className="text-orange-500"/>
+            </svg>
+            <span className="font-headline text-lg font-semibold">GoStudioM</span>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="outline">Back to App</Button>
+          </Link>
+        </div>
+      </header>
+      
+      <main className="container py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Cookie Policy</h1>
           <p className="text-muted-foreground mt-2">Last updated: January 30, 2025</p>
@@ -129,7 +148,26 @@ export default function CookiesPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <footer className="border-t mt-auto">
+        <div className="container py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">&copy; 2025 GoStudioM. All rights reserved.</p>
+          <div className="flex items-center gap-2">
+            <Link href="/terms">
+              <Button variant="ghost" size="sm">Terms</Button>
+            </Link>
+            <Link href="/privacy">
+              <Button variant="ghost" size="sm">Privacy</Button>
+            </Link>
+            <Link href="/cookies">
+              <Button variant="ghost" size="sm">Cookies</Button>
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

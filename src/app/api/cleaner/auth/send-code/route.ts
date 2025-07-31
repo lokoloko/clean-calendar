@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     await db.createAuthCode(cleaner.id, phoneNumber, code, expiresAt)
 
     // Send SMS
-    const message = `Your CleanSweep verification code is: ${code}\n\nThis code expires in 10 minutes.`
+    const message = `Your GoStudioM verification code is: ${code}\n\nThis code expires in 10 minutes.`
     await sendSMS(phoneNumber, message)
 
     return NextResponse.json({ 

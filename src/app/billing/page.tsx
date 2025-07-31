@@ -200,7 +200,7 @@ export default function BillingPage() {
             <div className="text-center py-8 text-muted-foreground">
               <p className="mb-4">Payment processing coming soon!</p>
               <p className="text-sm">
-                You're currently on a free trial. Add a payment method before your trial ends to continue using CleanSweep.
+                You're currently on a free trial. Add a payment method before your trial ends to continue using GoStudioM.
               </p>
             </div>
           </CardContent>
