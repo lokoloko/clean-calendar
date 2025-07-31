@@ -200,11 +200,11 @@ export default function LandingPage() {
                           </li>
                           <li className="flex gap-2">
                             <span className="font-semibold text-primary">3.</span>
-                            <span>Scroll down to <strong>Sync calendars</strong> section</span>
+                            <span>Click <strong>Connect another calendar</strong>, then go to <strong>Connect another website</strong></span>
                           </li>
                           <li className="flex gap-2">
                             <span className="font-semibold text-primary">4.</span>
-                            <span>Under <strong>Export calendar</strong>, copy the link that ends with <code className="px-1 py-0.5 bg-background rounded">.ics</code></span>
+                            <span>Copy your Airbnb calendar link that ends with <code className="px-1 py-0.5 bg-background rounded">.ics</code></span>
                           </li>
                         </ol>
                         <div className="mt-4 pt-4 border-t">
