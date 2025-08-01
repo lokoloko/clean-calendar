@@ -72,6 +72,13 @@ class EdgeLogger {
   db(operation: string, table: string, context?: LogContext) {
     this.debug(`DB ${operation} ${table}`, context);
   }
+
+  // Create a child logger (for compatibility, just returns self)
+  child(context: LogContext): EdgeLogger {
+    // In a more complex implementation, this would create a new logger
+    // with merged context. For now, we just return the same instance.
+    return this;
+  }
 }
 
 // Export singleton instance
