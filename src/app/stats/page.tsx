@@ -126,7 +126,9 @@ export default function StatsPage() {
       const response = await fetch('/api/listings');
       if (!response.ok) throw new Error('Failed to fetch listings');
       const data = await response.json();
-      setListings(data);
+      // Handle both old format (array) and new format (object with listings property)
+      const listingsData = Array.isArray(data) ? data : (data.listings || []);
+      setListings(listingsData);
     } catch (error) {
       toast({
         title: 'Error',
@@ -264,12 +266,21 @@ export default function StatsPage() {
           const feedbackData = await feedbackRes.json();
           
           const cleaningsWithFeedback = feedbackData.filter((item: any) => item.cleanliness_rating !== null);
-          const cleanCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 5).length;
-          const normalCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 3).length;
-          const dirtyCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 1).length;
+          const cleanCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 'clean' || item.cleanliness_rating === 5).length;
+          const normalCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 'normal' || item.cleanliness_rating === 3).length;
+          const dirtyCount = cleaningsWithFeedback.filter((item: any) => item.cleanliness_rating === 'dirty' || item.cleanliness_rating === 1).length;
           
-          // Calculate average rating
-          const totalRating = cleaningsWithFeedback.reduce((sum: number, item: any) => sum + item.cleanliness_rating, 0);
+          // Calculate average rating (convert string ratings to numeric)
+          const totalRating = cleaningsWithFeedback.reduce((sum: number, item: any) => {
+            if (typeof item.cleanliness_rating === 'number') {
+              return sum + item.cleanliness_rating;
+            }
+            // Convert string ratings to numeric
+            if (item.cleanliness_rating === 'clean') return sum + 5;
+            if (item.cleanliness_rating === 'normal') return sum + 3;
+            if (item.cleanliness_rating === 'dirty') return sum + 1;
+            return sum;
+          }, 0);
           const averageRating = cleaningsWithFeedback.length > 0 ? totalRating / cleaningsWithFeedback.length : 0;
           
           // Calculate trend by comparing to previous month
@@ -286,7 +297,16 @@ export default function StatsPage() {
           if (prevFeedbackRes.ok) {
             const prevFeedbackData = await prevFeedbackRes.json();
             const prevCleaningsWithFeedback = prevFeedbackData.filter((item: any) => item.cleanliness_rating !== null);
-            const prevTotalRating = prevCleaningsWithFeedback.reduce((sum: number, item: any) => sum + item.cleanliness_rating, 0);
+            const prevTotalRating = prevCleaningsWithFeedback.reduce((sum: number, item: any) => {
+              if (typeof item.cleanliness_rating === 'number') {
+                return sum + item.cleanliness_rating;
+              }
+              // Convert string ratings to numeric
+              if (item.cleanliness_rating === 'clean') return sum + 5;
+              if (item.cleanliness_rating === 'normal') return sum + 3;
+              if (item.cleanliness_rating === 'dirty') return sum + 1;
+              return sum;
+            }, 0);
             const prevAverageRating = prevCleaningsWithFeedback.length > 0 ? prevTotalRating / prevCleaningsWithFeedback.length : 0;
             
             if (prevAverageRating > 0) {

@@ -95,7 +95,9 @@ export default function FeedbackPage() {
       const cleanersData = await cleanersRes.json();
 
       setFeedbackItems(feedbackData);
-      setListings(listingsData);
+      // Handle both old format (array) and new format (object with listings property)
+      const listings = Array.isArray(listingsData) ? listingsData : (listingsData.listings || []);
+      setListings(listings);
       setCleaners(cleanersData);
     } catch (error) {
       toast({
