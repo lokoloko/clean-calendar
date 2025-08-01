@@ -123,13 +123,22 @@ export default function StatsPage() {
 
   const fetchListings = async () => {
     try {
+      console.log('Fetching listings...');
       const response = await fetch('/api/listings');
-      if (!response.ok) throw new Error('Failed to fetch listings');
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Failed to fetch listings');
+      }
       const data = await response.json();
+      console.log('Listings data:', data);
       // Handle both old format (array) and new format (object with listings property)
       const listingsData = Array.isArray(data) ? data : (data.listings || []);
+      console.log('Processed listings:', listingsData);
       setListings(listingsData);
     } catch (error) {
+      console.error('Error fetching listings:', error);
       toast({
         title: 'Error',
         description: 'Failed to load listings',

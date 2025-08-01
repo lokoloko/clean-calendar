@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 import { canCreateListing, getSubscriptionInfo } from '@/lib/subscription-edge'
@@ -52,11 +52,8 @@ export const POST = withApiHandler(async (req: NextRequest) => {
     // Check if there are cleaners before trying to sync
     let hasCleaners = false
     try {
-      const cleanersResult = await db.query(
-        'SELECT COUNT(*) as count FROM public.cleaners WHERE user_id = $1',
-        [user.id]
-      )
-      hasCleaners = cleanersResult.rows[0].count > 0
+      const cleaners = await db.getCleaners(user.id)
+      hasCleaners = cleaners.length > 0
     } catch (error) {
       console.error('Error checking cleaners:', error)
     }

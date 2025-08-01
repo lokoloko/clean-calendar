@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 import { canCreateCleaner } from '@/lib/subscription-edge'
