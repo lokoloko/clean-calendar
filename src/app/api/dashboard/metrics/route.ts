@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { logger } from '@/lib/logger-edge'
 import { handleApiError, ApiResponses } from '@/lib/api-errors'
 

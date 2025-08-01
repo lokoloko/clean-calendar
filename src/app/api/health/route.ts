@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { getCurrentUser } from '@/lib/auth-server'
 import { createClient } from '@/lib/supabase-server'
 

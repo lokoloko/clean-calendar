@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { NextResponse } from 'next/server'
 import { addDays, addWeeks, addMonths, setDate, getDay, startOfDay, endOfDay } from 'date-fns'
 

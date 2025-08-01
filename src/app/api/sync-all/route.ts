@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { NextResponse } from 'next/server'
 import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
 import { requireAuth } from '@/lib/auth-server'

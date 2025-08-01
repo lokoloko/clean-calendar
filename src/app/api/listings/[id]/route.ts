@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 
@@ -9,16 +9,13 @@ export async function GET(
   try {
     const user = await requireAuth()
     const { id } = await params;
-    const result = await db.query(
-      'SELECT * FROM public.listings WHERE id = $1 AND user_id = $2',
-      [id, user.id]
-    )
+    const listing = await db.getListing(id, user.id)
 
-    if (result.rows.length === 0) {
+    if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json(listing)
   } catch (error) {
     console.error('Error fetching listing:', error)
     return NextResponse.json(

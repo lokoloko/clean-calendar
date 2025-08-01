@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { validateCleanerSession, getCleanerToken } from '@/lib/cleaner-auth'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {

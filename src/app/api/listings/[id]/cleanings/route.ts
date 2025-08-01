@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db-edge';
 import { requireAuth } from '@/lib/auth-server';
 
 export async function GET(

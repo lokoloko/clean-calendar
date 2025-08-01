@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import { env, validateEnv } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
