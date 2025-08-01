@@ -877,7 +877,7 @@ export const db = {
       `)
       .eq('listings.user_id', userId)
       .gte('check_out', thirtyDaysAgo.toISOString())
-      .order('check_out', { ascending: false })
+      .order('check_out', { ascending: true })
     
     if (error) {
       logger.error('Failed to get schedule', error)

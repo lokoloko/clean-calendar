@@ -1,5 +1,5 @@
 import { db } from '@/lib/db-edge'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 import { canCreateListing, getSubscriptionInfo } from '@/lib/subscription-edge'
 import { withApiHandler, parseRequestBody, createApiResponse } from '@/lib/api-wrapper'
@@ -13,7 +13,7 @@ export const GET = withApiHandler(async (req: NextRequest) => {
     getSubscriptionInfo(user.id)
   ])
   
-  return createApiResponse.success({
+  return NextResponse.json({
     listings,
     subscription: subscriptionInfo
   })
@@ -83,11 +83,11 @@ export const POST = withApiHandler(async (req: NextRequest) => {
       }
     } else if (listing.is_active_on_airbnb && listing.ics_url && !hasCleaners) {
       // Return listing with a note about adding cleaners
-      return createApiResponse.success({
+      return NextResponse.json({
         ...listing,
         syncNote: 'Calendar sync will start automatically after you add cleaners and assign them to this listing.'
       })
     }
 
-    return createApiResponse.created(listing)
+    return NextResponse.json(listing, { status: 201 })
 })

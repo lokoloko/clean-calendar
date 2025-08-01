@@ -1,5 +1,5 @@
 import { db } from '@/lib/db-edge'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 import { canCreateCleaner } from '@/lib/subscription-edge'
 import { withApiHandler, parseRequestBody, createApiResponse } from '@/lib/api-wrapper'
@@ -9,7 +9,7 @@ import { cleanerSchema } from '@/lib/validations'
 export const GET = withApiHandler(async (req: NextRequest) => {
   const user = await requireAuth()
   const cleaners = await db.getCleaners(user.id)
-  return createApiResponse.success(cleaners)
+  return NextResponse.json(cleaners)
 })
 
 export const POST = withApiHandler(async (req: NextRequest) => {
@@ -33,5 +33,5 @@ export const POST = withApiHandler(async (req: NextRequest) => {
     ...validatedData
   })
 
-  return createApiResponse.created(cleaner)
+  return NextResponse.json(cleaner, { status: 201 })
 })
