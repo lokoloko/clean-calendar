@@ -80,10 +80,24 @@ export default function AssignmentsPage() {
         cleanersRes.json()
       ]);
 
-      // Extract data from response wrapper
-      setAssignments(assignmentsData.data || assignmentsData || []);
-      setListings(listingsData.data || listingsData || []);
-      setCleaners(cleanersData.data || cleanersData || []);
+      // Check for error responses
+      if (assignmentsData && assignmentsData.error) {
+        console.error('Assignments API error:', assignmentsData.error);
+        throw new Error(assignmentsData.error.message || 'Failed to load assignments');
+      }
+      if (listingsData && listingsData.error) {
+        console.error('Listings API error:', listingsData.error);
+        throw new Error(listingsData.error.message || 'Failed to load listings');
+      }
+      if (cleanersData && cleanersData.error) {
+        console.error('Cleaners API error:', cleanersData.error);
+        throw new Error(cleanersData.error.message || 'Failed to load cleaners');
+      }
+
+      // Extract data from response wrapper with array validation
+      setAssignments(Array.isArray(assignmentsData?.data) ? assignmentsData.data : Array.isArray(assignmentsData) ? assignmentsData : []);
+      setListings(Array.isArray(listingsData?.data) ? listingsData.data : Array.isArray(listingsData) ? listingsData : []);
+      setCleaners(Array.isArray(cleanersData?.data) ? cleanersData.data : Array.isArray(cleanersData) ? cleanersData : []);
     } catch (error) {
       toast({
         title: 'Error',

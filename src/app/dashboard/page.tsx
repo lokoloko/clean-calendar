@@ -137,6 +137,12 @@ export default function DashboardPage() {
 
       const data = await response.json();
       
+      // Check if response is an error object
+      if (data && data.error) {
+        console.error('API returned error:', data.error);
+        throw new Error(data.error.message || 'API error occurred');
+      }
+      
       // Validate response structure
       if (!data || typeof data !== 'object') {
         throw new Error('Invalid response format');

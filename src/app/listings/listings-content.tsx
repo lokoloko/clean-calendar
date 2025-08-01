@@ -109,20 +109,50 @@ export default function ListingsContent() {
 
       if (listingsRes.ok) {
         const data = await listingsRes.json();
-        setListings(data.listings || data);
-        if (data.subscription) {
-          setSubscriptionInfo(data.subscription);
+        // Check if response is an error object
+        if (data && data.error) {
+          console.error('Listings API error:', data.error);
+          toast({
+            title: 'Error',
+            description: data.error.message || 'Failed to load listings',
+            variant: 'destructive',
+          });
+        } else {
+          setListings(Array.isArray(data.listings) ? data.listings : Array.isArray(data) ? data : []);
+          if (data.subscription) {
+            setSubscriptionInfo(data.subscription);
+          }
         }
       }
 
       if (cleanersRes.ok) {
         const data = await cleanersRes.json();
-        setCleaners(data);
+        // Check if response is an error object
+        if (data && data.error) {
+          console.error('Cleaners API error:', data.error);
+          toast({
+            title: 'Error',
+            description: data.error.message || 'Failed to load cleaners',
+            variant: 'destructive',
+          });
+        } else {
+          setCleaners(Array.isArray(data) ? data : []);
+        }
       }
 
       if (assignmentsRes.ok) {
         const data = await assignmentsRes.json();
-        setAssignments(data);
+        // Check if response is an error object
+        if (data && data.error) {
+          console.error('Assignments API error:', data.error);
+          toast({
+            title: 'Error',
+            description: data.error.message || 'Failed to load assignments',
+            variant: 'destructive',
+          });
+        } else {
+          setAssignments(Array.isArray(data) ? data : []);
+        }
       }
     } catch (error) {
       toast({

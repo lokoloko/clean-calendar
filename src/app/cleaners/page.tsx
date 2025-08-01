@@ -77,12 +77,24 @@ export default function CleanersPage() {
         assignmentsRes.json()
       ]);
 
-      setCleaners(cleanersData);
-      setAssignments(assignmentsData);
+      // Check for error responses
+      if (cleanersData && cleanersData.error) {
+        console.error('Cleaners API error:', cleanersData.error);
+        throw new Error(cleanersData.error.message || 'Failed to load cleaners');
+      }
+      if (assignmentsData && assignmentsData.error) {
+        console.error('Assignments API error:', assignmentsData.error);
+        throw new Error(assignmentsData.error.message || 'Failed to load assignments');
+      }
+
+      setCleaners(Array.isArray(cleanersData) ? cleanersData : []);
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
       
       if (subscriptionRes.ok) {
         const subscriptionData = await subscriptionRes.json();
-        setSubscriptionInfo(subscriptionData);
+        if (subscriptionData && !subscriptionData.error) {
+          setSubscriptionInfo(subscriptionData);
+        }
       }
     } catch (error) {
       toast({

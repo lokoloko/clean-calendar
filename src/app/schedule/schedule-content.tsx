@@ -217,10 +217,24 @@ export default function ScheduleContent() {
         listingsRes.json()
       ]);
 
-      // Extract data from response wrapper
-      setScheduleItems(scheduleData.data || scheduleData || []);
-      setCleaners(cleanersData.data || cleanersData || []);
-      setListings(listingsData.data || listingsData || []);
+      // Check for error responses
+      if (scheduleData && scheduleData.error) {
+        console.error('Schedule API error:', scheduleData.error);
+        throw new Error(scheduleData.error.message || 'Failed to load schedule');
+      }
+      if (cleanersData && cleanersData.error) {
+        console.error('Cleaners API error:', cleanersData.error);
+        throw new Error(cleanersData.error.message || 'Failed to load cleaners');
+      }
+      if (listingsData && listingsData.error) {
+        console.error('Listings API error:', listingsData.error);
+        throw new Error(listingsData.error.message || 'Failed to load listings');
+      }
+
+      // Extract data from response wrapper with array validation
+      setScheduleItems(Array.isArray(scheduleData?.data) ? scheduleData.data : Array.isArray(scheduleData) ? scheduleData : []);
+      setCleaners(Array.isArray(cleanersData?.data) ? cleanersData.data : Array.isArray(cleanersData) ? cleanersData : []);
+      setListings(Array.isArray(listingsData?.data) ? listingsData.data : Array.isArray(listingsData) ? listingsData : []);
     } catch (error) {
       toast({
         title: 'Error',
