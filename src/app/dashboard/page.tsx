@@ -306,7 +306,7 @@ export default function DashboardPage() {
         totalListings: metrics.totalListings || 0,
         activeCleaners: metrics.activeCleaners || 0,
         upcomingCleanings: Array.isArray(upcomingCleanings) ? upcomingCleanings.length : 0,
-        monthlyRevenue
+        monthlyRevenue: metrics.monthlyRevenue || monthlyRevenue || 0
       });
       setTodaysCleanings(todayCleanings);
       setNeedsAttention(attentionItems.slice(0, 5)); // Limit to 5 items

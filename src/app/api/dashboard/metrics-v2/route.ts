@@ -155,6 +155,21 @@ async function fetchMetrics(userId: string) {
       return checkOut.toDateString() === today.toDateString()
     }).length
     
+    // Calculate monthly revenue
+    const currentMonth = new Date().getMonth()
+    const currentYear = new Date().getFullYear()
+    const monthlyCleanings = scheduleItems.filter(s => {
+      const checkOut = new Date(s.check_out)
+      return checkOut.getMonth() === currentMonth && checkOut.getFullYear() === currentYear
+    })
+    
+    // Get cleaning fees from listings
+    const listingFeesMap = new Map(listingsWithSync.map(l => [l.id, l.cleaning_fee || 0]))
+    const monthlyRevenue = monthlyCleanings.reduce((sum, cleaning) => {
+      const fee = listingFeesMap.get(cleaning.listing_id) || 0
+      return sum + fee
+    }, 0)
+    
     return {
       profile: profileResult.data,
       listings: listingsWithSync,
@@ -168,6 +183,7 @@ async function fetchMetrics(userId: string) {
         totalCleanings,
         completedCleanings,
         todaysCleanings,
+        monthlyRevenue,
         completionRate: totalCleanings > 0 ? Math.round((completedCleanings / totalCleanings) * 100) : 0,
       },
       feedbackStats,
