@@ -35,21 +35,21 @@ export async function GET() {
         total: allCookies.length,
         supabaseRelated: supabaseCookies.map(c => ({
           name: c.name,
-          hasValue: \!\!c.value,
+          hasValue: !!c.value,
           length: c.value?.length || 0
         }))
       },
       session: {
         data: sessionData,
         error: sessionError,
-        hasSession: \!\!sessionData?.session,
+        hasSession: !!sessionData?.session,
         userId: sessionData?.session?.user?.id,
         email: sessionData?.session?.user?.email,
       },
       user: {
         data: userData?.user ? { id: userData.user.id, email: userData.user.email } : null,
         error: userError,
-        hasUser: \!\!userData?.user,
+        hasUser: !!userData?.user,
       }
     })
   } catch (error) {
@@ -59,4 +59,3 @@ export async function GET() {
     }, { status: 500 })
   }
 }
-EOF < /dev/null
