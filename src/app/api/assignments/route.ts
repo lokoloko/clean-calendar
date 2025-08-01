@@ -18,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth()
     const body = await request.json()
     const { listing_id, cleaner_id } = body
 
@@ -28,12 +29,13 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await db.query(
-      'INSERT INTO public.assignments (listing_id, cleaner_id) VALUES ($1, $2) RETURNING *',
-      [listing_id, cleaner_id]
-    )
+    const assignment = await db.createAssignment({
+      listingId: listing_id,
+      cleanerId: cleaner_id,
+      userId: user.id
+    })
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json(assignment)
   } catch (error) {
     console.error('Error creating assignment:', error)
     return NextResponse.json(

@@ -10,16 +10,13 @@ export async function GET(
     const user = await requireAuth()
     const { id } = await params;
     
-    const result = await db.query(
-      'SELECT * FROM public.cleaners WHERE id = $1 AND user_id = $2',
-      [id, user.id]
-    )
+    const cleaner = await db.getCleaner(id, user.id)
 
-    if (result.rows.length === 0) {
+    if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 })
     }
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json(cleaner)
   } catch (error) {
     console.error('Error fetching cleaner:', error)
     return NextResponse.json(
@@ -39,19 +36,17 @@ export async function PUT(
     const body = await request.json()
     const { name, email, phone } = body
 
-    const result = await db.query(
-      `UPDATE public.cleaners 
-       SET name = $1, email = $2, phone = $3, updated_at = NOW()
-       WHERE id = $4 AND user_id = $5
-       RETURNING *`,
-      [name, email, phone, id, user.id]
-    )
+    const cleaner = await db.updateCleaner(id, user.id, {
+      name,
+      email,
+      phone
+    })
 
-    if (result.rows.length === 0) {
+    if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 })
     }
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json(cleaner)
   } catch (error) {
     console.error('Error updating cleaner:', error)
     return NextResponse.json(
@@ -69,18 +64,14 @@ export async function DELETE(
     const user = await requireAuth()
     const { id } = await params;
     
-    const result = await db.query(
-      'DELETE FROM public.cleaners WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, user.id]
-    )
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 })
-    }
+    await db.deleteCleaner(id, user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting cleaner:', error)
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 })
+    }
     return NextResponse.json(
       { error: 'Failed to delete cleaner' },
       { status: 500 }
