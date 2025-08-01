@@ -129,7 +129,7 @@ export default function DashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       console.log('Fetching dashboard data...');
-      const response = await fetch('/api/dashboard/metrics');
+      const response = await fetch('/api/dashboard/metrics-v2');
       
       if (!response.ok) {
         if (response.status === 401) {
