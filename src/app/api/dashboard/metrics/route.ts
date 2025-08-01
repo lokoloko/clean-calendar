@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-server'
 import { db } from '@/lib/db'
-import { logger } from '@/lib/logger'
+import { logger } from '@/lib/logger-edge'
 import { handleApiError, ApiResponses } from '@/lib/api-errors'
 
 // Simple in-memory cache for production
@@ -167,19 +167,20 @@ async function fetchMetrics(userId: string) {
 }
 
 export async function GET() {
+  console.log('[Dashboard Metrics API] Checking authentication')
+  const user = await getCurrentUser()
+  
+  if (!user) {
+    console.log('[Dashboard Metrics API] No user found - returning 401')
+    return NextResponse.json(
+      { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
+      { status: 401 }
+    )
+  }
+  
+  console.log('[Dashboard Metrics API] User authenticated:', user.id)
+  
   try {
-    console.log('[Dashboard Metrics API] Checking authentication')
-    const user = await getCurrentUser()
-    
-    if (!user) {
-      console.log('[Dashboard Metrics API] No user found - returning 401')
-      return NextResponse.json(
-        { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
-        { status: 401 }
-      )
-    }
-    
-    console.log('[Dashboard Metrics API] User authenticated:', user.id)
 
     // Check cache first
     const cached = metricsCache.get(user.id)

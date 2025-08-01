@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { handleApiError, ApiResponses } from './api-errors'
-import { logger } from './logger'
+import { logger } from './logger-edge'
 import { z } from 'zod'
 
 type ApiHandler = (

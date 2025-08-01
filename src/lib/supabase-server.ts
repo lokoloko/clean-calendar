@@ -17,7 +17,17 @@ export const createClient = async () => {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               console.log('[Supabase] Setting cookie:', name, 'with options:', options)
-              cookieStore.set(name, value, options)
+              // Ensure proper cookie options for production
+              const cookieOptions = {
+                ...options,
+                // Force secure cookies in production
+                secure: process.env.NODE_ENV === 'production' ? true : options.secure,
+                // Ensure cookies work across the domain
+                sameSite: options.sameSite || 'lax' as const,
+                // Ensure path is set
+                path: options.path || '/',
+              }
+              cookieStore.set(name, value, cookieOptions)
             })
           } catch (error) {
             // The `setAll` method was called from a Server Component.

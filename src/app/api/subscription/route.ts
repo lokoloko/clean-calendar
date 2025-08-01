@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import { getSubscriptionInfo } from '@/lib/subscription';
 import { handleApiError, ApiResponses } from '@/lib/api-errors';
-import { logger } from '@/lib/logger';
+import { logger } from '@/lib/logger-edge';
 
 export async function GET() {
   try {
