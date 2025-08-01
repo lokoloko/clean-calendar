@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
-import { canCreateListing, getSubscriptionInfo } from '@/lib/subscription'
+import { canCreateListing, getSubscriptionInfo } from '@/lib/subscription-edge'
 import { withApiHandler, parseRequestBody, createApiResponse } from '@/lib/api-wrapper'
 import { ApiError } from '@/lib/api-errors'
 import { listingSchema } from '@/lib/validations'
