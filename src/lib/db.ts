@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg'
-import { logger } from './logger'
+import { logger } from './logger-edge'
 
 // Parse database URL and configure SSL for production
 const getDatabaseConfig = () => {

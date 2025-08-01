@@ -5,7 +5,7 @@
 
 import { unstable_cache } from 'next/cache'
 import { db } from './db'
-import { logger } from './logger'
+import { logger } from './logger-edge'
 import type { Listing, Cleaner, ScheduleItem } from '@/types'
 
 // Cache configuration

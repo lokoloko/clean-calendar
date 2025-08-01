@@ -4,7 +4,7 @@
  */
 
 import { Pool, PoolConfig } from 'pg'
-import { logger } from './logger'
+import { logger } from './logger-edge'
 
 // Parse database URL to extract connection details
 const connectionString = process.env.DATABASE_URL

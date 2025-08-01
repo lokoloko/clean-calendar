@@ -1,6 +1,6 @@
 import { Pool, PoolConfig, QueryResultRow } from 'pg'
 import { env } from './env'
-import { logger } from './logger'
+import { logger } from './logger-edge'
 
 /**
  * Production-ready database configuration with proper pooling
