@@ -181,6 +181,23 @@ export async function GET() {
   console.log('[Dashboard Metrics API] User authenticated:', user.id)
   
   try {
+    // Test database connection first
+    try {
+      await db.query('SELECT 1')
+      console.log('[Dashboard Metrics API] Database connection successful')
+    } catch (dbError) {
+      console.error('[Dashboard Metrics API] Database connection failed:', dbError)
+      return NextResponse.json(
+        { 
+          error: { 
+            message: 'Database connection failed', 
+            code: 'DATABASE_ERROR',
+            details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+          } 
+        },
+        { status: 503 }
+      )
+    }
 
     // Check cache first
     const cached = metricsCache.get(user.id)
