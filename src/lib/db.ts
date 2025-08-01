@@ -5,12 +5,27 @@ import { logger } from './logger-edge'
 const getDatabaseConfig = () => {
   const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/cleansweep'
   
-  // For production, ensure SSL is configured properly
-  if (process.env.NODE_ENV === 'production') {
-    return {
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false // Required for some cloud providers
+  // For Vercel/production, handle SSL configuration
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    // Parse the connection string to check if SSL is already specified
+    const url = new URL(connectionString)
+    const sslMode = url.searchParams.get('sslmode')
+    
+    // If sslmode is not specified or is 'require', use SSL
+    if (!sslMode || sslMode === 'require') {
+      return {
+        connectionString,
+        ssl: {
+          rejectUnauthorized: false // Required for Supabase and other cloud providers
+        }
+      }
+    }
+    
+    // If sslmode is 'disable', don't use SSL
+    if (sslMode === 'disable') {
+      return {
+        connectionString,
+        ssl: false
       }
     }
   }
@@ -20,31 +35,47 @@ const getDatabaseConfig = () => {
   }
 }
 
-// Optimized connection pool configuration
-const pool = new Pool({
-  ...getDatabaseConfig(),
-  // Connection pool settings
-  max: process.env.NODE_ENV === 'production' ? 20 : 5,
-  min: process.env.NODE_ENV === 'production' ? 2 : 0,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-  // Query timeouts
-  statement_timeout: 30000,
-  query_timeout: 30000,
-})
+// Create pool with error handling
+let pool: Pool
 
-// Monitor pool health
-pool.on('error', (err) => {
-  logger.error('Database pool error', err)
-})
-
-pool.on('connect', () => {
-  logger.debug('Database connection established')
-})
-
-pool.on('remove', () => {
-  logger.debug('Database connection removed')
-})
+try {
+  const config = getDatabaseConfig()
+  logger.info('Creating database pool', { 
+    hasSSL: !!config.ssl,
+    connectionString: config.connectionString.replace(/:[^@]+@/, ':****@') // Hide password
+  })
+  
+  pool = new Pool({
+    ...config,
+    // Connection pool settings
+    max: process.env.NODE_ENV === 'production' ? 20 : 5,
+    min: process.env.NODE_ENV === 'production' ? 2 : 0,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000, // Increased timeout
+    // Query timeouts
+    statement_timeout: 30000,
+    query_timeout: 30000,
+  })
+  
+  // Monitor pool health
+  pool.on('error', (err) => {
+    logger.error('Database pool error', err)
+  })
+  
+  pool.on('connect', (client) => {
+    logger.debug('Database connection established')
+    
+    // Set runtime parameters for the connection
+    client.query('SET statement_timeout = 30000')
+  })
+  
+  pool.on('remove', () => {
+    logger.debug('Database connection removed')
+  })
+} catch (error) {
+  logger.error('Failed to create database pool', error)
+  throw error
+}
 
 export const db = {
   query: (text: string, params?: any[]) => pool.query(text, params),
@@ -714,11 +745,36 @@ export const db = {
   // Pool health check
   async checkHealth() {
     try {
-      const result = await pool.query('SELECT NOW()')
-      return { healthy: true, timestamp: result.rows[0].now }
-    } catch (error) {
+      const startTime = Date.now()
+      const result = await pool.query('SELECT NOW() as now, version() as version')
+      const duration = Date.now() - startTime
+      
+      return { 
+        healthy: true, 
+        timestamp: result.rows[0].now,
+        version: result.rows[0].version,
+        responseTime: duration,
+        pool: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount
+        }
+      }
+    } catch (error: any) {
       logger.error('Database health check failed', error)
-      return { healthy: false, error }
+      return { 
+        healthy: false, 
+        error: {
+          message: error.message,
+          code: error.code,
+          detail: error.detail
+        },
+        pool: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount
+        }
+      }
     }
   },
   
