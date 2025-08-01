@@ -132,6 +132,11 @@ export default function DashboardPage() {
       const response = await fetch('/api/dashboard/metrics');
       
       if (!response.ok) {
+        if (response.status === 401) {
+          // Authentication required - redirect to login
+          router.push('/login');
+          return;
+        }
         throw new Error('Failed to fetch dashboard metrics');
       }
 
@@ -333,6 +338,10 @@ export default function DashboardPage() {
         setLastSyncTime(new Date());
         fetchDashboardStats(); // Refresh data
       } else {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
         const error = await response.json();
         throw new Error(error.error || 'Sync failed');
       }
