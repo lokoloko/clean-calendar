@@ -168,11 +168,18 @@ async function fetchMetrics(userId: string) {
 
 export async function GET() {
   try {
+    console.log('[Dashboard Metrics API] Checking authentication')
     const user = await getCurrentUser()
     
     if (!user) {
-      throw ApiResponses.unauthorized()
+      console.log('[Dashboard Metrics API] No user found - returning 401')
+      return NextResponse.json(
+        { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
+        { status: 401 }
+      )
     }
+    
+    console.log('[Dashboard Metrics API] User authenticated:', user.id)
 
     // Check cache first
     const cached = metricsCache.get(user.id)

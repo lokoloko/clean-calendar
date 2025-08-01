@@ -4,6 +4,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 export async function middleware(request: NextRequest) {
   // Check if we're using Supabase auth or dev mode
   const useAuth = process.env.NEXT_PUBLIC_USE_AUTH === 'true'
+  console.log('[Middleware]', request.nextUrl.pathname, '- Auth mode:', process.env.NEXT_PUBLIC_USE_AUTH, '- Using auth:', useAuth)
   
   // Protected routes
   const protectedPaths = ['/dashboard', '/listings', '/cleaners', '/assignments', '/schedule', '/stats', '/settings']
@@ -70,15 +71,24 @@ export async function middleware(request: NextRequest) {
     )
 
     // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error } = await supabase.auth.getUser()
+    console.log('[Middleware] Auth check result:', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      error: error?.message,
+      isProtectedPath,
+      isProtectedApiPath 
+    })
     
     // Redirect to login if accessing protected route without auth
     if (isProtectedPath && !user) {
+      console.log('[Middleware] Redirecting to login - no user for protected path:', request.nextUrl.pathname)
       return NextResponse.redirect(new URL('/login', request.url))
     }
     
     // Return 401 for protected API routes without auth
     if (isProtectedApiPath && !user) {
+      console.log('[Middleware] Returning 401 - no user for protected API path:', request.nextUrl.pathname)
       return NextResponse.json(
         { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
         { status: 401 }

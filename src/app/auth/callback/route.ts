@@ -8,12 +8,17 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
   const origin = requestUrl.origin
   
-  console.log('Auth callback received:', {
+  console.log('[Auth Callback] Received request:', {
     url: request.url,
     origin: origin,
     code: code ? 'present' : 'absent',
     error: error,
-    searchParams: requestUrl.searchParams.toString()
+    next: next,
+    searchParams: requestUrl.searchParams.toString(),
+    headers: {
+      host: request.headers.get('host'),
+      referer: request.headers.get('referer'),
+    }
   })
 
   // Handle OAuth errors
@@ -27,32 +32,53 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     
     try {
+      console.log('[Auth Callback] Attempting to exchange code for session')
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       
-      if (!error && data?.session) {
-        // Successful authentication
-        console.log('Authentication successful, creating/updating profile')
-        
-        // Create or update user profile
-        try {
-          const { db } = await import('@/lib/db')
-          await db.createOrUpdateProfile(data.session.user.id, {
-            email: data.session.user.email,
-            name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name,
-            avatar_url: data.session.user.user_metadata?.avatar_url
-          })
-          console.log('Profile created/updated successfully')
-        } catch (profileError) {
-          console.error('Error creating/updating profile:', profileError)
-          // Continue anyway - the profile will be created on next login
-        }
-        
-        // Use absolute URL for redirect
-        return NextResponse.redirect(`${origin}${next}`)
-      } else {
-        console.error('Error exchanging code for session:', error)
-        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+      if (error) {
+        console.error('[Auth Callback] Error exchanging code:', error)
+        return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error.message)}`)
       }
+      
+      if (!data?.session) {
+        console.error('[Auth Callback] No session returned from code exchange')
+        return NextResponse.redirect(`${origin}/login?error=no_session`)
+      }
+      
+      // Successful authentication
+      console.log('[Auth Callback] Authentication successful:', {
+        userId: data.session.user.id,
+        email: data.session.user.email,
+        provider: data.session.user.app_metadata?.provider,
+        hasAccessToken: !!data.session.access_token,
+        hasRefreshToken: !!data.session.refresh_token,
+        expiresAt: data.session.expires_at,
+      })
+      
+      // Verify session was set
+      const { data: { session: verifySession } } = await supabase.auth.getSession()
+      console.log('[Auth Callback] Session verification:', {
+        hasSession: !!verifySession,
+        sessionUserId: verifySession?.user?.id,
+      })
+      
+      // Create or update user profile
+      try {
+        const { db } = await import('@/lib/db')
+        await db.createOrUpdateProfile(data.session.user.id, {
+          email: data.session.user.email,
+          name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name,
+          avatar_url: data.session.user.user_metadata?.avatar_url
+        })
+        console.log('[Auth Callback] Profile created/updated successfully')
+      } catch (profileError) {
+        console.error('[Auth Callback] Error creating/updating profile:', profileError)
+        // Continue anyway - the profile will be created on next login
+      }
+      
+      console.log('[Auth Callback] Redirecting to:', `${origin}${next}`)
+      // Use absolute URL for redirect
+      return NextResponse.redirect(`${origin}${next}`)
     } catch (err) {
       console.error('Exception during code exchange:', err)
       return NextResponse.redirect(`${origin}/login?error=auth_failed`)
