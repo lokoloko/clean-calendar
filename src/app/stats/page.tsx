@@ -91,6 +91,7 @@ export default function StatsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<StatsData>({
     weeklyBookingData: [],
     checkoutDayData: [],
@@ -112,6 +113,7 @@ export default function StatsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('StatsPage mounted, fetching listings...');
     fetchListings();
   }, []);
 
@@ -124,11 +126,13 @@ export default function StatsPage() {
   const fetchListings = async () => {
     try {
       console.log('Fetching listings...');
+      setError(null);
       const response = await fetch('/api/listings');
       console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response:', errorText);
+        setError(`Failed to fetch listings: ${response.status}`);
         throw new Error('Failed to fetch listings');
       }
       const data = await response.json();
@@ -137,8 +141,11 @@ export default function StatsPage() {
       const listingsData = Array.isArray(data) ? data : (data.listings || []);
       console.log('Processed listings:', listingsData);
       setListings(listingsData);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching listings:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load listings');
+      setLoading(false);
       toast({
         title: 'Error',
         description: 'Failed to load listings',
@@ -417,6 +424,39 @@ export default function StatsPage() {
     
     return bookedDates.size;
   };
+
+  if (loading && listings.length === 0) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col gap-8">
+          <PageHeader title="Your Listing Stats" />
+          <Card>
+            <CardHeader>
+              <CardDescription>Loading listings...</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col gap-8">
+          <PageHeader title="Your Listing Stats" />
+          <Card className="border-red-200 bg-red-50/50">
+            <CardHeader>
+              <CardTitle className="text-red-700">Error Loading Stats</CardTitle>
+              <CardDescription className="text-red-600">
+                {error}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
