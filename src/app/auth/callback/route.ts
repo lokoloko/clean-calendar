@@ -6,9 +6,11 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
+  const origin = requestUrl.origin
   
   console.log('Auth callback received:', {
     url: request.url,
+    origin: origin,
     code: code ? 'present' : 'absent',
     error: error,
     searchParams: requestUrl.searchParams.toString()
@@ -17,7 +19,7 @@ export async function GET(request: Request) {
   // Handle OAuth errors
   if (error) {
     console.error('OAuth error:', error)
-    return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   }
 
   // Handle authorization code flow
@@ -45,15 +47,15 @@ export async function GET(request: Request) {
           // Continue anyway - the profile will be created on next login
         }
         
-        const redirectUrl = new URL(next, request.url)
-        return NextResponse.redirect(redirectUrl)
+        // Use absolute URL for redirect
+        return NextResponse.redirect(`${origin}${next}`)
       } else {
         console.error('Error exchanging code for session:', error)
-        return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
       }
     } catch (err) {
       console.error('Exception during code exchange:', err)
-      return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
   }
 

@@ -1,76 +1,62 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { getCurrentUser } from '@/lib/auth-server'
+import { cookies } from 'next/headers'
 
 export async function GET() {
   try {
-    // Test 1: Check environment variables
-    const envCheck = {
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-      DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Missing',
-      NEXT_PUBLIC_USE_AUTH: process.env.NEXT_PUBLIC_USE_AUTH,
-    }
+    // Get all cookies
+    const cookieStore = await cookies()
+    const allCookies = cookieStore.getAll()
     
-    // Test 2: Get user from auth
-    let authUser = null
-    let authError = null
-    try {
-      const supabase = await createClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-      authUser = user
-      authError = error
-    } catch (e) {
-      authError = e instanceof Error ? e.message : 'Unknown error'
-    }
+    // Create Supabase client
+    const supabase = await createClient()
     
-    // Test 3: Get user through our helper
-    let helperUser = null
-    let helperError = null
-    try {
-      helperUser = await getCurrentUser()
-    } catch (e) {
-      helperError = e instanceof Error ? e.message : 'Unknown error'
-    }
+    // Try to get session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
     
-    // Test 4: Direct database query (if we have a user)
-    let dbTest = null
-    if (authUser?.id) {
-      try {
-        const { Pool } = await import('pg')
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL
-        })
-        const result = await pool.query(
-          'SELECT COUNT(*) as count FROM public.listings WHERE user_id = $1',
-          [authUser.id]
-        )
-        dbTest = {
-          listings: result.rows[0]?.count || 0,
-          userId: authUser.id
-        }
-        await pool.end()
-      } catch (e) {
-        dbTest = { error: e instanceof Error ? e.message : 'Unknown error' }
-      }
-    }
+    // Try to get user
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    
+    // Check for specific Supabase cookies
+    const supabaseCookies = allCookies.filter(c => 
+      c.name.includes('supabase') || 
+      c.name.includes('sb-') ||
+      c.name.includes('auth')
+    )
     
     return NextResponse.json({
-      envCheck,
-      authTest: {
-        user: authUser ? { id: authUser.id, email: authUser.email } : null,
-        error: authError
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PUBLIC_USE_AUTH: process.env.NEXT_PUBLIC_USE_AUTH,
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'missing',
       },
-      helperTest: {
-        user: helperUser ? { id: helperUser.id, email: helperUser.email } : null,
-        error: helperError
+      cookies: {
+        total: allCookies.length,
+        supabaseRelated: supabaseCookies.map(c => ({
+          name: c.name,
+          hasValue: \!\!c.value,
+          length: c.value?.length || 0
+        }))
       },
-      dbTest
+      session: {
+        data: sessionData,
+        error: sessionError,
+        hasSession: \!\!sessionData?.session,
+        userId: sessionData?.session?.user?.id,
+        email: sessionData?.session?.user?.email,
+      },
+      user: {
+        data: userData?.user ? { id: userData.user.id, email: userData.user.email } : null,
+        error: userError,
+        hasUser: \!\!userData?.user,
+      }
     })
   } catch (error) {
-    return NextResponse.json({ 
-      error: 'Test failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 })
   }
 }
+EOF < /dev/null

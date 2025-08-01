@@ -7,7 +7,9 @@ export async function middleware(request: NextRequest) {
   
   // Protected routes
   const protectedPaths = ['/dashboard', '/listings', '/cleaners', '/assignments', '/schedule', '/stats', '/settings']
+  const protectedApiPaths = ['/api/dashboard', '/api/listings', '/api/cleaners', '/api/assignments', '/api/schedule', '/api/subscription', '/api/stats']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  const isProtectedApiPath = protectedApiPaths.some(path => request.nextUrl.pathname.startsWith(path))
   
   // Auth routes that should redirect if already logged in
   const authPaths = ['/login', '/signup']
@@ -75,6 +77,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     
+    // Return 401 for protected API routes without auth
+    if (isProtectedApiPath && !user) {
+      return NextResponse.json(
+        { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
+        { status: 401 }
+      )
+    }
+    
     // Redirect to dashboard if accessing auth routes while logged in
     if (isAuthPath && user) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -87,6 +97,14 @@ export async function middleware(request: NextRequest) {
     
     if (isProtectedPath && !isLoggedIn) {
       return NextResponse.redirect(new URL('/', request.url))
+    }
+    
+    // Return 401 for protected API routes without auth in dev mode
+    if (isProtectedApiPath && !isLoggedIn) {
+      return NextResponse.json(
+        { error: { message: 'Authentication required', code: 'UNAUTHORIZED' } },
+        { status: 401 }
+      )
     }
     
     return NextResponse.next()
