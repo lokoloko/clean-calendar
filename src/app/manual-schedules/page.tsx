@@ -111,9 +111,14 @@ export default function ManualSchedulesPage() {
         cleanersRes.json()
       ]);
 
-      setSchedules(schedulesData);
-      setListings(listingsData);
-      setCleaners(cleanersData);
+      setSchedules(Array.isArray(schedulesData) ? schedulesData : []);
+      // Handle listings API response format
+      if (listingsData && listingsData.listings) {
+        setListings(Array.isArray(listingsData.listings) ? listingsData.listings : []);
+      } else {
+        setListings(Array.isArray(listingsData) ? listingsData : []);
+      }
+      setCleaners(Array.isArray(cleanersData) ? cleanersData : []);
     } catch (error) {
       toast({
         title: 'Error',
