@@ -316,9 +316,6 @@ All major features are implemented and functional with real database integration
 ### Remaining TODOs & Production Readiness
 
 #### Critical for Production (High Priority)
-- **18 Disabled API Routes**: Re-enable and fix routes with raw SQL queries that were temporarily disabled
-  - These routes use direct SQL queries that are incompatible with edge runtime
-  - Need to convert to use db-edge.ts methods or Supabase queries
 - **Fix 5 Failing Tests**: Mock request body parsing and unstable_cache issues
 - **Production Database Connection**: Update DATABASE_URL for Vercel deployment
   - Currently using local PostgreSQL connection
@@ -371,6 +368,14 @@ All major features are implemented and functional with real database integration
    - [ ] Fix remaining 5 test failures
    - [ ] Run full test suite on production data
    - [ ] Test cleaner portal with real phone numbers
+
+### Disabled Routes Documentation
+See `DISABLED_ROUTES.md` for details on 15 API routes that were disabled due to Edge Runtime incompatibility. These routes contain valuable functionality that can be re-enabled after converting raw SQL to Supabase queries.
+
+**High-value routes to consider fixing:**
+- Automated calendar sync (cron jobs)
+- Manual schedule generation
+- Individual listing operations
 
 ### Future Features (from PRD)
 - AI-powered schedule optimization (Genkit foundation exists)
