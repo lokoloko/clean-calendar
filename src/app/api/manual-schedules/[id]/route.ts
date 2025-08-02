@@ -14,7 +14,7 @@ export async function PUT(
     
     // Verify ownership
     const { data: schedule } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .select('*, listings!inner(user_id)')
       .eq('id', id)
       .single();
@@ -25,7 +25,7 @@ export async function PUT(
     
     // Update schedule
     const { data, error } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .update({
         ...body,
         updated_at: new Date().toISOString()
@@ -57,7 +57,7 @@ export async function DELETE(
     
     // Verify ownership
     const { data: schedule } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .select('*, listings!inner(user_id)')
       .eq('id', id)
       .single();
@@ -70,11 +70,11 @@ export async function DELETE(
     await supabase
       .from('schedule_items')
       .delete()
-      .eq('manual_schedule_id', id);
+      .eq('manual_rule_id', id);
     
     // Delete the schedule
     const { error } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .delete()
       .eq('id', id);
     

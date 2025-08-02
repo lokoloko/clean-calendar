@@ -9,7 +9,7 @@ export async function GET() {
     
     // Get manual schedules with related data
     const { data, error } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .select(`
         *,
         listings!inner(name, user_id),
@@ -62,14 +62,17 @@ export async function POST(request: Request) {
     
     // Create manual schedule
     const { data, error } = await supabase
-      .from('manual_schedules')
+      .from('manual_schedule_rules')
       .insert({
         listing_id: body.listing_id,
         cleaner_id: body.cleaner_id,
+        schedule_type: body.schedule_type || 'recurring',
         frequency: body.frequency,
-        day_of_week: body.day_of_week || null,
+        days_of_week: body.days_of_week || (body.day_of_week ? [body.day_of_week] : null),
         day_of_month: body.day_of_month || null,
-        time: body.time || '11:00',
+        cleaning_time: body.time || '11:00',
+        start_date: body.start_date || new Date().toISOString().split('T')[0],
+        end_date: body.end_date || null,
         notes: body.notes || null
       })
       .select()
