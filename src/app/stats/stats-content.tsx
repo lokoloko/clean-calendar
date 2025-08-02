@@ -343,7 +343,7 @@ export default function StatsContent() {
               {revenueTrend === 'stable' && <Minus className="h-4 w-4 text-gray-600" />}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${summary.monthlyRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">${Math.round(summary.monthlyRevenue)}</div>
               <p className="text-xs text-muted-foreground">
                 {revenueChange !== 0 && (
                   <span className={revenueTrend === 'up' ? 'text-green-600' : 'text-red-600'}>
@@ -536,7 +536,7 @@ export default function StatsContent() {
                     </TableCell>
                     <TableCell className="text-center">{month.total_cleanings}</TableCell>
                     <TableCell className="text-center">{month.completed_cleanings}</TableCell>
-                    <TableCell className="text-center">${month.total_revenue.toFixed(2)}</TableCell>
+                    <TableCell className="text-center">${Math.round(month.total_revenue)}</TableCell>
                     <TableCell className="text-center">{month.feedback_count}</TableCell>
                     <TableCell className="text-center">
                       <span className="text-green-600">{month.clean_count}</span>
