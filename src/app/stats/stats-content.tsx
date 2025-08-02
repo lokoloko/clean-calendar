@@ -36,8 +36,8 @@ const chartConfig: ChartConfig = {
     label: "Cleanings",
     color: "hsl(var(--chart-1))",
   },
-  revenue: {
-    label: "Revenue",
+  costs: {
+    label: "Costs",
     color: "hsl(var(--chart-2))",
   },
   feedback: {
@@ -135,7 +135,7 @@ export default function StatsContent() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Monthly Costs</CardTitle>
               {revenueTrend === 'up' && <TrendingUp className="h-4 w-4 text-green-600" />}
               {revenueTrend === 'down' && <TrendingDown className="h-4 w-4 text-red-600" />}
               {revenueTrend === 'stable' && <Minus className="h-4 w-4 text-gray-600" />}
@@ -186,7 +186,7 @@ export default function StatsContent() {
           <Card>
             <CardHeader>
               <CardTitle>Monthly Trends</CardTitle>
-              <CardDescription>Cleanings and revenue over time</CardDescription>
+              <CardDescription>Cleanings and costs over time</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[300px]">
@@ -211,8 +211,8 @@ export default function StatsContent() {
                       yAxisId="right"
                       type="monotone"
                       dataKey="total_revenue"
-                      stroke={chartConfig.revenue.color}
-                      name="Revenue ($)"
+                      stroke={chartConfig.costs.color}
+                      name="Costs ($)"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -319,7 +319,7 @@ export default function StatsContent() {
                   <TableHead>Month</TableHead>
                   <TableHead className="text-center">Cleanings</TableHead>
                   <TableHead className="text-center">Completed</TableHead>
-                  <TableHead className="text-center">Revenue</TableHead>
+                  <TableHead className="text-center">Cost</TableHead>
                   <TableHead className="text-center">Feedback</TableHead>
                   <TableHead className="text-center">Clean</TableHead>
                   <TableHead className="text-center">Normal</TableHead>
