@@ -33,6 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WeeklyView } from '@/components/schedule/weekly-view';
 import { MonthlyView } from '@/components/schedule/monthly-view';
+import { ContinuousMonthlyView } from '@/components/schedule/continuous-monthly-view';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -1070,7 +1071,7 @@ export default function ScheduleContent() {
 
           <TabsContent value="month" className="mt-0 overflow-visible">
             <div className="overflow-visible">
-              <MonthlyView
+              <ContinuousMonthlyView
                 getItemsForDate={getItemsForDate}
                 hasSameDayTurnaround={hasSameDayTurnaround}
                 currentMonth={currentMonth}
