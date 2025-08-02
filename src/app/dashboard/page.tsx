@@ -328,6 +328,8 @@ export default function DashboardPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
+      // For manual sync, we'll use a different approach since CRON_SECRET is server-side only
+      // We'll create a separate endpoint for manual sync that uses regular auth
       const response = await fetch('/api/sync-all', { method: 'POST' });
       if (response.ok) {
         const result = await response.json();
