@@ -47,12 +47,12 @@ import { TrialBanner } from '@/components/trial-banner';
 // Navigation items for the sidebar.
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/stats', label: 'Stats', icon: BarChart3 },
+  { href: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
   { href: '/listings', label: 'Listings', icon: Home },
   { href: '/cleaners', label: 'Cleaners', icon: Users },
   { href: '/assignments', label: 'Assignments', icon: Link2 },
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays },
-  { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
+  { href: '/stats', label: 'Stats', icon: BarChart3 },
   { href: '/feedback', label: 'Feedback', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
