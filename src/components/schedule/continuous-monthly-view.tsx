@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { format, isSameDay, isToday, isPast, startOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
+import { format, isSameDay, isToday, isPast, startOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown } from 'lucide-react';
@@ -68,11 +68,24 @@ export function ContinuousMonthlyView({
     setVisibleMonths(months);
   }, [centerMonth]);
   
-  // Scroll to today on initial load
+  // Scroll to current week on initial load
   useEffect(() => {
-    if (todayRef.current) {
-      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (todayRef.current) {
+        // Scroll to today but position it near the top to show the current week
+        todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Then adjust scroll position to show a bit of the previous week
+        if (containerRef.current) {
+          setTimeout(() => {
+            containerRef.current!.scrollTop -= 100; // Adjust to show some context
+          }, 500);
+        }
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
   
   const scrollToMonth = (month: Date) => {
@@ -86,7 +99,15 @@ export function ContinuousMonthlyView({
     setCurrentMonth(startOfMonth(today));
     setTimeout(() => {
       if (todayRef.current) {
-        todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Scroll to today positioned at the start to show current week
+        todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Adjust to show some context from previous week
+        if (containerRef.current) {
+          setTimeout(() => {
+            containerRef.current!.scrollTop -= 100;
+          }, 500);
+        }
       }
     }, 100);
   };
@@ -128,6 +149,7 @@ export function ContinuousMonthlyView({
               const isCurrentMonth = isSameMonth(day, month);
               const isPastDate = isPast(startOfDay(day)) && !isToday(day);
               const isTodayDate = isToday(day);
+              const isCurrentWeek = isSameWeek(day, new Date(), { weekStartsOn: 0 });
               
               return (
                 <Popover key={day.toISOString()}>
@@ -139,6 +161,7 @@ export function ContinuousMonthlyView({
                         !isCurrentMonth && "bg-gray-50 text-muted-foreground",
                         isPastDate && "bg-gray-100 text-gray-500",
                         isTodayDate && "bg-blue-50 border-orange-500 border-2",
+                        isCurrentWeek && !isTodayDate && "bg-orange-50",
                         hasTurnaround && !isTodayDate && "border-orange-300"
                       )}
                       onClick={() => onDateClick(day)}
