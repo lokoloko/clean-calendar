@@ -26,6 +26,13 @@ import {
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -55,11 +62,19 @@ const COLORS: Record<string, string> = {
 export default function StatsContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [selectedListing, setSelectedListing] = useState<string>('all');
+  const [filteredData, setFilteredData] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (data) {
+      filterDataByListing();
+    }
+  }, [selectedListing, data]);
 
   const fetchStats = async () => {
     try {
@@ -68,6 +83,7 @@ export default function StatsContent() {
       
       const result = await response.json();
       setData(result);
+      setFilteredData(result); // Initialize filtered data
     } catch (error) {
       toast({
         title: 'Error',
@@ -77,6 +93,170 @@ export default function StatsContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterDataByListing = () => {
+    if (!data) return;
+    
+    if (selectedListing === 'all') {
+      setFilteredData(data);
+      return;
+    }
+
+    // Filter schedule items by listing
+    const filteredSchedule = data.schedule.filter((item: any) => 
+      item.listing_id === selectedListing
+    );
+    
+    // Filter feedback by listing
+    const filteredFeedback = data.feedback.filter((item: any) => 
+      item.schedule_items?.listing_id === selectedListing
+    );
+
+    // Recalculate stats for filtered data
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Current month schedule
+    const currentMonthSchedule = filteredSchedule.filter((s: any) => {
+      const checkOut = new Date(s.check_out);
+      return checkOut.getMonth() === currentMonth && checkOut.getFullYear() === currentYear;
+    });
+    
+    // Current month feedback
+    const currentMonthFeedback = filteredFeedback.filter((f: any) => {
+      const created = new Date(f.created_at);
+      return created.getMonth() === currentMonth && created.getFullYear() === currentYear;
+    });
+    
+    // Get the selected listing's cleaning fee
+    const selectedListingData = data.listings.find((l: any) => l.id === selectedListing);
+    const cleaningFee = selectedListingData?.cleaning_fee || 0;
+    
+    // Calculate current month revenue
+    const currentMonthRevenue = currentMonthSchedule.length * cleaningFee;
+    
+    // Calculate feedback stats
+    const feedbackStats = {
+      total: currentMonthFeedback.length,
+      clean: currentMonthFeedback.filter((f: any) => f.cleanliness_rating === 'clean').length,
+      normal: currentMonthFeedback.filter((f: any) => f.cleanliness_rating === 'normal').length,
+      dirty: currentMonthFeedback.filter((f: any) => f.cleanliness_rating === 'dirty').length
+    };
+    
+    // Completion rate
+    const completedCleanings = currentMonthSchedule.filter((s: any) => 
+      s.is_completed || s.status === 'completed'
+    ).length;
+    const completionRate = currentMonthSchedule.length > 0 
+      ? Math.round((completedCleanings / currentMonthSchedule.length) * 100)
+      : 0;
+
+    // Recalculate monthly stats for filtered data
+    const monthlyStats: any[] = [];
+    const monthsWithData = new Set<string>();
+    
+    filteredSchedule.forEach((s: any) => {
+      const checkOut = new Date(s.check_out);
+      const monthKey = `${checkOut.getFullYear()}-${String(checkOut.getMonth() + 1).padStart(2, '0')}`;
+      monthsWithData.add(monthKey);
+    });
+    
+    Array.from(monthsWithData).sort().forEach(monthKey => {
+      const [year, month] = monthKey.split('-').map(Number);
+      
+      const monthSchedule = filteredSchedule.filter((s: any) => {
+        const checkOut = new Date(s.check_out);
+        return checkOut.getMonth() === month - 1 && checkOut.getFullYear() === year;
+      });
+      
+      const monthFeedback = filteredFeedback.filter((f: any) => {
+        const created = new Date(f.created_at);
+        return created.getMonth() === month - 1 && created.getFullYear() === year;
+      });
+      
+      if (monthSchedule.length > 0) {
+        monthlyStats.push({
+          month: monthKey,
+          total_cleanings: monthSchedule.length,
+          completed_cleanings: monthSchedule.filter((s: any) => s.is_completed || s.status === 'completed').length,
+          total_revenue: monthSchedule.length * cleaningFee,
+          feedback_count: monthFeedback.length,
+          clean_count: monthFeedback.filter((f: any) => f.cleanliness_rating === 'clean').length,
+          normal_count: monthFeedback.filter((f: any) => f.cleanliness_rating === 'normal').length,
+          dirty_count: monthFeedback.filter((f: any) => f.cleanliness_rating === 'dirty').length
+        });
+      }
+    });
+
+    // Filter cleaner stats for this listing
+    const cleanerStats = new Map();
+    filteredSchedule.forEach((s: any) => {
+      if (!s.cleaner_id) return;
+      
+      const cleanerData = data.cleaners.find((c: any) => c.id === s.cleaner_id);
+      const stats = cleanerStats.get(s.cleaner_id) || {
+        cleaner_id: s.cleaner_id,
+        cleaner_name: cleanerData?.name || 'Unknown',
+        total_cleanings: 0,
+        completed_cleanings: 0,
+        feedback_count: 0,
+        ratings: { clean: 0, normal: 0, dirty: 0 }
+      };
+      
+      stats.total_cleanings++;
+      if (s.is_completed || s.status === 'completed') {
+        stats.completed_cleanings++;
+      }
+      
+      cleanerStats.set(s.cleaner_id, stats);
+    });
+    
+    // Add feedback to cleaner stats
+    filteredFeedback.forEach((f: any) => {
+      const cleanerId = f.schedule_items?.cleaner_id;
+      if (!cleanerId) return;
+      
+      const stats = cleanerStats.get(cleanerId);
+      if (stats) {
+        stats.feedback_count++;
+        if (f.cleanliness_rating === 'clean') stats.ratings.clean++;
+        else if (f.cleanliness_rating === 'normal') stats.ratings.normal++;
+        else if (f.cleanliness_rating === 'dirty') stats.ratings.dirty++;
+      }
+    });
+    
+    // Convert to array and calculate metrics
+    const topCleaners = Array.from(cleanerStats.values())
+      .map(stats => ({
+        ...stats,
+        completion_rate: stats.total_cleanings > 0 
+          ? Math.round((stats.completed_cleanings / stats.total_cleanings) * 100)
+          : 0,
+        average_rating: stats.feedback_count > 0
+          ? ((stats.ratings.clean * 3 + stats.ratings.normal * 2 + stats.ratings.dirty * 1) / stats.feedback_count).toFixed(1)
+          : null
+      }))
+      .sort((a, b) => b.total_cleanings - a.total_cleanings)
+      .slice(0, 5);
+
+    setFilteredData({
+      ...data,
+      summary: {
+        totalListings: selectedListing === 'all' ? data.summary.totalListings : 1,
+        totalCleanings: currentMonthSchedule.length,
+        completedCleanings,
+        monthlyRevenue: currentMonthRevenue,
+        completionRate,
+        feedbackStats,
+        averageRating: feedbackStats.total > 0
+          ? ((feedbackStats.clean * 3 + feedbackStats.normal * 2 + feedbackStats.dirty * 1) / feedbackStats.total).toFixed(1)
+          : null
+      },
+      monthlyStats,
+      topCleaners
+    });
   };
 
   if (loading) {
@@ -89,7 +269,7 @@ export default function StatsContent() {
     );
   }
 
-  if (!data) {
+  if (!data || !filteredData) {
     return (
       <AppLayout>
         <div className="text-center py-12">
@@ -99,7 +279,7 @@ export default function StatsContent() {
     );
   }
 
-  const { summary, monthlyStats, topCleaners, feedbackStats } = data;
+  const { summary, monthlyStats, topCleaners, feedbackStats } = filteredData;
   
   // Calculate trend - compare current month to previous month if available
   const sortedMonthlyStats = [...monthlyStats].sort((a, b) => a.month.localeCompare(b.month));
@@ -124,7 +304,24 @@ export default function StatsContent() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        <PageHeader title="Analytics & Statistics" />
+        <div className="flex justify-between items-center">
+          <PageHeader title="Analytics & Statistics" />
+          <div className="w-64">
+            <Select value={selectedListing} onValueChange={setSelectedListing}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {data.listings.map((listing: any) => (
+                  <SelectItem key={listing.id} value={listing.id}>
+                    {listing.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
