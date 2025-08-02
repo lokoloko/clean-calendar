@@ -101,9 +101,14 @@ export default function StatsContent() {
 
   const { summary, monthlyStats, topCleaners, feedbackStats } = data;
   
-  // Calculate trend
-  const currentMonthRevenue = monthlyStats[monthlyStats.length - 1]?.total_revenue || 0;
-  const lastMonthRevenue = monthlyStats[monthlyStats.length - 2]?.total_revenue || 0;
+  // Calculate trend - compare current month to previous month if available
+  const sortedMonthlyStats = [...monthlyStats].sort((a, b) => a.month.localeCompare(b.month));
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonthData = sortedMonthlyStats.find(m => m.month === currentMonth);
+  const currentMonthRevenue = currentMonthData?.total_revenue || summary.monthlyRevenue || 0;
+  
+  // Find previous month in the data
+  const lastMonthRevenue = sortedMonthlyStats[sortedMonthlyStats.length - 2]?.total_revenue || 0;
   const revenueTrend = currentMonthRevenue > lastMonthRevenue ? 'up' : 
                        currentMonthRevenue < lastMonthRevenue ? 'down' : 'stable';
   const revenueChange = lastMonthRevenue > 0 
@@ -191,7 +196,7 @@ export default function StatsContent() {
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyStats}>
+                  <LineChart data={sortedMonthlyStats}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="month" 
@@ -327,7 +332,7 @@ export default function StatsContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {monthlyStats.slice().reverse().map((month: any) => (
+                {sortedMonthlyStats.map((month: any) => (
                   <TableRow key={month.month}>
                     <TableCell className="font-medium">
                       {format(new Date(month.month + '-01'), 'MMMM yyyy')}

@@ -100,21 +100,30 @@ export async function GET() {
     const listingFeesMap = new Map(listings.map(l => [l.id, l.cleaning_fee || 0]))
     const cleanerNameMap = new Map(cleaners.map(c => [c.id, c.name]))
     
-    // Calculate monthly stats for last 6 months
-    const monthlyStats = []
-    for (let i = 0; i < 6; i++) {
-      const monthDate = new Date(currentYear, currentMonth - i, 1)
-      const month = monthDate.getMonth()
-      const year = monthDate.getFullYear()
+    // Calculate monthly stats for months with data
+    const monthlyStats: any[] = []
+    const monthsWithData = new Set<string>()
+    
+    // Find all months that have data
+    schedule.forEach(s => {
+      const checkOut = new Date(s.check_out)
+      const monthKey = `${checkOut.getFullYear()}-${String(checkOut.getMonth() + 1).padStart(2, '0')}`
+      monthsWithData.add(monthKey)
+    })
+    
+    // Sort months and process each one
+    Array.from(monthsWithData).sort().forEach(monthKey => {
+      const [year, month] = monthKey.split('-').map(Number)
+      const monthDate = new Date(year, month - 1, 1)
       
       const monthSchedule = schedule.filter(s => {
         const checkOut = new Date(s.check_out)
-        return checkOut.getMonth() === month && checkOut.getFullYear() === year
+        return checkOut.getMonth() === month - 1 && checkOut.getFullYear() === year
       })
       
       const monthFeedback = feedback.filter(f => {
         const created = new Date(f.created_at)
-        return created.getMonth() === month && created.getFullYear() === year
+        return created.getMonth() === month - 1 && created.getFullYear() === year
       })
       
       const revenue = monthSchedule.reduce((sum, s) => {
@@ -122,7 +131,7 @@ export async function GET() {
       }, 0)
       
       monthlyStats.push({
-        month: monthDate.toISOString().slice(0, 7),
+        month: monthKey,
         total_cleanings: monthSchedule.length,
         completed_cleanings: monthSchedule.filter(s => s.is_completed || s.status === 'completed').length,
         total_revenue: revenue,
@@ -131,7 +140,7 @@ export async function GET() {
         normal_count: monthFeedback.filter(f => f.cleanliness_rating === 'normal').length,
         dirty_count: monthFeedback.filter(f => f.cleanliness_rating === 'dirty').length
       })
-    }
+    })
     
     // Calculate cleaner performance
     const cleanerStats = new Map()
@@ -218,7 +227,7 @@ export async function GET() {
           ? ((feedbackStats.clean * 3 + feedbackStats.normal * 2 + feedbackStats.dirty * 1) / feedbackStats.total).toFixed(1)
           : null
       },
-      monthlyStats: monthlyStats.reverse(), // Oldest to newest for charts
+      monthlyStats, // Already sorted by month
       topCleaners,
       // Limited schedule data for client-side processing
       schedule: schedule.slice(0, 500),
