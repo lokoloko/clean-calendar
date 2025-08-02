@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for cron endpoints
+  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
+    return NextResponse.next()
+  }
+  
   // Check if we're using Supabase auth or dev mode
   const useAuth = process.env.NEXT_PUBLIC_USE_AUTH === 'true'
   console.log('[Middleware]', request.nextUrl.pathname, '- Auth mode:', process.env.NEXT_PUBLIC_USE_AUTH, '- Using auth:', useAuth)
