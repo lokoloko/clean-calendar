@@ -130,16 +130,19 @@ export async function GET() {
         return sum + (listingFeesMap.get(s.listing_id) || 0)
       }, 0)
       
-      monthlyStats.push({
-        month: monthKey,
-        total_cleanings: monthSchedule.length,
-        completed_cleanings: monthSchedule.filter(s => s.is_completed || s.status === 'completed').length,
-        total_revenue: revenue,
-        feedback_count: monthFeedback.length,
-        clean_count: monthFeedback.filter(f => f.cleanliness_rating === 'clean').length,
-        normal_count: monthFeedback.filter(f => f.cleanliness_rating === 'normal').length,
-        dirty_count: monthFeedback.filter(f => f.cleanliness_rating === 'dirty').length
-      })
+      // Only include months that have actual cleanings
+      if (monthSchedule.length > 0) {
+        monthlyStats.push({
+          month: monthKey,
+          total_cleanings: monthSchedule.length,
+          completed_cleanings: monthSchedule.filter(s => s.is_completed || s.status === 'completed').length,
+          total_revenue: revenue,
+          feedback_count: monthFeedback.length,
+          clean_count: monthFeedback.filter(f => f.cleanliness_rating === 'clean').length,
+          normal_count: monthFeedback.filter(f => f.cleanliness_rating === 'normal').length,
+          dirty_count: monthFeedback.filter(f => f.cleanliness_rating === 'dirty').length
+        })
+      }
     })
     
     // Calculate cleaner performance
