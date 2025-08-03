@@ -46,3 +46,7 @@ firestore-debug.log
 
 # turbo
 .turbo
+
+# monorepo
+apps/*/.next
+apps/*/node_modules
