@@ -40,7 +40,7 @@ export async function GET() {
 
     if (listingsError) throw listingsError
 
-    let listingBookings = []
+    let listingBookings: any[] = []
     if (listings && listings.length > 0) {
       const { data, error } = await supabase
         .from('schedule_items')
