@@ -35,6 +35,12 @@ export function parseICSData(icsData: string): ParsedBooking[] {
     // Only process VEVENT components
     if (event.type !== 'VEVENT') continue
     
+    // Skip cancelled events
+    if (event.status === 'CANCELLED') {
+      console.log(`Skipping cancelled event: ${event.summary} (UID: ${event.uid})`)
+      continue
+    }
+    
     // Skip blocked dates or non-booking events
     if (event.summary?.toLowerCase().includes('blocked') || 
         event.summary?.toLowerCase().includes('not available')) {

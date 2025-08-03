@@ -62,6 +62,8 @@ export async function POST(request: Request) {
         // Parse the ICS file
         const bookings = await parseICSFromURL(listing.ics_url)
         
+        console.log(`Parsed ${bookings.length} bookings from ${listing.name} ICS feed`)
+        
         // Get all future bookings UIDs from the ICS feed
         const currentBookingUids = bookings.map(b => b.uid)
         
@@ -94,13 +96,17 @@ export async function POST(request: Request) {
 
         // Mark cancelled bookings
         if (cancelledUids.length > 0) {
+          console.log(`Found ${cancelledUids.length} cancelled bookings for ${listing.name}:`, cancelledUids)
+          
           // We need to update each cancelled booking individually to append to notes
           for (const uid of cancelledUids) {
             const { data: item } = await supabase
               .from('schedule_items')
-              .select('notes')
+              .select('notes, guest_name')
               .eq('booking_uid', uid)
               .single()
+            
+            console.log(`Marking booking as cancelled: ${item?.guest_name} (UID: ${uid})`)
             
             await supabase
               .from('schedule_items')
