@@ -38,6 +38,12 @@ GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cle
 - Updated cleanerSchema to trim whitespace from names
 - Production readiness: 90% complete (only missing Twilio SMS integration)
 - Preparing for monorepo migration to support multiple tools
+- Fixed cancelled Airbnb bookings not showing in schedule:
+  - Updated ICS parser to skip STATUS:CANCELLED events
+  - Enhanced sync to detect bookings removed from ICS feed
+  - Created Docker-specific sync function using direct PostgreSQL
+  - Fixed settings page to use bulk sync endpoint instead of individual listing sync
+  - Verified L3-RV cancellation properly marked in database
 
 **Product Goal**: Automate cleaning schedules for Airbnb hosts by parsing .ics calendar links into structured schedules and daily messages, helping hosts assign cleaners and avoid missed turnovers.
 

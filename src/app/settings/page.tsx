@@ -117,65 +117,45 @@ export default function SettingsPage() {
     setSyncProgress({ current: 0, total: 0 });
 
     try {
-      // Get all listings
-      const listingsRes = await fetch('/api/listings');
-      if (!listingsRes.ok) throw new Error('Failed to fetch listings');
+      // Use the bulk sync endpoint
+      const syncRes = await fetch('/api/sync-all', {
+        method: 'POST',
+      });
       
-      const listings = await listingsRes.json();
-      // Sync any listing with an ICS URL, not just those marked as active on Airbnb
-      const syncableListings = listings.filter((listing: any) => listing.ics_url);
-      
-      setSyncProgress({ current: 0, total: syncableListings.length });
-      
-      if (syncableListings.length === 0) {
-        toast({
-          title: 'No listings to sync',
-          description: 'No listings found with calendar URLs',
-        });
-        setIsSyncing(false);
-        return;
+      if (!syncRes.ok) {
+        const error = await syncRes.text();
+        throw new Error(error || 'Failed to sync calendars');
       }
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      // Sync each listing
-      for (let i = 0; i < syncableListings.length; i++) {
-        const listing = syncableListings[i];
-        setSyncProgress({ current: i + 1, total: syncableListings.length });
+      
+      const result = await syncRes.json();
+      
+      if (result.success) {
+        const { successful, failed, skipped, total } = result.summary;
         
-        try {
-          const syncRes = await fetch(`/api/listings/${listing.id}/sync`, {
-            method: 'POST',
+        if (failed === 0 && skipped === 0) {
+          toast({
+            title: 'Sync completed successfully',
+            description: `All ${successful} listings have been synced`,
           });
+        } else {
+          let description = `${successful} succeeded`;
+          if (failed > 0) description += `, ${failed} failed`;
+          if (skipped > 0) description += `, ${skipped} skipped`;
           
-          if (syncRes.ok) {
-            successCount++;
-          } else {
-            errorCount++;
-          }
-        } catch (error) {
-          errorCount++;
+          toast({
+            title: 'Sync completed with issues',
+            description,
+            variant: failed > 0 ? 'destructive' : 'default',
+          });
         }
-      }
-
-      // Show results
-      if (errorCount === 0) {
-        toast({
-          title: 'Sync completed successfully',
-          description: `All ${successCount} listings have been synced`,
-        });
       } else {
-        toast({
-          title: 'Sync completed with errors',
-          description: `${successCount} succeeded, ${errorCount} failed`,
-          variant: 'destructive',
-        });
+        throw new Error(result.error || 'Sync failed');
       }
     } catch (error) {
+      console.error('Error syncing listings:', error);
       toast({
         title: 'Sync failed',
-        description: 'Failed to sync listings. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to sync listings. Please try again.',
         variant: 'destructive',
       });
     } finally {
