@@ -114,9 +114,19 @@ export default function SettingsPage() {
 
   const handleSyncAll = async () => {
     setIsSyncing(true);
-    setSyncProgress({ current: 0, total: 0 });
+    setSyncProgress({ current: 0, total: 1 }); // Show indeterminate progress
 
     try {
+      // First get the number of listings to sync for progress tracking
+      const listingsRes = await fetch('/api/listings');
+      if (listingsRes.ok) {
+        const listings = await listingsRes.json();
+        const syncableListings = listings.filter((listing: any) => listing.ics_url);
+        if (syncableListings.length > 0) {
+          setSyncProgress({ current: 0, total: syncableListings.length });
+        }
+      }
+
       // Use the bulk sync endpoint
       const syncRes = await fetch('/api/sync-all', {
         method: 'POST',
@@ -131,6 +141,9 @@ export default function SettingsPage() {
       
       if (result.success) {
         const { successful, failed, skipped, total } = result.summary;
+        
+        // Show full progress when complete
+        setSyncProgress({ current: total, total: total });
         
         if (failed === 0 && skipped === 0) {
           toast({

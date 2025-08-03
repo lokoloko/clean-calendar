@@ -376,9 +376,10 @@ export default function ScheduleContent() {
   };
 
   const generateExportForCleaner = (cleanerId: string, startDate: Date, endDate: Date) => {
-    // Filter schedule items for the selected cleaner and date range
+    // Filter schedule items for the selected cleaner and date range, excluding cancelled bookings
     const cleanerItems = scheduleItems.filter(item => {
       if (item.cleaner_id !== cleanerId) return false;
+      if (item.status === 'cancelled') return false; // Exclude cancelled bookings
       const checkoutDate = parseLocalDate(item.check_out);
       const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
       const startDateStr = format(startDate, 'yyyy-MM-dd');
