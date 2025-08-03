@@ -1,12 +1,25 @@
 import { NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth-server'
+import { getCurrentUser } from '@/lib/auth-server'
 import { createClient } from '@/lib/supabase-server'
 import { parseICSFromURL, getCheckoutTime } from '@/lib/ics-parser'
+import { syncAllListingsDocker } from '@/lib/db-docker-sync'
 
 export async function POST() {
   try {
     // Regular authentication for manual sync
-    const user = await requireAuth()
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Check if we're in Docker mode
+    const isDockerMode = process.env.DATABASE_URL?.includes('@db:5432')
+    if (isDockerMode) {
+      console.log('Using Docker mode sync')
+      const result = await syncAllListingsDocker(user.id)
+      return NextResponse.json(result)
+    }
+    
     const supabase = await createClient()
     
     // Get all listings with ICS URLs for this user
