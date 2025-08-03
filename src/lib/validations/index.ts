@@ -32,7 +32,7 @@ export const emailSchema = z.string().email('Invalid email format')
 
 // Common entity schemas
 export const cleanerSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
   phone: phoneSchema,
   email: emailSchema.optional(),
 })

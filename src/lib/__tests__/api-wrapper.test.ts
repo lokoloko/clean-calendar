@@ -16,10 +16,12 @@ jest.mock('../api-errors', () => ({
   }
 }))
 
-jest.mock('../logger', () => ({
+jest.mock('../logger-edge', () => ({
   logger: {
     api: jest.fn(),
     error: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
   }
 }))
 
@@ -48,7 +50,7 @@ describe('withApiHandler', () => {
   })
 
   it('should log requests when enabled', async () => {
-    const { logger } = require('../logger')
+    const { logger } = require('../logger-edge')
     mockHandler.mockResolvedValue(NextResponse.json({ success: true }))
 
     const wrappedHandler = withApiHandler(mockHandler, { logRequests: true })
@@ -58,7 +60,7 @@ describe('withApiHandler', () => {
   })
 
   it('should not log requests when disabled', async () => {
-    const { logger } = require('../logger')
+    const { logger } = require('../logger-edge')
     mockHandler.mockResolvedValue(NextResponse.json({ success: true }))
 
     const wrappedHandler = withApiHandler(mockHandler, { logRequests: false })

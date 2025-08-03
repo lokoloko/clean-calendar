@@ -11,6 +11,8 @@ const customJestConfig = {
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you soon)
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock problematic modules
+    'isows': '<rootDir>/src/test-utils/mocks/isows.js',
   },
   testEnvironment: 'jest-environment-jsdom',
   testMatch: [
@@ -23,6 +25,12 @@ const customJestConfig = {
     '/.next/',
     '/out/',
     '/build/',
+  ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(isows|@supabase)/)',
+  ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/.next/',
   ],
   coverageDirectory: '<rootDir>/coverage',
   collectCoverageFrom: [

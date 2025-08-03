@@ -97,3 +97,40 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalError
 })
+
+// Mock Supabase server client
+jest.mock('@/lib/supabase-server', () => {
+  const mockChain = () => {
+    const chain = {
+      select: jest.fn(() => chain),
+      from: jest.fn(() => chain),
+      eq: jest.fn(() => chain),
+      neq: jest.fn(() => chain),
+      not: jest.fn(() => chain),
+      in: jest.fn(() => chain),
+      gt: jest.fn(() => chain),
+      gte: jest.fn(() => chain),
+      lt: jest.fn(() => chain),
+      lte: jest.fn(() => chain),
+      order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
+      single: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      insert: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      update: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      delete: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      then: (resolve, reject) => Promise.resolve({ data: [], error: null }).then(resolve, reject),
+      data: [],
+      error: null
+    }
+    return chain
+  }
+  
+  return {
+    createClient: jest.fn(() => ({
+      from: jest.fn(() => mockChain()),
+      auth: {
+        getUser: jest.fn(() => Promise.resolve({ data: { user: null }, error: null }))
+      }
+    }))
+  }
+})

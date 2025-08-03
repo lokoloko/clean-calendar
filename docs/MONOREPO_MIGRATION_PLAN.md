@@ -233,3 +233,60 @@ import { Button } from '@cleancalendar/ui'
 ---
 
 *Last Updated: July 31, 2025*
+
+---
+
+## Updated Plan (August 3, 2025): Conservative Monorepo Migration
+
+### New Approach: Minimal Impact Migration
+
+Based on the need to minimize breaking changes while the app is in production, we're adopting a more conservative migration strategy.
+
+#### Core Principle: Keep Everything Working
+
+- Landing page stays exactly where it is
+- All existing routes remain unchanged
+- No breaking changes for users
+- Gradual, reversible changes only
+
+#### Revised Migration Strategy
+
+**Phase 1: Add Monorepo Tools (No Code Movement)**
+1. Install Turborepo at root level
+2. Configure to recognize current location as `apps/cleaning`
+3. All existing code stays in place
+4. Create empty `apps/analytics` directory
+
+**Phase 2: Build New Apps Alongside**
+1. Create analytics app in `apps/analytics`
+2. Import shared code via relative paths initially
+3. Test thoroughly before any extraction
+4. Deploy analytics to `/analytics` route
+
+**Phase 3: Gradual Package Extraction**
+1. Copy (don't move) shared UI components to `packages/ui`
+2. New apps use packages, existing app unchanged
+3. Update existing app only after thorough testing
+4. Always maintain ability to rollback
+
+#### What Stays the Same
+- ✅ Landing page location and content
+- ✅ All existing routes and URLs
+- ✅ Database connections
+- ✅ Authentication flow
+- ✅ Current deployment process
+- ✅ All API endpoints
+
+#### What Changes Gradually
+- 📦 Shared code gets copied to packages (not moved)
+- 🆕 New apps added in `apps/` directory
+- 🔄 Imports updated only after testing
+
+#### Branch Strategy
+- All work on `feature/monorepo-migration` branch
+- Main branch remains untouched
+- Easy rollback if issues arise
+
+This conservative approach ensures zero downtime and minimal risk while building the foundation for GoStudioM's multi-tool platform.
+
+*Last Updated: August 3, 2025*
