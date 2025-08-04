@@ -53,13 +53,13 @@
 ### 🔧 Manual Configuration Required
 
 #### Supabase Dashboard Settings
-1. [ ] **Authentication > Providers > Email**
+1. [x] **Authentication > Providers > Email**
    - Set OTP Expiry to 1800 (30 min) or 3600 (1 hour)
    
-2. [ ] **Authentication > Security & Protection**
+2. [x] **Authentication > Security & Protection**
    - Enable "Leaked password protection"
 
-3. [ ] **Verify Security**
+3. [x] **Verify Security**
    - Run Security Advisor scan
    - Confirm all warnings cleared
 
@@ -98,15 +98,15 @@
 ## Environment Variables Checklist
 
 ### Core Database
-- [ ] `DATABASE_URL` - Production PostgreSQL URL
-- [ ] `NEXT_PUBLIC_SUPABASE_URL` - https://[project].supabase.co
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Public anon key
+- [x] `DATABASE_URL` - Production PostgreSQL URL
+- [x] `NEXT_PUBLIC_SUPABASE_URL` - https://[project].supabase.co
+- [x] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Public anon key
 
 ### Authentication
-- [ ] `NEXTAUTH_URL` - https://your-domain.com
-- [ ] `NEXTAUTH_SECRET` - Generate with: openssl rand -base64 32
-- [ ] `GOOGLE_CLIENT_ID` - From Google Console
-- [ ] `GOOGLE_CLIENT_SECRET` - From Google Console
+- [x] `NEXTAUTH_URL` - https://your-domain.com
+- [x] `NEXTAUTH_SECRET` - Generate with: openssl rand -base64 32
+- [x] `GOOGLE_CLIENT_ID` - From Google Console
+- [x] `GOOGLE_CLIENT_SECRET` - From Google Console
 
 ### Notifications (Day 2)
 - [ ] `SENDGRID_API_KEY` - From SendGrid
@@ -116,7 +116,7 @@
 - [ ] `TWILIO_PHONE_NUMBER` - Purchased number
 
 ### Security
-- [ ] `CRON_SECRET` - For sync endpoint protection
+- [x] `CRON_SECRET` - For sync endpoint protection
 
 ### Future (Post-Launch)
 - [ ] `STRIPE_SECRET_KEY` - Payment processing
@@ -288,4 +288,4 @@ All migrations already created and tested:
 ---
 
 *Last Updated: 2025-08-04*
-*Status: Day 1 Complete, Ready for Day 2*
+*Status: Core security and env vars complete, Twilio SMS integration remaining*

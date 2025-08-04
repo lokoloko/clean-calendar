@@ -53,7 +53,9 @@ GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cle
 - Removed deprecated cleaner edit page (`/cleaners/[id]/edit`)
 - Documented SMS timezone strategy in `NOTIFICATION_TIMEZONE_PLAN.md`
 - Fixed mobile responsiveness for stats Monthly Breakdown table
-- Production readiness: 85% complete (pending Twilio SMS and minor tasks)
+- Production readiness: 90% complete (only Twilio SMS integration remaining as critical blocker)
+- Supabase security settings configured (OTP expiry, leaked password protection)
+- All core environment variables set in production
 
 **Previous Session (2025-08-03)**:
 - Fixed all remaining test failures (82/82 tests passing)
