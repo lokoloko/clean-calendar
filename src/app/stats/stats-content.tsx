@@ -525,42 +525,71 @@ export default function StatsContent() {
             <CardDescription>Detailed statistics by month</CardDescription>
           </CardHeader>
           <CardContent className="p-2 sm:p-6">
-            <ResponsiveTable>
-              <ResponsiveTableHeader>
-                <ResponsiveTableRow>
-                  <ResponsiveTableHead>Month</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Cleanings</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Completed</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Cost</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Feedback</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Clean</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Normal</ResponsiveTableHead>
-                  <ResponsiveTableHead className="text-center">Dirty</ResponsiveTableHead>
-                </ResponsiveTableRow>
-              </ResponsiveTableHeader>
-              <ResponsiveTableBody>
-                {sortedMonthlyStats.map((month: any) => (
-                  <ResponsiveTableRow key={month.month}>
-                    <ResponsiveTableCell data-label="Month" className="font-medium">
-                      {format(new Date(month.month + '-01'), 'MMMM yyyy')}
-                    </ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Cleanings" className="text-center">{month.total_cleanings}</ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Completed" className="text-center">{month.completed_cleanings}</ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Cost" className="text-center">${Math.round(month.total_revenue)}</ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Feedback" className="text-center">{month.feedback_count}</ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Clean" className="text-center">
-                      <span className="text-green-600">{month.clean_count}</span>
-                    </ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Normal" className="text-center">
-                      <span className="text-blue-600">{month.normal_count}</span>
-                    </ResponsiveTableCell>
-                    <ResponsiveTableCell data-label="Dirty" className="text-center">
-                      <span className="text-orange-600">{month.dirty_count}</span>
-                    </ResponsiveTableCell>
-                  </ResponsiveTableRow>
-                ))}
-              </ResponsiveTableBody>
-            </ResponsiveTable>
+            {/* Mobile view - simplified table */}
+            <div className="sm:hidden overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left pb-2 pr-2">Month</th>
+                    <th className="text-center pb-2 px-2">Clean</th>
+                    <th className="text-center pb-2 px-2">Done</th>
+                    <th className="text-center pb-2 pl-2">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedMonthlyStats.map((month: any) => (
+                    <tr key={month.month} className="border-b">
+                      <td className="py-3 pr-2 font-medium">
+                        {format(new Date(month.month + '-01'), 'MMM yy')}
+                      </td>
+                      <td className="py-3 px-2 text-center">{month.total_cleanings}</td>
+                      <td className="py-3 px-2 text-center">{month.completed_cleanings}</td>
+                      <td className="py-3 pl-2 text-center">${Math.round(month.total_revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Desktop view with all columns */}
+            <div className="hidden sm:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-center">Cleanings</TableHead>
+                    <TableHead className="text-center">Completed</TableHead>
+                    <TableHead className="text-center">Cost</TableHead>
+                    <TableHead className="text-center">Feedback</TableHead>
+                    <TableHead className="text-center">Clean</TableHead>
+                    <TableHead className="text-center">Normal</TableHead>
+                    <TableHead className="text-center">Dirty</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedMonthlyStats.map((month: any) => (
+                    <TableRow key={month.month}>
+                      <TableCell className="font-medium">
+                        {format(new Date(month.month + '-01'), 'MMMM yyyy')}
+                      </TableCell>
+                      <TableCell className="text-center">{month.total_cleanings}</TableCell>
+                      <TableCell className="text-center">{month.completed_cleanings}</TableCell>
+                      <TableCell className="text-center">${Math.round(month.total_revenue)}</TableCell>
+                      <TableCell className="text-center">{month.feedback_count}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-green-600">{month.clean_count}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-blue-600">{month.normal_count}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-orange-600">{month.dirty_count}</span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
