@@ -4,11 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cleaning schedules. It integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
+GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbnb property cleaning schedules. Built for hosts, by a host - it integrates with calendar systems, manages cleaner assignments, and uses AI for schedule optimization.
 
 **Current Status**: Production-ready at 60% completion. Security and performance fully optimized with RLS policies, database indexes, and mobile-first design. Core functionality complete, awaiting external services for notifications and final deployment configuration.
 
 **Recent Session (2025-08-04)**:
+- Fixed type incompatibility between shared export interface and component interfaces
+  - Added required fields to ScheduleItem interface
+  - Build now succeeds without errors
+- Updated branding with GoStudioM logo
+  - Replaced SVG icons with custom logo (40px height)
+  - Added proper favicon support for all devices
+  - Fixed mobile header to display logo
+  - Updated site title for better SEO: "Smart Cleaning Calendar - GoStudioM - Built for hosts, by a host"
 - Fixed Monthly Trends graph responsiveness in stats page
   - Added responsive padding and height adjustments
   - Improved axis labels with smaller fonts and better spacing

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/contexts/auth-context'
 
 export const metadata: Metadata = {
-  title: 'GoStudioM Scheduler',
+  title: 'Smart Cleaning Calendar - GoStudioM - Built for hosts, by a host',
   description: 'AI-Powered Airbnb Cleaner Scheduler',
 };
 
