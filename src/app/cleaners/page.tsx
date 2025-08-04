@@ -286,8 +286,8 @@ export default function CleanersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact Info</TableHead>
                 <TableHead>SMS Status</TableHead>
-                <TableHead>Assigned Listings</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[200px]">Listings</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -324,50 +324,50 @@ export default function CleanersPage() {
                       );
                     })()}
                   </TableCell>
-                  <TableCell>
-                    {getAssignedListings(cleaner.id) || (
-                      <span className="text-muted-foreground">No listings assigned</span>
-                    )}
+                  <TableCell className="text-sm">
+                    <div className="max-w-[200px] truncate" title={getAssignedListings(cleaner.id) || 'No listings assigned'}>
+                      {getAssignedListings(cleaner.id) || (
+                        <span className="text-muted-foreground">None</span>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {cleaner.phone && !cleaner.sms_opted_in && !cleaner.sms_opt_out_at && (
+                        <Button
+                          size="sm"
+                          variant={cleaner.sms_invite_sent_at ? "outline" : "default"}
+                          onClick={() => handleSendSmsInvite(cleaner.id)}
+                          className="gap-2"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          {cleaner.sms_invite_sent_at ? 'Resend Invite' : 'Send SMS Invite'}
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setEditingCleaner(cleaner);
-                            setFormData({
-                              name: cleaner.name,
-                              email: cleaner.email || '',
-                              phone: cleaner.phone || '',
-                            });
-                            setIsModalOpen(true);
-                          }}
-                        >
-                          <FilePenLine className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {cleaner.phone && !cleaner.sms_opted_in && !cleaner.sms_opt_out_at && (
-                          <DropdownMenuItem
-                            onClick={() => handleSendSmsInvite(cleaner.id)}
-                          >
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Send SMS Invite
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDelete(cleaner.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingCleaner(cleaner);
+                          setFormData({
+                            name: cleaner.name,
+                            email: cleaner.email || '',
+                            phone: cleaner.phone || '',
+                          });
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        <FilePenLine className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(cleaner.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
