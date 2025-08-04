@@ -68,12 +68,11 @@ function AppSidebar() {
       {/* Sidebar Header with logo and app name */}
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden rounded-full">
-                <Sparkles className="h-6 w-6 text-primary" />
-            </Button>
-            <span className="text-lg font-semibold font-headline group-data-[collapsible=icon]:hidden">
-                GoStudioM
-            </span>
+            <img 
+                src="/gostudiom-logo.png" 
+                alt="GoStudioM" 
+                className="h-10 w-auto"
+            />
         </Link>
       </SidebarHeader>
       {/* Sidebar content with navigation menu */}

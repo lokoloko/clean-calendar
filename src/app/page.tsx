@@ -101,22 +101,11 @@ export default function LandingPage() {
         <div className="container flex h-14 items-center justify-between">
           <Link href="#" className="flex items-center gap-2" prefetch={false}>
             {/* Logo */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6 text-primary"
-            >
-              <path d="M12.5 5.25a.75.75 0 0 0-1.5 0v3.313a2.52 2.52 0 0 0-3.322 3.322A4.5 4.5 0 0 0 12 19.5a4.5 4.5 0 0 0 4.322-5.615 2.52 2.52 0 0 0-3.322-3.322V5.25Z" />
-              <path d="M21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12c0 4.22 2.67 7.854 6.375 9.172.441.082.625-.19.625-.422v-1.655c-2.924.634-3.543-1.223-3.725-1.638-.075-.165-.424-.68-.748-.823-.27-.12-.674-.524-.025-.533.614-.01.99.567 1.138.78.69 1.202 1.815 1.025 2.256.782.075-.607.27-1.025.498-1.26-2.212-.25-4.537-1.107-4.537-4.924 0-1.088.388-1.98.975-2.678-.1-.25-.425-1.26.1-2.64 0 0 .837-.262 2.75 1.025A9.623 9.623 0 0 1 12 6.75c.825 0 1.667.112 2.438.337 1.912-1.287 2.75-1.025 2.75-1.025.525 1.38.2 2.39.1 2.64.587.698.975 1.59.975 2.678 0 3.829-2.325 4.674-4.537 4.924.288.25.538.737.538 1.487v2.187c0 .237.187.512.625.425C19.08 19.854 21.75 16.22 21.75 12Z" />
-            </svg>
-            <span className="font-headline text-lg font-semibold">GoStudioM</span>
+            <img 
+              src="/gostudiom-logo.png" 
+              alt="GoStudioM" 
+              className="h-10 w-auto"
+            />
           </Link>
           <div className="flex items-center gap-2">
             <Button onClick={signInWithGoogle}>
