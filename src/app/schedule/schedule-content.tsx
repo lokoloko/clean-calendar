@@ -60,6 +60,8 @@ interface ScheduleItem extends ExportScheduleItem {
   notes: string | null;
   listing_timezone: string;
   cleaner_phone: string | null;
+  source: 'airbnb' | 'manual' | 'manual_recurring';
+  checkout_time: string;
   original_check_in?: string;
   original_check_out?: string;
   cancelled_at?: string;

@@ -11,7 +11,7 @@ interface ScheduleItem {
   id: string;
   check_in: string;
   check_out: string;
-  checkout_time: string;
+  checkout_time?: string;
   guest_name: string | null;
   notes: string | null;
   status: string;
