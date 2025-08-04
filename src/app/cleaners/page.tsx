@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { AppLayout } from '@/components/layout';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { formatPhoneNumber } from '@/lib/twilio';
 
 interface Cleaner {
   id: string;
@@ -299,7 +300,7 @@ export default function CleanersPage() {
                       {cleaner.phone && (
                         <a href={`tel:${cleaner.phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                           <Phone className="h-3 w-3" />
-                          {cleaner.phone}
+                          {formatPhoneNumber(cleaner.phone)}
                         </a>
                       )}
                       {cleaner.email && (
