@@ -45,6 +45,9 @@ async function fetchMetrics(userId: string) {
           cleanliness_rating,
           notes,
           completed_at
+        ),
+        manual_schedule_rules(
+          frequency
         )
       `).eq('listings.user_id', userId).gte('check_out', thirtyDaysAgo.toISOString()).order('check_out'),
       
@@ -86,6 +89,7 @@ async function fetchMetrics(userId: string) {
       cleaner_name: s.cleaners?.name,
       cleaner_phone: s.cleaners?.phone,
       source: s.source || 'airbnb',
+      manual_rule_frequency: s.manual_schedule_rules?.frequency,
       feedback_id: s.cleaner_feedback?.[0]?.id,
       cleanliness_rating: s.cleaner_feedback?.[0]?.cleanliness_rating,
       feedback_notes: s.cleaner_feedback?.[0]?.notes,

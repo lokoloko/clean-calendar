@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format, formatRelative, parseISO } from "date-fns";
+import { generateExportForCleaner, getNextCheckIn, parseLocalDate, type ScheduleItem as ExportScheduleItem } from "@/lib/schedule-export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,15 +54,8 @@ interface Cleaner {
   name: string;
 }
 
-interface ScheduleItem {
-  id: string;
-  listing_id: string;
-  listing_name: string;
-  cleaner_id: string;
-  cleaner_name: string;
-  check_in: string;
-  check_out: string;
-  status: string;
+interface ScheduleItem extends ExportScheduleItem {
+  // Additional fields specific to dashboard if needed
 }
 
 // The main dashboard page for a quick overview of the application's state.
@@ -109,22 +103,6 @@ export default function DashboardPage() {
     fetchDashboardStats();
   }, [router, toast]);
 
-  // Helper to parse date strings as local dates
-  const parseLocalDate = (dateStr: string): Date => {
-    if (!dateStr) return new Date();
-    const datePart = dateStr.split('T')[0];
-    const parts = datePart.split('-');
-    if (parts.length !== 3) {
-      console.error('Invalid date format:', dateStr);
-      return new Date();
-    }
-    const [year, month, day] = parts.map(Number);
-    if (isNaN(year) || isNaN(month) || isNaN(day)) {
-      console.error('Invalid date string:', dateStr);
-      return new Date();
-    }
-    return new Date(year, month - 1, day);
-  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -358,54 +336,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Find the next check-in for a given listing
-  const getNextCheckIn = (listingId: string, currentCheckout: string, currentBookingId: string): string => {
-    try {
-      const checkoutDateObj = parseLocalDate(currentCheckout);
-      if (isNaN(checkoutDateObj.getTime())) {
-        return 'Invalid date';
-      }
-      
-      const checkoutDateStr = format(checkoutDateObj, 'yyyy-MM-dd');
-      
-      // Look for same-day turnaround
-      const sameDay = Array.isArray(scheduleItems) ? scheduleItems.find(item => {
-        if (item.listing_id !== listingId || item.id === currentBookingId) return false;
-        const checkinDate = parseLocalDate(item.check_in);
-        const checkinStr = !isNaN(checkinDate.getTime()) ? format(checkinDate, 'yyyy-MM-dd') : '';
-        return checkinStr === checkoutDateStr;
-      }) : null;
-      
-      if (sameDay) {
-        return 'Same day';
-      }
-      
-      // Find next booking
-      const futureBookings = Array.isArray(scheduleItems) ? scheduleItems
-        .filter(item => {
-          if (item.listing_id !== listingId || item.id === currentBookingId) return false;
-          const checkinDate = parseLocalDate(item.check_in);
-          return !isNaN(checkinDate.getTime()) && checkinDate >= checkoutDateObj;
-        })
-        .sort((a, b) => parseLocalDate(a.check_in).getTime() - parseLocalDate(b.check_in).getTime()) : [];
-      
-      if (futureBookings.length > 0) {
-        const nextBooking = futureBookings[0];
-        const nextCheckin = parseLocalDate(nextBooking.check_in);
-        const daysUntil = Math.ceil((nextCheckin.getTime() - checkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (daysUntil === 0) return 'Same day';
-        else if (daysUntil === 1) return 'Next day';
-        else if (daysUntil <= 7) return `${daysUntil} days later`;
-        else return format(nextCheckin, 'MMM d');
-      }
-      
-      return 'No upcoming';
-    } catch (error) {
-      console.error('Error in getNextCheckIn:', error);
-      return 'Error';
-    }
-  };
 
   const handleExport = () => {
     setExportModal({
@@ -420,66 +350,6 @@ export default function DashboardPage() {
     });
   };
 
-  const generateExportForCleaner = (cleanerId: string, startDate: Date, endDate: Date) => {
-    const cleanerItems = Array.isArray(scheduleItems) ? scheduleItems.filter(item => {
-      if (item.cleaner_id !== cleanerId) return false;
-      const checkoutDate = parseLocalDate(item.check_out);
-      const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd');
-      return checkoutDateStr >= startDateStr && checkoutDateStr <= endDateStr && item.status !== 'cancelled';
-    }) : [];
-
-    const itemsByDate = new Map<string, ScheduleItem[]>();
-    cleanerItems.forEach(item => {
-      const dateKey = format(parseLocalDate(item.check_out), 'yyyy-MM-dd');
-      if (!itemsByDate.has(dateKey)) {
-        itemsByDate.set(dateKey, []);
-      }
-      itemsByDate.get(dateKey)!.push(item);
-    });
-
-    let exportText = '';
-    
-    if (exportModal.exportType === 'range') {
-      exportText += `Schedule for ${format(startDate, 'MMMM d')} - ${format(endDate, 'MMMM d, yyyy')}:\n\n`;
-    }
-    
-    const currentDate = new Date(startDate);
-    
-    while (currentDate <= endDate) {
-      const dateKey = format(currentDate, 'yyyy-MM-dd');
-      const dayItems = itemsByDate.get(dateKey) || [];
-      
-      if (exportModal.exportType === 'today' && format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
-        exportText += `Today's Cleanings - ${format(currentDate, 'MMMM d')}:\n`;
-      } else {
-        exportText += `${format(currentDate, 'EEEE, MMMM d')}:\n`;
-      }
-      
-      if (dayItems.length === 0) {
-        exportText += 'No cleanings scheduled\n';
-      } else {
-        dayItems.forEach(item => {
-          const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
-          exportText += `${item.listing_name}`;
-          
-          if (nextCheckIn === 'Same day' || nextCheckIn === 'Next day') {
-            exportText += ` - ${nextCheckIn}`;
-          } else if (nextCheckIn !== 'No upcoming') {
-            exportText += ` - Next: ${nextCheckIn}`;
-          }
-          
-          exportText += '\n';
-        });
-      }
-      
-      exportText += '\n';
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return exportText.trim();
-  };
 
   const handleExportNext = () => {
     if (exportModal.step === 'selectCleaner') {
@@ -495,21 +365,25 @@ export default function DashboardPage() {
     } else if (exportModal.step === 'selectType') {
       if (exportModal.exportType === 'today') {
         const today = new Date();
-        const exportText = generateExportForCleaner(
-          exportModal.selectedCleanerId,
-          today,
-          today
-        );
+        const exportText = generateExportForCleaner({
+          cleanerId: exportModal.selectedCleanerId,
+          startDate: today,
+          endDate: today,
+          exportType: exportModal.exportType,
+          scheduleItems
+        });
         setExportModal({ ...exportModal, step: 'showExport', exportText });
       } else {
         setExportModal({ ...exportModal, step: 'selectDates' });
       }
     } else if (exportModal.step === 'selectDates') {
-      const exportText = generateExportForCleaner(
-        exportModal.selectedCleanerId,
-        exportModal.startDate,
-        exportModal.endDate
-      );
+      const exportText = generateExportForCleaner({
+        cleanerId: exportModal.selectedCleanerId,
+        startDate: exportModal.startDate,
+        endDate: exportModal.endDate,
+        exportType: exportModal.exportType,
+        scheduleItems
+      });
       setExportModal({ ...exportModal, step: 'showExport', exportText });
     }
   };
