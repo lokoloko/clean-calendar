@@ -380,7 +380,7 @@ export default function ScheduleContent() {
     const cleanerItems = scheduleItems.filter(item => {
       if (item.cleaner_id !== cleanerId) return false;
       if (item.status === 'cancelled') {
-        console.log('Excluding cancelled booking:', item.guest_name || 'No name', item.listing?.name, item.check_out);
+        console.log('Excluding cancelled booking:', item.guest_name || 'No name', item.listing_name, item.check_out);
         return false; // Exclude cancelled bookings
       }
       const checkoutDate = parseLocalDate(item.check_out);
