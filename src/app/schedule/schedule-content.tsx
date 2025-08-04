@@ -379,7 +379,10 @@ export default function ScheduleContent() {
     // Filter schedule items for the selected cleaner and date range, excluding cancelled bookings
     const cleanerItems = scheduleItems.filter(item => {
       if (item.cleaner_id !== cleanerId) return false;
-      if (item.status === 'cancelled') return false; // Exclude cancelled bookings
+      if (item.status === 'cancelled') {
+        console.log('Excluding cancelled booking:', item.guest_name || 'No name', item.listing?.name, item.check_out);
+        return false; // Exclude cancelled bookings
+      }
       const checkoutDate = parseLocalDate(item.check_out);
       const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');
       const startDateStr = format(startDate, 'yyyy-MM-dd');

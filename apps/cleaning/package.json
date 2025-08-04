@@ -1,0 +1,15 @@
+{
+  "name": "@cleancalendar/cleaning",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd ../.. && next dev --turbopack -p 9002",
+    "build": "cd ../.. && next build",
+    "start": "cd ../.. && next start",
+    "lint": "cd ../.. && next lint",
+    "typecheck": "cd ../.. && tsc --noEmit",
+    "test": "cd ../.. && jest",
+    "test:integration": "cd ../.. && jest --config jest.integration.config.js",
+    "test:e2e": "cd ../.. && playwright test"
+  }
+}

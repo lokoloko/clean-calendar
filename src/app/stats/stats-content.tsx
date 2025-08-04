@@ -11,6 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  ResponsiveTable,
+  ResponsiveTableHeader,
+  ResponsiveTableRow,
+  ResponsiveTableHead,
+  ResponsiveTableBody,
+  ResponsiveTableCell,
+} from "@/components/ui/responsive-table";
+import {
   Table,
   TableBody,
   TableCell,
@@ -390,17 +398,19 @@ export default function StatsContent() {
               <CardTitle>Monthly Trends</CardTitle>
               <CardDescription>Cleanings and costs over time</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px]">
+            <CardContent className="p-2 sm:p-6">
+              <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={sortedMonthlyStats}>
+                  <LineChart data={sortedMonthlyStats} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="month" 
                       tickFormatter={(value) => format(new Date(value + '-01'), 'MMM')}
+                      tick={{ fontSize: 12 }}
+                      interval="preserveStartEnd"
                     />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
+                    <YAxis yAxisId="left" tick={{ fontSize: 12 }} width={30} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} width={40} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Line
                       yAxisId="left"
@@ -428,18 +438,18 @@ export default function StatsContent() {
               <CardTitle>Cleanliness Feedback</CardTitle>
               <CardDescription>Distribution of cleanliness ratings</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6">
               {pieData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px]">
+                <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                       <Pie
                         data={pieData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
+                        outerRadius="70%"
                         fill="#8884d8"
                         dataKey="value"
                       >
@@ -452,7 +462,7 @@ export default function StatsContent() {
                   </ResponsiveContainer>
                 </ChartContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
                   No feedback data available
                 </div>
               )}
@@ -514,43 +524,43 @@ export default function StatsContent() {
             <CardTitle>Monthly Breakdown</CardTitle>
             <CardDescription>Detailed statistics by month</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-center">Cleanings</TableHead>
-                  <TableHead className="text-center">Completed</TableHead>
-                  <TableHead className="text-center">Cost</TableHead>
-                  <TableHead className="text-center">Feedback</TableHead>
-                  <TableHead className="text-center">Clean</TableHead>
-                  <TableHead className="text-center">Normal</TableHead>
-                  <TableHead className="text-center">Dirty</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <CardContent className="p-2 sm:p-6">
+            <ResponsiveTable>
+              <ResponsiveTableHeader>
+                <ResponsiveTableRow>
+                  <ResponsiveTableHead>Month</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Cleanings</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Completed</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Cost</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Feedback</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Clean</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Normal</ResponsiveTableHead>
+                  <ResponsiveTableHead className="text-center">Dirty</ResponsiveTableHead>
+                </ResponsiveTableRow>
+              </ResponsiveTableHeader>
+              <ResponsiveTableBody>
                 {sortedMonthlyStats.map((month: any) => (
-                  <TableRow key={month.month}>
-                    <TableCell className="font-medium">
+                  <ResponsiveTableRow key={month.month}>
+                    <ResponsiveTableCell data-label="Month" className="font-medium">
                       {format(new Date(month.month + '-01'), 'MMMM yyyy')}
-                    </TableCell>
-                    <TableCell className="text-center">{month.total_cleanings}</TableCell>
-                    <TableCell className="text-center">{month.completed_cleanings}</TableCell>
-                    <TableCell className="text-center">${Math.round(month.total_revenue)}</TableCell>
-                    <TableCell className="text-center">{month.feedback_count}</TableCell>
-                    <TableCell className="text-center">
+                    </ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Cleanings" className="text-center">{month.total_cleanings}</ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Completed" className="text-center">{month.completed_cleanings}</ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Cost" className="text-center">${Math.round(month.total_revenue)}</ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Feedback" className="text-center">{month.feedback_count}</ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Clean" className="text-center">
                       <span className="text-green-600">{month.clean_count}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
+                    </ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Normal" className="text-center">
                       <span className="text-blue-600">{month.normal_count}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
+                    </ResponsiveTableCell>
+                    <ResponsiveTableCell data-label="Dirty" className="text-center">
                       <span className="text-orange-600">{month.dirty_count}</span>
-                    </TableCell>
-                  </TableRow>
+                    </ResponsiveTableCell>
+                  </ResponsiveTableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </ResponsiveTableBody>
+            </ResponsiveTable>
           </CardContent>
         </Card>
       </div>

@@ -46,6 +46,7 @@ Visit `http://localhost:9002` to see the app.
 - **Database**: PostgreSQL (Supabase)
 - **Authentication**: Supabase Auth + Custom SMS auth for cleaners
 - **AI**: Google Genkit for schedule optimization
+- **Monorepo**: Turborepo for multi-app architecture
 - **Hosting**: Vercel
 
 ## 📱 Key Features
@@ -139,6 +140,11 @@ npm run dev              # Start dev server on port 9002
 npm run build           # Build for production
 npm run lint            # Run linter
 npm run typecheck       # Check TypeScript types
+
+# Turborepo (Monorepo)
+npm run dev:turbo       # Run all apps with Turbo
+npm run build:turbo     # Build all apps with Turbo
+npx turbo run dev --filter=@cleancalendar/cleaning  # Run specific app
 
 # Database
 supabase start          # Start local Supabase

@@ -37,6 +37,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# turbo
+.turbo
+
+# app-specific ignores
+apps/**/node_modules
+apps/**/.next
+
 .genkit/*
 .env*
 
