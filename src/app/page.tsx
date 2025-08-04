@@ -532,6 +532,12 @@ export default function LandingPage() {
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-5">
+                <AccordionTrigger className="text-lg">What countries do you support?</AccordionTrigger>
+                <AccordionContent className="text-base text-muted-foreground">
+                  Currently, we support properties and cleaners in the United States only. This includes all 50 states, from Hawaii to Alaska to the East Coast. We use US timezones and US phone numbers for SMS notifications. International expansion is planned for the future.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-6">
                 <AccordionTrigger className="text-lg">Who built this and why?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
                   I've been an Airbnb Superhost for over 10 years. Over that time, I built a handful of small tools to help me stay organized, automate tasks, and work better as a host — mostly for myself.

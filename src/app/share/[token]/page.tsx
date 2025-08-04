@@ -83,17 +83,13 @@ const parseLocalDate = (dateStr: string): Date => {
 // Helper to get timezone abbreviation
 const getTimezoneAbbr = (timezone: string): string => {
   const abbreviations: { [key: string]: string } = {
-    'America/New_York': 'EST',
-    'America/Chicago': 'CST',
-    'America/Denver': 'MST',
-    'America/Los_Angeles': 'PST',
-    'America/Phoenix': 'AZ',
+    'America/New_York': 'ET',
+    'America/Chicago': 'CT',
+    'America/Denver': 'MT',
+    'America/Los_Angeles': 'PT',
+    'America/Phoenix': 'MST',
     'Pacific/Honolulu': 'HST',
-    'America/Anchorage': 'AKST',
-    'Europe/London': 'GMT',
-    'Europe/Paris': 'CET',
-    'Asia/Tokyo': 'JST',
-    'Australia/Sydney': 'AEDT'
+    'America/Anchorage': 'AKT'
   };
   return abbreviations[timezone] || timezone.split('/')[1];
 };

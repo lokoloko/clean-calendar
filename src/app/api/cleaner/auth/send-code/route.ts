@@ -1,29 +1,17 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db-edge'
-import crypto from 'crypto'
+import { sendSMS, validatePhoneNumber } from '@/lib/twilio'
 
 // Mock user ID for development
 const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
-// For now, we'll just log the SMS instead of actually sending it
-// In production, you would integrate with Twilio or another SMS service
-async function sendSMS(phoneNumber: string, message: string) {
-  console.log(`[SMS to ${phoneNumber}]: ${message}`)
-  // In production:
-  // await twilioClient.messages.create({
-  //   body: message,
-  //   to: `+1${phoneNumber}`,
-  //   from: process.env.TWILIO_PHONE_NUMBER
-  // })
-}
 
 export async function POST(request: Request) {
   try {
     const { phoneNumber } = await request.json()
 
-    if (!phoneNumber || phoneNumber.length !== 10) {
+    if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       return NextResponse.json(
-        { error: 'Invalid phone number' },
+        { error: 'Invalid phone number. Please enter a 10-digit US phone number.' },
         { status: 400 }
       )
     }
