@@ -130,7 +130,7 @@ function AppHeader() {
         <header className="sticky top-0 z-10 w-full bg-background/50 backdrop-blur-sm">
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                         {/* Sidebar toggle button for mobile view */}
                         <Button
                             variant="ghost"
@@ -141,6 +141,14 @@ function AppHeader() {
                             <PanelLeft className="h-6 w-6" />
                             <span className="sr-only">Toggle Sidebar</span>
                         </Button>
+                        {/* Logo for mobile view */}
+                        <Link href="/" className="flex items-center md:hidden">
+                            <img 
+                                src="/gostudiom-logo.png" 
+                                alt="GoStudioM" 
+                                className="h-8 w-auto"
+                            />
+                        </Link>
                     </div>
                     {/* User profile and menu */}
                     <div className="flex items-center gap-4">
