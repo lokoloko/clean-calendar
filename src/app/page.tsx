@@ -534,7 +534,7 @@ export default function LandingPage() {
               <AccordionItem value="item-5">
                 <AccordionTrigger className="text-lg">What countries do you support?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  Currently, we support properties and cleaners in the United States only. This includes all 50 states, from Hawaii to Alaska to the East Coast. We use US timezones and US phone numbers for SMS notifications. International expansion is planned for the future.
+                  Currently, we support properties and cleaners in the United States and Canada. This includes all US states and Canadian provinces, from Hawaii to Newfoundland. We support North American timezones and phone numbers (US & Canadian) for SMS notifications. International expansion beyond North America is planned for the future.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-6">

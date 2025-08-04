@@ -44,14 +44,24 @@ GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cle
 - Docker environment experiencing connectivity issues - system restart recommended
 - **UNCOMMITTED CHANGES**: Updated Airbnb instructions in src/app/page.tsx (step 3: "Connect another calendar" > "Connect another website")
 
-**Latest Session (2025-08-03)**:
+**Latest Session (2025-08-04)**:
+- Added full Canadian timezone and phone number support:
+  - Created centralized timezone configuration in `/src/lib/timezones.ts`
+  - Updated all timezone dropdowns to include Canadian timezones
+  - Expanded messaging from "US only" to "US & Canada"
+  - Phone validation already supports Canadian numbers (same format as US)
+- Removed deprecated cleaner edit page (`/cleaners/[id]/edit`)
+- Documented SMS timezone strategy in `NOTIFICATION_TIMEZONE_PLAN.md`
+- Fixed mobile responsiveness for stats Monthly Breakdown table
+- Production readiness: 85% complete (pending Twilio SMS and minor tasks)
+
+**Previous Session (2025-08-03)**:
 - Fixed all remaining test failures (82/82 tests passing)
 - Resolved ESM module compatibility issues with isows
 - Updated API route imports from db to db-edge for Vercel compatibility
 - Fixed API response format expectations in tests
 - Added proper mock setup for parseRequestBody
 - Updated cleanerSchema to trim whitespace from names
-- Production readiness: 90% complete (only missing Twilio SMS integration)
 - Preparing for monorepo migration to support multiple tools
 - Fixed cancelled Airbnb bookings not showing in schedule:
   - Updated ICS parser to skip STATUS:CANCELLED events

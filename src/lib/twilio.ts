@@ -31,7 +31,7 @@ export async function sendSMS(phoneNumber: string, message: string): Promise<voi
   }
 }
 
-// Validate phone number format (US 10-digit)
+// Validate phone number format (North American 10-digit)
 export function validatePhoneNumber(phone: string): boolean {
   const cleaned = phone.replace(/\D/g, '');
   return cleaned.length === 10 && cleaned[0] !== '0' && cleaned[0] !== '1';

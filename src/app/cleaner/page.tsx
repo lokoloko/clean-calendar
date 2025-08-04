@@ -103,7 +103,7 @@ export default function CleanerLoginPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number (US only)</Label>
+                <Label htmlFor="phone">Phone Number (US & Canada)</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                   <Input
@@ -119,7 +119,7 @@ export default function CleanerLoginPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Currently supporting US phone numbers only
+                  Currently supporting US & Canadian phone numbers
                 </p>
               </div>
             </CardContent>

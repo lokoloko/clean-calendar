@@ -72,6 +72,7 @@
 - [ ] Get credentials
 - [ ] Implement notification services
 - [ ] Test email/SMS delivery
+- [ ] Implement timezone-aware SMS scheduling (see NOTIFICATION_TIMEZONE_PLAN.md)
 
 ### 📅 Day 3: Legal & SMS
 - [ ] Create Privacy Policy
@@ -239,6 +240,7 @@ All migrations already created and tested:
 - Advanced analytics dashboard
 - Basic mobile calendar for Starter tier
 - Annual billing implementation in Stripe
+- Timezone-aware SMS notifications (plan documented in NOTIFICATION_TIMEZONE_PLAN.md)
 
 ### Already Fixed
 - ✅ DEV_USER_ID removed
@@ -285,5 +287,5 @@ All migrations already created and tested:
 
 ---
 
-*Last Updated: 2025-07-30*
+*Last Updated: 2025-08-04*
 *Status: Day 1 Complete, Ready for Day 2*

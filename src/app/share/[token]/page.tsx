@@ -23,6 +23,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { getTimezoneAbbreviation } from '@/lib/timezones';
 
 interface Params {
   token: string;
@@ -80,19 +81,6 @@ const parseLocalDate = (dateStr: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-// Helper to get timezone abbreviation
-const getTimezoneAbbr = (timezone: string): string => {
-  const abbreviations: { [key: string]: string } = {
-    'America/New_York': 'ET',
-    'America/Chicago': 'CT',
-    'America/Denver': 'MT',
-    'America/Los_Angeles': 'PT',
-    'America/Phoenix': 'MST',
-    'Pacific/Honolulu': 'HST',
-    'America/Anchorage': 'AKT'
-  };
-  return abbreviations[timezone] || timezone.split('/')[1];
-};
 
 export default function SharedSchedulePage({ params }: Props) {
   const resolvedParams = use(params);
@@ -282,7 +270,7 @@ export default function SharedSchedulePage({ params }: Props) {
                             <span className="text-sm text-muted-foreground block">
                               {item.checkout_time || '11:00 AM'}
                               {item.listing_timezone && item.listing_timezone !== 'America/New_York' && (
-                                <span className="text-xs ml-1">({getTimezoneAbbr(item.listing_timezone)})</span>
+                                <span className="text-xs ml-1">({getTimezoneAbbreviation(item.listing_timezone)})</span>
                               )}
                             </span>
                           </TableCell>

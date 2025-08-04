@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { NORTH_AMERICAN_TIMEZONES, DEFAULT_TIMEZONE } from '@/lib/timezones';
 
 interface Listing {
   id: string;
@@ -41,7 +42,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     name: '',
     ics_url: '',
     cleaning_fee: '',
-    timezone: 'America/New_York',
+    timezone: DEFAULT_TIMEZONE,
     is_active_on_airbnb: true,
   });
 
@@ -62,7 +63,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         name: listingData.name,
         ics_url: listingData.ics_url || '',
         cleaning_fee: listingData.cleaning_fee.toString(),
-        timezone: listingData.timezone || 'America/New_York',
+        timezone: listingData.timezone || DEFAULT_TIMEZONE,
         is_active_on_airbnb: listingData.is_active_on_airbnb !== false,
       });
 
@@ -250,13 +251,11 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                    <SelectItem value="America/Phoenix">Arizona Time (MST)</SelectItem>
-                    <SelectItem value="Pacific/Honolulu">Hawaii Time (HST)</SelectItem>
-                    <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
+                    {NORTH_AMERICAN_TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">

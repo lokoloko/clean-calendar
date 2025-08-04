@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
       return NextResponse.json(
-        { error: 'Invalid phone number. Please enter a 10-digit US phone number.' },
+        { error: 'Invalid phone number. Please enter a 10-digit North American phone number.' },
         { status: 400 }
       )
     }
