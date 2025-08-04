@@ -222,6 +222,22 @@ export const db = {
     return data
   },
   
+  async getUserProfile(userId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    
+    if (error && error.code !== 'PGRST116') { // Not found is ok
+      logger.error('Failed to get user profile', error)
+      throw error
+    }
+    
+    return data
+  },
+
   async getCleaners(userId: string) {
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -238,14 +254,18 @@ export const db = {
     return data || []
   },
   
-  async getCleaner(id: string, userId: string) {
+  async getCleaner(id: string, userId?: string) {
     const supabase = await createClient()
-    const { data, error } = await supabase
+    let query = supabase
       .from('cleaners')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId)
-      .single()
+    
+    if (userId) {
+      query = query.eq('user_id', userId)
+    }
+    
+    const { data, error } = await query.single()
     
     if (error) {
       logger.error('Failed to get cleaner', error)
@@ -288,6 +308,11 @@ export const db = {
       name?: string
       phone?: string
       email?: string
+      sms_opted_in?: boolean
+      sms_opted_in_at?: string
+      sms_opt_out_at?: string | null
+      sms_invite_sent_at?: string
+      sms_invite_token?: string
     }
   ) {
     const supabase = await createClient()
@@ -296,6 +321,11 @@ export const db = {
     if (data.name !== undefined) updateData.name = data.name
     if (data.phone !== undefined) updateData.phone = data.phone
     if (data.email !== undefined) updateData.email = data.email
+    if (data.sms_opted_in !== undefined) updateData.sms_opted_in = data.sms_opted_in
+    if (data.sms_opted_in_at !== undefined) updateData.sms_opted_in_at = data.sms_opted_in_at
+    if (data.sms_opt_out_at !== undefined) updateData.sms_opt_out_at = data.sms_opt_out_at
+    if (data.sms_invite_sent_at !== undefined) updateData.sms_invite_sent_at = data.sms_invite_sent_at
+    if (data.sms_invite_token !== undefined) updateData.sms_invite_token = data.sms_invite_token
     
     if (Object.keys(updateData).length === 0) {
       return null

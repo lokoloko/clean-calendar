@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
-import { MoreHorizontal, Plus, Phone, Mail, FilePenLine, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Plus, Phone, Mail, FilePenLine, Trash2, Loader2, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,10 @@ interface Cleaner {
   phone: string | null;
   created_at: string;
   updated_at: string;
+  sms_opted_in?: boolean;
+  sms_opted_in_at?: string;
+  sms_opt_out_at?: string;
+  sms_invite_sent_at?: string;
 }
 
 interface Assignment {
@@ -191,6 +195,49 @@ export default function CleanersPage() {
     }
   };
 
+  const handleSendSmsInvite = async (cleanerId: string) => {
+    try {
+      const response = await fetch(`/api/cleaners/${cleanerId}/send-sms-invite`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send SMS invite');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'SMS invite sent successfully',
+      });
+
+      fetchData();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to send SMS invite',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getSmsStatus = (cleaner: Cleaner) => {
+    if (!cleaner.phone) {
+      return { icon: null, text: 'No phone', color: 'text-muted-foreground' };
+    }
+    if (cleaner.sms_opted_in) {
+      return { icon: <CheckCircle className="h-4 w-4" />, text: 'Active', color: 'text-green-600' };
+    }
+    if (cleaner.sms_opt_out_at) {
+      return { icon: <XCircle className="h-4 w-4" />, text: 'Opted out', color: 'text-red-600' };
+    }
+    if (cleaner.sms_invite_sent_at) {
+      return { icon: <Clock className="h-4 w-4" />, text: 'Pending', color: 'text-yellow-600' };
+    }
+    return { icon: <MessageSquare className="h-4 w-4" />, text: 'Not invited', color: 'text-muted-foreground' };
+  };
+
   const getAssignedListings = (cleanerId: string) => {
     return assignments
       .filter(a => a.cleaner_id === cleanerId)
@@ -238,6 +285,7 @@ export default function CleanersPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Contact Info</TableHead>
+                <TableHead>SMS Status</TableHead>
                 <TableHead>Assigned Listings</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -266,6 +314,17 @@ export default function CleanersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
+                    {(() => {
+                      const status = getSmsStatus(cleaner);
+                      return (
+                        <div className={`flex items-center gap-2 ${status.color}`}>
+                          {status.icon}
+                          <span className="text-sm">{status.text}</span>
+                        </div>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell>
                     {getAssignedListings(cleaner.id) || (
                       <span className="text-muted-foreground">No listings assigned</span>
                     )}
@@ -292,6 +351,14 @@ export default function CleanersPage() {
                           <FilePenLine className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
+                        {cleaner.phone && !cleaner.sms_opted_in && !cleaner.sms_opt_out_at && (
+                          <DropdownMenuItem
+                            onClick={() => handleSendSmsInvite(cleaner.id)}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Send SMS Invite
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleDelete(cleaner.id)}
