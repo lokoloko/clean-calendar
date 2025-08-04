@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db-edge'
-import { sendSMS, validatePhoneNumber } from '@/lib/twilio'
+import { sendSMS } from '@/lib/twilio'
+import { validatePhoneNumber } from '@/lib/phone-utils'
 
 // Mock user ID for development
 const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'

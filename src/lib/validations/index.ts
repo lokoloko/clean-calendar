@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { normalizePhoneNumber } from '../phone-utils'
 
 // Common validation schemas
 export const idSchema = z.string().uuid('Invalid ID format')

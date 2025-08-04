@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { AppLayout } from '@/components/layout';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { formatPhoneNumber } from '@/lib/twilio';
+import { formatPhoneNumber } from '@/lib/phone-utils';
 
 interface Cleaner {
   id: string;
