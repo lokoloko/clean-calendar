@@ -1,6 +1,7 @@
 import { db } from '@/lib/db-edge'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
+import { cleanerSchema } from '@/lib/validations'
 
 export async function GET(
   request: Request,
@@ -34,13 +35,11 @@ export async function PUT(
     const user = await requireAuth()
     const { id } = await params;
     const body = await request.json()
-    const { name, email, phone } = body
+    
+    // Validate with cleanerSchema to normalize phone number
+    const validatedData = cleanerSchema.parse(body)
 
-    const cleaner = await db.updateCleaner(id, user.id, {
-      name,
-      email,
-      phone
-    })
+    const cleaner = await db.updateCleaner(id, user.id, validatedData)
 
     if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 })
@@ -49,6 +48,15 @@ export async function PUT(
     return NextResponse.json(cleaner)
   } catch (error) {
     console.error('Error updating cleaner:', error)
+    
+    // Handle validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: 'Invalid data: ' + error.message },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update cleaner' },
       { status: 500 }

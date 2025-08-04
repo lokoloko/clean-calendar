@@ -20,11 +20,15 @@ export const dateRangeSchema = z.object({
   message: 'Start date must be before end date',
 })
 
-// Phone number validation (basic)
+// Phone number validation (North American 10-digit)
 export const phoneSchema = z.string()
-  .regex(/^[\d\s\-\+\(\)]+$/, 'Invalid phone number format')
-  .min(10, 'Phone number too short')
-  .max(20, 'Phone number too long')
+  .transform(val => val?.replace(/\D/g, '') || '') // Strip all non-numeric
+  .refine(val => !val || val.length === 10, {
+    message: 'Phone number must be exactly 10 digits'
+  })
+  .refine(val => !val || (val[0] !== '0' && val[0] !== '1'), {
+    message: 'Phone number cannot start with 0 or 1'
+  })
   .optional()
 
 // Email validation

@@ -9,9 +9,17 @@ const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 export async function sendSMS(phoneNumber: string, message: string): Promise<void> {
+  // Clean the phone number - remove all non-numeric characters
+  const cleanedNumber = phoneNumber.replace(/\D/g, '');
+  
+  // Validate the phone number
+  if (!validatePhoneNumber(cleanedNumber)) {
+    throw new Error('Invalid phone number. Must be 10 digits.');
+  }
+  
   // In development or if Twilio is not configured, just log the message
   if (!twilioClient || !fromNumber) {
-    console.log(`[SMS MOCK] To: +1${phoneNumber}`);
+    console.log(`[SMS MOCK] To: +1${cleanedNumber}`);
     console.log(`[SMS MOCK] Message: ${message}`);
     return;
   }
@@ -20,7 +28,7 @@ export async function sendSMS(phoneNumber: string, message: string): Promise<voi
     // Send actual SMS via Twilio
     const result = await twilioClient.messages.create({
       body: message,
-      to: `+1${phoneNumber}`, // Assumes US numbers
+      to: `+1${cleanedNumber}`, // Add North American prefix
       from: fromNumber
     });
 

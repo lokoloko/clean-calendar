@@ -408,10 +408,13 @@ export default function CleanersPage() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="(555) 123-4567"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    10-digit number (US & Canada only)
+                  </p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email Address</Label>
