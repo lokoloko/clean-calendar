@@ -44,16 +44,24 @@ GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cle
 - Docker environment experiencing connectivity issues - system restart recommended
 - **UNCOMMITTED CHANGES**: Updated Airbnb instructions in src/app/page.tsx (step 3: "Connect another calendar" > "Connect another website")
 
-**Latest Session (2025-08-04)**:
-- Fixed manual monthly schedules appearing as "weekly cleaning" in export:
-  - Added manual_rule_frequency field to database queries in db-edge.ts
-  - Updated export logic to properly display recurring schedule frequencies
-  - Export now shows "Monthly cleaning" for monthly schedules instead of generic text
-- Added full Canadian timezone and phone number support:
-  - Created centralized timezone configuration in `/src/lib/timezones.ts`
-  - Updated all timezone dropdowns to include Canadian timezones
-  - Expanded messaging from "US only" to "US & Canada"
-  - Phone validation already supports Canadian numbers (same format as US)
+**Latest Session (2025-08-05)**:
+- Refactored export logic into shared utility (`/src/lib/schedule-export.ts`):
+  - Centralized export generation for dashboard and schedule pages
+  - Fixed "Unit 4 - Next: 7 days later" showing for recurring schedules
+  - Both exports now properly show "Monthly cleaning" for monthly schedules
+- Created notification message utilities (`/src/lib/notification-messages.ts`):
+  - `generateDailyReminder()` - For daily SMS reminders
+  - `generateWeeklySchedule()` - For weekly schedule SMS
+  - `generateTomorrowReminder()` - For evening reminders
+  - All use the shared export logic for consistency
+- Created example API routes for automated notifications:
+  - `/api/notifications/send-daily/route.ts.example`
+  - `/api/notifications/send-weekly/route.ts.example`
+  - Ready to implement when Twilio SMS is configured
+
+**Previous Session (2025-08-04)**:
+- Fixed manual monthly schedules appearing as "weekly cleaning" in export
+- Added full Canadian timezone and phone number support
 - Removed deprecated cleaner edit page (`/cleaners/[id]/edit`)
 - Documented SMS timezone strategy in `NOTIFICATION_TIMEZONE_PLAN.md`
 - Fixed mobile responsiveness for stats Monthly Breakdown table

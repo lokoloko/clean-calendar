@@ -1,0 +1,77 @@
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db-edge';
+import { sendSMS } from '@/lib/twilio';
+import { generateDailyReminder } from '@/lib/notification-messages';
+import { logger } from '@/lib/logger-edge';
+
+// This would be triggered by a cron job at the configured daily reminder time
+export async function POST(request: Request) {
+  try {
+    // Verify cron secret
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+    
+    if (token !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Get all users with daily reminders enabled
+    const users = await db.getUsersWithDailyRemindersEnabled();
+    
+    const results = {
+      sent: 0,
+      failed: 0,
+      errors: [] as string[]
+    };
+    
+    for (const user of users) {
+      try {
+        // Get cleaners for this user
+        const cleaners = await db.getCleaners(user.id);
+        
+        // Get today's schedule for all cleaners
+        const schedule = await db.getSchedule(user.id);
+        
+        // Send reminder to each cleaner with today's cleanings
+        for (const cleaner of cleaners) {
+          const todayCleanings = schedule.filter(item => {
+            const checkoutDate = new Date(item.check_out);
+            const today = new Date();
+            return checkoutDate.toDateString() === today.toDateString() && 
+                   item.cleaner_id === cleaner.id &&
+                   item.status !== 'cancelled';
+          });
+          
+          // Only send if cleaner has cleanings today
+          if (todayCleanings.length > 0 && cleaner.phone) {
+            const message = generateDailyReminder({
+              cleanerId: cleaner.id,
+              cleanerName: cleaner.name,
+              scheduleItems: schedule
+            });
+            
+            await sendSMS(cleaner.phone, message);
+            results.sent++;
+          }
+        }
+      } catch (error) {
+        logger.error('Failed to send daily reminders for user', { userId: user.id, error });
+        results.failed++;
+        results.errors.push(`User ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+    
+    logger.info('Daily reminder job completed', results);
+    
+    return NextResponse.json({
+      success: true,
+      results
+    });
+  } catch (error) {
+    logger.error('Daily reminder job failed', error);
+    return NextResponse.json(
+      { error: 'Failed to send daily reminders' },
+      { status: 500 }
+    );
+  }
+}
