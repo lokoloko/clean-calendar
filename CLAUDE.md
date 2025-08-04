@@ -45,6 +45,10 @@ GoStudioM Scheduler is a Next.js 15 application for managing Airbnb property cle
 - **UNCOMMITTED CHANGES**: Updated Airbnb instructions in src/app/page.tsx (step 3: "Connect another calendar" > "Connect another website")
 
 **Latest Session (2025-08-04)**:
+- Fixed manual monthly schedules appearing as "weekly cleaning" in export:
+  - Added manual_rule_frequency field to database queries in db-edge.ts
+  - Updated export logic to properly display recurring schedule frequencies
+  - Export now shows "Monthly cleaning" for monthly schedules instead of generic text
 - Added full Canadian timezone and phone number support:
   - Created centralized timezone configuration in `/src/lib/timezones.ts`
   - Updated all timezone dropdowns to include Canadian timezones

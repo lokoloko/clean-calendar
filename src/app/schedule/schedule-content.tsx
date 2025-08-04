@@ -411,13 +411,21 @@ export default function ScheduleContent() {
           const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
           exportText += `${item.listing_name}`;
           
-          // Always show next cleaning info
-          if (nextCheckIn === 'Same day') {
+          // Handle different types of schedules
+          if (item.source === 'manual_recurring' && item.manual_rule_frequency) {
+            // For recurring manual schedules, show the frequency
+            const frequencyMap: Record<string, string> = {
+              'daily': 'Daily cleaning',
+              'weekly': 'Weekly cleaning',
+              'biweekly': 'Biweekly cleaning',
+              'monthly': 'Monthly cleaning'
+            };
+            exportText += ` - ${frequencyMap[item.manual_rule_frequency] || item.manual_rule_frequency}`;
+          } else if (nextCheckIn === 'Same day' || nextCheckIn === 'Next day' || nextCheckIn === 'No upcoming') {
             exportText += ` - ${nextCheckIn}`;
-          } else if (nextCheckIn === 'Next day') {
-            exportText += ` - ${nextCheckIn}`;
-          } else if (nextCheckIn === 'No upcoming') {
-            exportText += ` - No upcoming`;
+          } else if (['Monthly', 'Weekly', 'Biweekly', 'Daily', 'Recurring'].includes(nextCheckIn)) {
+            // Handle recurring patterns detected by getNextCheckIn
+            exportText += ` - ${nextCheckIn} cleaning`;
           } else {
             exportText += ` - Next Cleaning: ${nextCheckIn}`;
           }

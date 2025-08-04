@@ -873,6 +873,9 @@ export const db = {
           id,
           cleanliness_rating,
           notes
+        ),
+        manual_schedule_rules(
+          frequency
         )
       `)
       .eq('listings.user_id', userId)
@@ -893,7 +896,8 @@ export const db = {
       cleaner_phone: s.cleaners?.phone,
       feedback_id: s.cleaner_feedback?.[0]?.id,
       cleanliness_rating: s.cleaner_feedback?.[0]?.cleanliness_rating,
-      feedback_notes: s.cleaner_feedback?.[0]?.notes
+      feedback_notes: s.cleaner_feedback?.[0]?.notes,
+      manual_rule_frequency: s.manual_schedule_rules?.frequency
     }))
   },
   
@@ -909,6 +913,9 @@ export const db = {
           id,
           cleanliness_rating,
           notes
+        ),
+        manual_schedule_rules(
+          frequency
         )
       `)
       .eq('listings.user_id', userId)
@@ -928,7 +935,8 @@ export const db = {
       cleaner_phone: s.cleaners?.phone,
       feedback_id: s.cleaner_feedback?.[0]?.id,
       cleanliness_rating: s.cleaner_feedback?.[0]?.cleanliness_rating,
-      feedback_notes: s.cleaner_feedback?.[0]?.notes
+      feedback_notes: s.cleaner_feedback?.[0]?.notes,
+      manual_rule_frequency: s.manual_schedule_rules?.frequency
     }))
   },
   
