@@ -8,23 +8,29 @@ GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbn
 
 **Current Status**: Production-ready at 60% completion. Security and performance fully optimized with RLS policies, database indexes, and mobile-first design. Core functionality complete, awaiting external services for notifications and final deployment configuration.
 
-**Latest Session (2025-08-04)**:
-- Implemented complete SMS notification system with Twilio:
-  - Added SMS opt-in flow where hosts invite cleaners
-  - Created database schema for tracking opt-in status  
-  - Built webhook handler for YES/STOP replies
-  - Phone number validation for US/Canada (10-digit format)
-  - Rate limiting: one invite per 48 hours per cleaner
-- Fixed export logic for manual schedules showing incorrect frequency
-- Refactored export logic into shared utility (`/src/lib/schedule-export.ts`)
-- Updated branding with GoStudioM logo and SEO-optimized title
-- Enhanced cleaner UI with prominent SMS invite buttons
-- Fixed phone number normalization to prevent 500 errors
-- Added helper text for phone input: "10-digit number (US & Canada only)"
-- **Twilio Configuration**:
-  - Phone number: +1 (628) 282-5326
-  - Webhook URL: https://gostudiom.com/api/twilio/incoming
-  - Environment variables set in Vercel
+**Latest Session (2025-08-05)**:
+- Discovered SMS migration hasn't run on production database
+  - SMS invite returns 500 error due to missing columns
+  - Created manual migration script: `/supabase/migrations/manual_run_sms_migration.sql`
+  - Created verification endpoint: `/api/test/verify-sms-fields`
+  - Must run migration in Supabase Dashboard SQL Editor
+- **Previous work (2025-08-04)**:
+  - Implemented complete SMS notification system with Twilio:
+    - Added SMS opt-in flow where hosts invite cleaners
+    - Created database schema for tracking opt-in status  
+    - Built webhook handler for YES/STOP replies
+    - Phone number validation for US/Canada (10-digit format)
+    - Rate limiting: one invite per 48 hours per cleaner
+  - Fixed export logic for manual schedules showing incorrect frequency
+  - Refactored export logic into shared utility (`/src/lib/schedule-export.ts`)
+  - Updated branding with GoStudioM logo and SEO-optimized title
+  - Enhanced cleaner UI with prominent SMS invite buttons
+  - Fixed phone number normalization to prevent 500 errors
+  - Added helper text for phone input: "10-digit number (US & Canada only)"
+  - **Twilio Configuration**:
+    - Phone number: +1 (628) 282-5326
+    - Webhook URL: https://gostudiom.com/api/twilio/incoming
+    - Environment variables set in Vercel
 
 **Previous Session (2025-08-04 morning)**:
 - Fixed type incompatibility between shared export interface and component interfaces

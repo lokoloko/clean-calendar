@@ -30,6 +30,12 @@ export const POST = withApiHandler(async (
     throw new ApiError(400, 'Cleaner does not have a phone number')
   }
 
+  // Check if SMS fields exist (migration might not have run yet)
+  if (!('sms_opted_in' in cleaner)) {
+    console.error('[SMS Invite] SMS fields missing from cleaner record. Migration may not have run.')
+    throw new ApiError(500, 'SMS feature not properly configured. Please contact support.')
+  }
+
   // Check if already opted in
   if (cleaner.sms_opted_in) {
     throw new ApiError(400, 'Cleaner has already opted in to SMS notifications')
