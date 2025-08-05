@@ -18,9 +18,12 @@ console.log('[Twilio Init]', {
 // Only initialize if we have the required environment variables
 const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
-export async function sendSMS(phoneNumber: string, message: string): Promise<void> {
+export async function sendSMS(phoneNumber: string, message: string): Promise<any> {
   // Normalize the phone number
   const normalizedNumber = normalizePhoneNumber(phoneNumber);
+  
+  console.log('[SMS] Input phone:', phoneNumber);
+  console.log('[SMS] Normalized phone:', normalizedNumber);
   
   // Validate the phone number
   if (!validatePhoneNumber(normalizedNumber)) {
@@ -29,12 +32,24 @@ export async function sendSMS(phoneNumber: string, message: string): Promise<voi
   
   // In development or if Twilio is not configured, just log the message
   if (!twilioClient || !fromNumber) {
+    console.log(`[SMS MOCK] Twilio not configured`);
     console.log(`[SMS MOCK] To: +1${normalizedNumber}`);
     console.log(`[SMS MOCK] Message: ${message}`);
-    return;
+    console.log(`[SMS MOCK] twilioClient:`, !!twilioClient);
+    console.log(`[SMS MOCK] fromNumber:`, fromNumber);
+    return {
+      sid: 'mock-sid',
+      status: 'mock',
+      to: `+1${normalizedNumber}`,
+      from: fromNumber || 'not-configured'
+    };
   }
 
   try {
+    console.log('[SMS] Sending via Twilio...');
+    console.log('[SMS] From:', fromNumber);
+    console.log('[SMS] To:', `+1${normalizedNumber}`);
+    
     // Send actual SMS via Twilio
     const result = await twilioClient.messages.create({
       body: message,
@@ -42,9 +57,19 @@ export async function sendSMS(phoneNumber: string, message: string): Promise<voi
       from: fromNumber
     });
 
-    console.log(`[SMS SENT] SID: ${result.sid}, To: ${result.to}`);
+    console.log(`[SMS SENT] SID: ${result.sid}`);
+    console.log(`[SMS SENT] Status: ${result.status}`);
+    console.log(`[SMS SENT] To: ${result.to}`);
+    console.log(`[SMS SENT] From: ${result.from}`);
+    console.log(`[SMS SENT] Price: ${result.price}`);
+    
+    return result;
   } catch (error) {
-    console.error('[SMS ERROR]', error);
-    throw new Error('Failed to send SMS');
+    console.error('[SMS ERROR] Full error:', error);
+    if (error instanceof Error) {
+      console.error('[SMS ERROR] Message:', error.message);
+      console.error('[SMS ERROR] Stack:', error.stack);
+    }
+    throw error;
   }
 }
