@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
 import { db } from '@/lib/db-edge'
-import crypto from 'crypto'
+
+export const runtime = 'edge'
 
 // Generate a unique share token for a cleaner
 export async function POST(
@@ -42,7 +43,10 @@ export async function POST(
     }
 
     // Generate a unique token for this cleaner
-    const shareToken = crypto.randomBytes(32).toString('hex')
+    // Use Web Crypto API for Edge runtime compatibility
+    const array = new Uint8Array(32)
+    crypto.getRandomValues(array)
+    const shareToken = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
     
     // Store the share token in the database
     // For now, we'll store it in the cleaner_sessions table with a special type
@@ -68,10 +72,15 @@ export async function POST(
     })
   } catch (error) {
     console.error('Error generating share link:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Error type:', typeof error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
+    
     return NextResponse.json(
       { 
         error: 'Failed to generate share link',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : JSON.stringify(error),
+        type: typeof error
       },
       { status: 500 }
     )
