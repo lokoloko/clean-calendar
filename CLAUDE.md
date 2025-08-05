@@ -12,12 +12,17 @@ GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbn
 - Fixed SMS integration issues:
   - Added missing SMS columns to production database
   - Normalized phone numbers to 10-digit format
-  - Verified Twilio successfully sending messages
-  - SMS invites now working from /cleaners page
+  - Discovered carrier blocking: 213 area code rejecting unregistered numbers
+  - **Action Required**: Need Toll-Free number or A2P 10DLC registration
 - Created debugging tools:
   - Test SMS page: `/test-sms`
+  - SMS diagnostic: `/api/test/sms-diagnostic`
   - Config verification: `/api/test/twilio-config`
   - Enhanced logging in Twilio module
+- **Twilio Status**:
+  - Daily limit: 2/15 messages used
+  - Error 30034: Carrier blocking unregistered number
+  - Solution: Get Toll-Free number for immediate testing
 - **Previous work (2025-08-04)**:
   - Implemented complete SMS notification system with Twilio:
     - Added SMS opt-in flow where hosts invite cleaners
