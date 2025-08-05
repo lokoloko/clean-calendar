@@ -4,14 +4,13 @@ import { requireAuth } from '@/lib/auth-server'
 import { sendSMS } from '@/lib/twilio'
 import { withApiHandler } from '@/lib/api-wrapper'
 import { ApiError } from '@/lib/api-errors'
-import { randomBytes } from 'crypto'
 
 export const POST = withApiHandler(async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   const user = await requireAuth()
-  const cleanerId = params.id
+  const { id: cleanerId } = await params
 
   // Get cleaner
   const cleaner = await db.getCleaner(cleanerId)
@@ -38,8 +37,10 @@ export const POST = withApiHandler(async (
     }
   }
 
-  // Generate unique token
-  const token = randomBytes(16).toString('hex')
+  // Generate unique token using Web Crypto API (Edge Runtime compatible)
+  const tokenBytes = new Uint8Array(16)
+  crypto.getRandomValues(tokenBytes)
+  const token = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
   
   // Update cleaner with invite info
   await db.updateCleaner(cleanerId, user.id, {
@@ -63,6 +64,15 @@ export const POST = withApiHandler(async (
     })
   } catch (error) {
     console.error('Failed to send SMS invite:', error)
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid phone number')) {
+        throw new ApiError(400, 'Invalid phone number format. Please ensure the phone number is 10 digits.')
+      }
+      throw new ApiError(500, `Failed to send SMS: ${error.message}`)
+    }
+    
     throw new ApiError(500, 'Failed to send SMS invite')
   }
 })
