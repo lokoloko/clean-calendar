@@ -65,7 +65,7 @@ BEGIN
     si.guest_name,
     COALESCE(cf.id IS NOT NULL, FALSE) AS is_completed,
     cf.id AS feedback_id,
-    cf.cleanliness_rating,
+    cf.cleanliness_rating::TEXT,
     cf.notes AS feedback_notes,
     cf.completed_at AS feedback_completed_at,
     si.booking_uid,
