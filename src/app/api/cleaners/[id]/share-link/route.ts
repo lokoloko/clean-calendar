@@ -36,7 +36,11 @@ export async function POST(
     await db.createCleanerShareToken(cleanerId, shareToken)
 
     // Return the share link
-    const shareLink = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/cleaner/schedule/${shareToken}`
+    // Get the base URL from the request headers if env var not set
+    const host = request.headers.get('host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
+    const shareLink = `${baseUrl}/cleaner/schedule/${shareToken}`
 
     return NextResponse.json({
       shareLink,
