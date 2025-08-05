@@ -1085,7 +1085,7 @@ export const db = {
       .from('cleaner_sessions')
       .insert({
         cleaner_id: cleanerId,
-        session_token: token,
+        token: token,
         expires_at: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 10 years
         created_at: new Date().toISOString(),
         last_activity: new Date().toISOString()
@@ -1109,7 +1109,7 @@ export const db = {
         *,
         cleaner:cleaners(*)
       `)
-      .eq('session_token', token)
+      .eq('token', token)
       .gt('expires_at', new Date().toISOString())
       .single()
     
@@ -1119,7 +1119,7 @@ export const db = {
       throw error
     }
     
-    return data?.cleaner ? { ...data.cleaner, session_token: token, expires_at: data.expires_at } : null
+    return data?.cleaner ? { ...data.cleaner, token: token, expires_at: data.expires_at } : null
   },
 
   async getCleanerScheduleAllHosts(cleanerId: string) {

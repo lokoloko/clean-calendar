@@ -36,7 +36,7 @@ export async function POST(
     const tokenData = await db.createCleanerShareToken(cleanerId, shareToken)
     
     // Use the token from the database (might be existing or new)
-    const actualToken = tokenData.session_token || shareToken
+    const actualToken = tokenData.token || shareToken
 
     // Return the share link
     // Get the base URL from the request headers if env var not set
