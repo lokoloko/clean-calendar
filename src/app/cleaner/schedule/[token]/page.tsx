@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@gostudiom/ui';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isToday, isSameDay } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { formatTimeDisplay } from '@/lib/format-utils';
+import { getNextCheckIn } from '@/lib/schedule-export';
 
 interface ScheduleItem {
   id: string;
+  listing_id: string;
   listing_name: string;
   listing_address?: string;
   host_name?: string;
@@ -22,6 +24,8 @@ interface ScheduleItem {
   is_completed: boolean;
   feedback_id?: string;
   cleanliness_rating?: string;
+  source?: string;
+  manual_rule_frequency?: string;
 }
 
 export default function CleanerShareSchedulePage({ params }: { params: Promise<{ token: string }> }) {
@@ -136,30 +140,36 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
                   <p className="text-sm text-muted-foreground">No cleanings scheduled</p>
                 ) : (
                   <div className="space-y-2">
-                    {items.map((item) => (
-                      <Card key={item.id} className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="font-medium flex items-center gap-2">
-                              <Home className="h-4 w-4" />
-                              {item.listing_name}
-                            </div>
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <Clock className="h-3 w-3" />
-                              Check-out by {formatTimeDisplay(item.checkout_time)}
-                            </div>
-                            {item.guest_name && (
-                              <div className="text-sm text-muted-foreground">
-                                Guest: {item.guest_name}
+                    {items.map((item) => {
+                      const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id, scheduleItems);
+                      return (
+                        <Card key={item.id} className="p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="font-medium flex items-center gap-2">
+                                <Home className="h-4 w-4" />
+                                {item.listing_name}
                               </div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                Check-out by {formatTimeDisplay(item.checkout_time)}
+                              </div>
+                              <div className="text-sm font-medium text-muted-foreground">
+                                Next: {nextCheckIn}
+                              </div>
+                              {item.guest_name && (
+                                <div className="text-sm text-muted-foreground">
+                                  Guest: {item.guest_name}
+                                </div>
+                              )}
+                            </div>
+                            {item.is_completed && (
+                              <CheckCircle2 className="h-5 w-5 text-green-600" />
                             )}
                           </div>
-                          {item.is_completed && (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          )}
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -320,19 +330,25 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {todaysCleanings.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="font-medium">{item.listing_name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Check-out by {formatTimeDisplay(item.checkout_time)}
+              {todaysCleanings.map((item) => {
+                const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id, scheduleItems);
+                return (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <div className="font-medium">{item.listing_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Check-out by {formatTimeDisplay(item.checkout_time)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Next: {nextCheckIn}
+                      </div>
                     </div>
+                    {item.is_completed && (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    )}
                   </div>
-                  {item.is_completed && (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
@@ -357,29 +373,35 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
                       No upcoming cleanings scheduled
                     </p>
                   ) : (
-                    upcomingCleanings.map((item) => (
-                      <Card key={item.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="font-medium">{item.listing_name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {format(parseISO(item.check_out), 'EEEE, MMMM d, yyyy')}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Check-out by {formatTimeDisplay(item.checkout_time)}
-                            </div>
-                            {item.guest_name && (
+                    upcomingCleanings.map((item) => {
+                      const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id, scheduleItems);
+                      return (
+                        <Card key={item.id} className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="font-medium">{item.listing_name}</div>
                               <div className="text-sm text-muted-foreground">
-                                Guest: {item.guest_name}
+                                {format(parseISO(item.check_out), 'EEEE, MMMM d, yyyy')}
                               </div>
+                              <div className="text-sm text-muted-foreground">
+                                Check-out by {formatTimeDisplay(item.checkout_time)}
+                              </div>
+                              <div className="text-sm font-medium text-muted-foreground">
+                                Next: {nextCheckIn}
+                              </div>
+                              {item.guest_name && (
+                                <div className="text-sm text-muted-foreground">
+                                  Guest: {item.guest_name}
+                                </div>
+                              )}
+                            </div>
+                            {item.is_completed && (
+                              <CheckCircle2 className="h-5 w-5 text-green-600" />
                             )}
                           </div>
-                          {item.is_completed && (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          )}
-                        </div>
-                      </Card>
-                    ))
+                        </Card>
+                      );
+                    })
                   )}
                 </div>
               </TabsContent>

@@ -36,6 +36,7 @@ export async function GET(
     // Format the schedule items
     const formattedSchedule = (schedule || []).map((item: any) => ({
       id: item.id,
+      listing_id: item.listing_id,
       listing_name: item.listing_name,
       listing_address: '', // Address not available in database
       host_name: item.host_email, // Using host_email as host_name for display
@@ -45,7 +46,10 @@ export async function GET(
       guest_name: item.guest_name,
       is_completed: item.is_completed || false,
       feedback_id: item.feedback_id,
-      cleanliness_rating: item.cleanliness_rating
+      cleanliness_rating: item.cleanliness_rating,
+      status: item.status,
+      source: item.source,
+      manual_rule_frequency: item.manual_rule_frequency
     }))
 
     return NextResponse.json({
