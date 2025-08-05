@@ -6,6 +6,7 @@ import { Calendar, Clock, Home, AlertCircle, CheckCircle2, ChevronLeft, ChevronR
 import { Button } from '@gostudiom/ui';
 import { Badge } from '@gostudiom/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@gostudiom/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@gostudiom/ui';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isToday, isSameDay } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { formatTimeDisplay } from '@/lib/format-utils';
@@ -41,6 +42,11 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
   const [token, setToken] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [dayDetailsModal, setDayDetailsModal] = useState({
+    isOpen: false,
+    date: new Date(),
+    items: [] as ScheduleItem[]
+  });
 
   useEffect(() => {
     params.then((p) => {
@@ -270,7 +276,17 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
                       border rounded-md p-2 min-h-[80px] 
                       ${isCurrentMonth ? '' : 'opacity-50'} 
                       ${isCurrentDay ? 'border-primary bg-primary/5' : ''}
+                      ${items.length > 0 ? 'cursor-pointer hover:bg-muted/50' : ''}
                     `}
+                    onClick={() => {
+                      if (items.length > 0) {
+                        setDayDetailsModal({
+                          isOpen: true,
+                          date: day,
+                          items
+                        });
+                      }
+                    }}
                   >
                     <div className="text-sm font-medium mb-1">{format(day, 'd')}</div>
                     {items.length > 0 && (
@@ -464,6 +480,100 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
           </CardContent>
         </Card>
       </div>
+
+      {/* Day Details Modal */}
+      <Dialog open={dayDetailsModal.isOpen} onOpenChange={(open) => {
+        if (!open) {
+          setDayDetailsModal({ ...dayDetailsModal, isOpen: false });
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Cleanings for {format(dayDetailsModal.date, 'EEEE, MMMM d, yyyy')}
+            </DialogTitle>
+            <DialogDescription>
+              {dayDetailsModal.items.length === 0
+                ? 'No cleanings scheduled for this day'
+                : `${dayDetailsModal.items.length} cleaning${dayDetailsModal.items.length !== 1 ? 's' : ''} scheduled`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {dayDetailsModal.items.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No cleanings scheduled for this day
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {dayDetailsModal.items.map((item) => {
+                  const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id, scheduleItems);
+                  return (
+                    <div key={item.id} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-lg">{item.listing_name}</h4>
+                          {item.listing_address && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              <Home className="h-3 w-3 inline mr-1" />
+                              {item.listing_address}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {item.is_completed && (
+                            <Badge variant="secondary">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Completed
+                            </Badge>
+                          )}
+                          {nextCheckIn === 'Same day' && (
+                            <Badge variant="outline" className="border-orange-300 text-orange-600">
+                              Same-day turnaround
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>Check-out: {formatTimeDisplay(item.checkout_time)}</span>
+                        </div>
+                        {item.guest_name && (
+                          <div>Guest: {item.guest_name}</div>
+                        )}
+                      </div>
+                      
+                      {nextCheckIn && (
+                        <div className="text-sm">
+                          <span className="font-medium">Next: </span>
+                          <span className="text-muted-foreground">{nextCheckIn}</span>
+                        </div>
+                      )}
+                      
+                      {item.cleanliness_rating && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium">Last rating:</span>
+                          <Badge variant={
+                            item.cleanliness_rating === 'clean' ? 'default' :
+                            item.cleanliness_rating === 'normal' ? 'secondary' :
+                            'destructive'
+                          }>
+                            {item.cleanliness_rating === 'clean' ? '😊 Clean' :
+                             item.cleanliness_rating === 'normal' ? '😐 Normal' :
+                             '😟 Dirty'}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
