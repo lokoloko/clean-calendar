@@ -24,21 +24,30 @@ interface ScheduleItem {
   cleanliness_rating?: string;
 }
 
-export default function CleanerShareSchedulePage({ params }: { params: { token: string } }) {
+export default function CleanerShareSchedulePage({ params }: { params: Promise<{ token: string }> }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cleanerName, setCleanerName] = useState<string>('');
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [token, setToken] = useState<string>('');
 
   useEffect(() => {
-    fetchSchedule();
-  }, [params.token]);
+    params.then((p) => {
+      setToken(p.token);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (token) {
+      fetchSchedule();
+    }
+  }, [token]);
 
   const fetchSchedule = async () => {
     try {
-      const response = await fetch(`/api/cleaner/schedule/share/${params.token}`);
+      const response = await fetch(`/api/cleaner/schedule/share/${token}`);
       
       if (!response.ok) {
         if (response.status === 404) {

@@ -3,10 +3,10 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: Request,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params
+    const { token } = await params
 
     // Get cleaner info by share token
     const cleaner = await db.getCleanerByShareToken(token)

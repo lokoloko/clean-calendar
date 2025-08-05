@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-server'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
 
 // Generate a unique share token for a cleaner
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await getAuth(request)
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -17,7 +17,7 @@ export async function POST(
       )
     }
 
-    const cleanerId = params.id
+    const { id: cleanerId } = await params
 
     // Verify the cleaner belongs to this user
     const cleaner = await db.getCleaner(cleanerId, user.id)
