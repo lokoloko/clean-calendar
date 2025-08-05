@@ -427,7 +427,7 @@ export default function LandingPage() {
                 <Image
                   src="/screen3.png"
                   width={600}
-                  height={500}
+                  height={400}
                   alt="Clean Calendar schedule view showing cleaning assignments"
                   className="rounded-xl shadow-lg"
                 />
