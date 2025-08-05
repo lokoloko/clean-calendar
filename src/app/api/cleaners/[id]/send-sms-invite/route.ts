@@ -50,17 +50,32 @@ export const POST = withApiHandler(async (
   const token = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
   
   // Update cleaner with invite info
-  await db.updateCleaner(cleanerId, user.id, {
-    sms_invite_token: token,
-    sms_invite_sent_at: new Date().toISOString()
-  })
+  console.log('[SMS Invite] Updating cleaner with token')
+  try {
+    await db.updateCleaner(cleanerId, user.id, {
+      sms_invite_token: token,
+      sms_invite_sent_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('[SMS Invite] Failed to update cleaner:', error)
+    throw new ApiError(500, `Database update failed: ${error instanceof Error ? error.message : 'unknown'}`)
+  }
 
   // Get user info for the SMS
-  const userProfile = await db.getUserProfile(user.id)
-  const hostName = userProfile?.name || user.email?.split('@')[0] || 'Your host'
+  console.log('[SMS Invite] Getting user profile')
+  let hostName = 'Your host'
+  try {
+    const userProfile = await db.getUserProfile(user.id)
+    hostName = userProfile?.name || user.email?.split('@')[0] || 'Your host'
+    console.log('[SMS Invite] Host name:', hostName)
+  } catch (error) {
+    console.error('[SMS Invite] Failed to get user profile:', error)
+    // Continue with default host name
+  }
 
   // Send SMS invite
   const message = `Hi ${cleaner.name}! ${hostName} wants to send you cleaning schedule reminders via GoStudioM. Reply YES to opt-in or STOP to decline.`
+  console.log('[SMS Invite] Sending SMS to:', cleaner.phone)
   
   try {
     await sendSMS(cleaner.phone, message)
