@@ -9,37 +9,34 @@ GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbn
 **Current Status**: Production-ready at 90% completion. All core functionality complete, security and performance optimized. SMS integration pending A2P approval (1-3 days). Quick start guide planned for seamless user onboarding.
 
 **Latest Session (2025-08-05)**:
-- Completed SMS integration and A2P 10DLC registration:
-  - Added SMS opt-in tracking columns to production database
-  - Normalized all phone numbers to 10-digit format
-  - Successfully registered for A2P 10DLC compliance
-  - Campaign ID: CMba872a661f73c51b9083efb214b6a727
-  - Status: Pending approval (1-3 days)
-- Fixed all test failures:
-  - Updated phone validation tests for normalized format
-  - All 83 tests now passing
-- Created SMS debugging tools:
-  - Test SMS page: `/test-sms`
-  - SMS diagnostic: `/api/test/sms-diagnostic`
-  - Config verification: `/api/test/twilio-config`
-- Planned comprehensive quick start guide:
-  - 5-step interactive onboarding flow
-  - Visual progress tracking with persistence
-  - Auto-detection of completed actions
-  - Expected completion time: 5-10 minutes
-- **Previous work (2025-08-04)**:
-  - Implemented complete SMS notification system with Twilio:
-    - Added SMS opt-in flow where hosts invite cleaners
-    - Created database schema for tracking opt-in status  
-    - Built webhook handler for YES/STOP replies
-    - Phone number validation for US/Canada (10-digit format)
-    - Rate limiting: one invite per 48 hours per cleaner
-  - Fixed export logic for manual schedules showing incorrect frequency
-  - Refactored export logic into shared utility (`/src/lib/schedule-export.ts`)
-  - Updated branding with GoStudioM logo and SEO-optimized title
-  - Enhanced cleaner UI with prominent SMS invite buttons
-  - Fixed phone number normalization to prevent 500 errors
-  - Added helper text for phone input: "10-digit number (US & Canada only)"
+- Fixed cleaner share link generation 500 errors:
+  - Corrected column name from 'session_token' to 'token' in cleaner_sessions table queries
+  - Updated getCleanerByShareToken and createCleanerShareToken functions
+  - Share links now working properly for direct cleaner schedule access
+- Twilio A2P 10DLC campaign status:
+  - Existing campaign found (CMba872a661f73c51b9083efb214b6a727) in "In progress" status
+  - Campaign is under review by TCR (The Campaign Registry)
+  - Approval may take 2-3 weeks for Sole Proprietor campaigns
+  - Once approved, SMS notifications can be enabled by adding phone number to messaging service MG16c2dd5b961df31963e30492e172f2c1
+- **Previous work**:
+  - Completed SMS integration and A2P 10DLC registration:
+    - Added SMS opt-in tracking columns to production database
+    - Normalized all phone numbers to 10-digit format
+    - Successfully registered for A2P 10DLC compliance
+    - Campaign ID: CMba872a661f73c51b9083efb214b6a727
+    - Status: Pending approval (1-3 days)
+  - Fixed all test failures:
+    - Updated phone validation tests for normalized format
+    - All 83 tests now passing
+  - Created SMS debugging tools:
+    - Test SMS page: `/test-sms`
+    - SMS diagnostic: `/api/test/sms-diagnostic`
+    - Config verification: `/api/test/twilio-config`
+  - Planned comprehensive quick start guide:
+    - 5-step interactive onboarding flow
+    - Visual progress tracking with persistence
+    - Auto-detection of completed actions
+    - Expected completion time: 5-10 minutes
   - **Twilio Configuration**:
     - Phone number: +1 (628) 282-5326
     - Webhook URL: https://gostudiom.com/api/twilio/incoming
