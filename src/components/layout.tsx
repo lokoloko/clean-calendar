@@ -47,6 +47,7 @@ import { TrialBanner } from '@/components/trial-banner';
 // Navigation items for the sidebar.
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/quick-start', label: 'Quick Start', icon: Sparkles, badge: 'NEW' },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
   { href: '/listings', label: 'Listings', icon: Home },
@@ -90,6 +91,11 @@ function AppSidebar() {
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto flex h-5 px-1.5 items-center rounded bg-primary text-[10px] font-bold text-primary-foreground">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

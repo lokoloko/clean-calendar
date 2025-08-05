@@ -25,6 +25,7 @@ import { AppLayout } from '@/components/layout';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { formatPhoneNumber } from '@/lib/phone-utils';
+import { formatPhoneForDisplay } from '@/lib/format-utils';
 
 interface Cleaner {
   id: string;
@@ -300,7 +301,7 @@ export default function CleanersPage() {
                       {cleaner.phone && (
                         <a href={`tel:${cleaner.phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                           <Phone className="h-3 w-3" />
-                          {formatPhoneNumber(cleaner.phone)}
+                          {formatPhoneForDisplay(cleaner.phone)}
                         </a>
                       )}
                       {cleaner.email && (

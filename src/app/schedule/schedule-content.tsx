@@ -14,6 +14,7 @@ import PageHeader from '@/components/page-header';
 import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck, Home, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatTimeDisplay } from '@/lib/format-utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -734,7 +735,7 @@ export default function ScheduleContent() {
                       <TableCell className="font-medium">
                         {isValidDate ? format(checkoutDate, 'MMM d, yyyy') : 'Invalid date'}
                         <span className="text-sm text-muted-foreground block">
-                          {item.checkout_time || '11:00 AM'}
+                          {formatTimeDisplay(item.checkout_time) || '11:00 AM'}
                           {item.listing_timezone && item.listing_timezone !== 'America/New_York' && (
                             <span className="text-xs ml-1">({getTimezoneAbbreviation(item.listing_timezone)})</span>
                           )}

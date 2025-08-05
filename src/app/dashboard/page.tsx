@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { format, formatRelative, parseISO } from "date-fns";
 import { generateExportForCleaner, getNextCheckIn, parseLocalDate, type ScheduleItem as ExportScheduleItem } from "@/lib/schedule-export";
+import { formatTimeDisplay } from "@/lib/format-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { QuickStartBanner } from "@/components/quick-start-banner";
 
 interface DashboardStats {
   totalListings: number;
@@ -198,7 +200,7 @@ export default function DashboardPage() {
             id: item.id,
             listing_name: item.listing_name,
             cleaner_name: item.cleaner_name || 'Unassigned',
-            checkout_time: item.checkout_time || '11:00 AM',
+            checkout_time: formatTimeDisplay(item.checkout_time) || '11:00 AM',
             status: item.status
           });
           
@@ -437,6 +439,9 @@ export default function DashboardPage() {
           </Button>
         </div>
       </PageHeader>
+      
+      {/* Quick Start Banner for new users */}
+      <QuickStartBanner />
       
       {/* Grid for displaying key metric cards - Mobile optimized */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
