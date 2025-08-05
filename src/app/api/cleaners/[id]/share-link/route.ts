@@ -33,25 +33,31 @@ export async function POST(
     
     // Store the share token in the database
     // For now, we'll store it in the cleaner_sessions table with a special type
-    await db.createCleanerShareToken(cleanerId, shareToken)
+    const tokenData = await db.createCleanerShareToken(cleanerId, shareToken)
+    
+    // Use the token from the database (might be existing or new)
+    const actualToken = tokenData.session_token || shareToken
 
     // Return the share link
     // Get the base URL from the request headers if env var not set
     const host = request.headers.get('host')
     const protocol = request.headers.get('x-forwarded-proto') || 'https'
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
-    const shareLink = `${baseUrl}/cleaner/schedule/${shareToken}`
+    const shareLink = `${baseUrl}/cleaner/schedule/${actualToken}`
 
     return NextResponse.json({
       shareLink,
-      shareToken,
+      shareToken: actualToken,
       cleanerId,
       cleanerName: cleaner.name
     })
   } catch (error) {
     console.error('Error generating share link:', error)
     return NextResponse.json(
-      { error: 'Failed to generate share link' },
+      { 
+        error: 'Failed to generate share link',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

@@ -1064,6 +1064,23 @@ export const db = {
   
   async createCleanerShareToken(cleanerId: string, token: string) {
     const supabase = await createClient()
+    
+    // First check if a share token already exists for this cleaner
+    const { data: existing } = await supabase
+      .from('cleaner_sessions')
+      .select('*')
+      .eq('cleaner_id', cleanerId)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    
+    if (existing) {
+      // Return existing token
+      return existing
+    }
+    
+    // Create new token
     const { data, error } = await supabase
       .from('cleaner_sessions')
       .insert({
