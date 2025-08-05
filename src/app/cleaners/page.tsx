@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
-import { MoreHorizontal, Plus, Phone, Mail, FilePenLine, Trash2, Loader2, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { MoreHorizontal, Plus, Phone, Mail, FilePenLine, Trash2, Loader2, MessageSquare, CheckCircle, XCircle, Clock, Calendar, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,8 @@ export default function CleanersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCleaner, setEditingCleaner] = useState<Cleaner | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedCleaner, setSelectedCleaner] = useState<Cleaner | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -192,6 +194,31 @@ export default function CleanersPage() {
       toast({
         title: 'Error',
         description: 'Failed to delete cleaner',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleShareCalendarLink = (cleaner: Cleaner) => {
+    setSelectedCleaner(cleaner);
+    setShareModalOpen(true);
+  };
+
+  const copyLinkToClipboard = async () => {
+    const baseUrl = window.location.origin;
+    const calendarUrl = `${baseUrl}/cleaner`;
+    
+    try {
+      await navigator.clipboard.writeText(calendarUrl);
+      toast({
+        title: 'Link Copied!',
+        description: 'Calendar link copied to clipboard',
+      });
+      setShareModalOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to copy link',
         variant: 'destructive',
       });
     }
@@ -349,6 +376,14 @@ export default function CleanersPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => handleShareCalendarLink(cleaner)}
+                        title="Share calendar link"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => {
                           setEditingCleaner(cleaner);
                           setFormData({
@@ -436,6 +471,57 @@ export default function CleanersPage() {
                 <Button type="submit">{editingCleaner ? 'Save Changes' : 'Add Cleaner'}</Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Share Calendar Link Dialog */}
+        <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Calendar Link</DialogTitle>
+              <DialogDescription>
+                Share this link with {selectedCleaner?.name} so they can access their cleaning schedule.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                <code className="flex-1 text-sm break-all">
+                  {window.location.origin}/cleaner
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={copyLinkToClipboard}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  <strong>How it works:</strong>
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Cleaner visits the link and enters their phone number</li>
+                  <li>They receive a verification code via SMS</li>
+                  <li>Once verified, they can view their schedule</li>
+                  <li>They'll see schedules from all hosts they work for</li>
+                </ul>
+              </div>
+
+              {selectedCleaner?.phone && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Phone:</strong> {formatPhoneForDisplay(selectedCleaner.phone)}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShareModalOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
