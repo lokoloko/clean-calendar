@@ -40,6 +40,7 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [token, setToken] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   useEffect(() => {
     params.then((p) => {
@@ -51,6 +52,35 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
     if (token) {
       fetchSchedule();
     }
+  }, [token]);
+
+  // Auto-refresh every 30 seconds when page is visible
+  useEffect(() => {
+    if (!token) return;
+
+    // Function to check if page is visible and refresh
+    const autoRefresh = () => {
+      if (!document.hidden) {
+        fetchSchedule();
+      }
+    };
+
+    // Set up interval for auto-refresh (30 seconds)
+    const interval = setInterval(autoRefresh, 30000);
+
+    // Also refresh when page becomes visible after being hidden
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchSchedule();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [token]);
 
   const fetchSchedule = async () => {
@@ -69,6 +99,7 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
       const data = await response.json();
       setCleanerName(data.cleanerName);
       setScheduleItems(data.schedule);
+      setLastRefresh(new Date());
     } catch (error) {
       console.error('Error fetching schedule:', error);
       setError('Failed to load schedule');
@@ -312,19 +343,26 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
               <h1 className="text-2xl font-bold">Cleaning Schedule</h1>
               <p className="text-muted-foreground">Welcome, {cleanerName}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                Tap to sync latest schedule
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                title="Refresh schedule"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Auto-refreshes
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  title="Refresh now"
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+              {lastRefresh && (
+                <span className="text-[10px] text-muted-foreground">
+                  Updated {format(lastRefresh, 'h:mm a')}
+                </span>
+              )}
             </div>
           </div>
         </div>
