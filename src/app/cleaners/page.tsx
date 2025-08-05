@@ -8,19 +8,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@gostudiom/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+} from '@gostudiom/ui';
+import { Button } from '@gostudiom/ui';
 import PageHeader from '@/components/page-header';
 import { MoreHorizontal, Plus, Phone, Mail, FilePenLine, Trash2, Loader2, MessageSquare, CheckCircle, XCircle, Clock, Calendar, Copy } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@gostudiom/ui';
+import { Label } from '@gostudiom/ui';
+import { Input } from '@gostudiom/ui';
 import { AppLayout } from '@/components/layout';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -199,22 +199,43 @@ export default function CleanersPage() {
     }
   };
 
-  const handleShareCalendarLink = (cleaner: Cleaner) => {
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+
+  const handleShareCalendarLink = async (cleaner: Cleaner) => {
     setSelectedCleaner(cleaner);
-    setShareModalOpen(true);
+    setGeneratingLink(true);
+    
+    try {
+      const response = await fetch(`/api/cleaners/${cleaner.id}/share-link`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate share link');
+      }
+
+      const data = await response.json();
+      setShareLink(data.shareLink);
+      setShareModalOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate share link',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingLink(false);
+    }
   };
 
   const copyLinkToClipboard = async () => {
-    const baseUrl = window.location.origin;
-    const calendarUrl = `${baseUrl}/cleaner`;
-    
     try {
-      await navigator.clipboard.writeText(calendarUrl);
+      await navigator.clipboard.writeText(shareLink);
       toast({
         title: 'Link Copied!',
         description: 'Calendar link copied to clipboard',
       });
-      setShareModalOpen(false);
     } catch (error) {
       toast({
         title: 'Error',
@@ -475,45 +496,58 @@ export default function CleanersPage() {
         </Dialog>
 
         {/* Share Calendar Link Dialog */}
-        <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <Dialog open={shareModalOpen} onOpenChange={(open) => {
+          setShareModalOpen(open);
+          if (!open) {
+            setShareLink('');
+          }
+        }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Share Calendar Link</DialogTitle>
+              <DialogTitle>Direct Calendar Link</DialogTitle>
               <DialogDescription>
-                Share this link with {selectedCleaner?.name} so they can access their cleaning schedule.
+                Share this direct link with {selectedCleaner?.name} to give them instant access to their cleaning schedule.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
-                <code className="flex-1 text-sm break-all">
-                  {window.location.origin}/cleaner
-                </code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={copyLinkToClipboard}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  <strong>How it works:</strong>
-                </p>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Cleaner visits the link and enters their phone number</li>
-                  <li>They receive a verification code via SMS</li>
-                  <li>Once verified, they can view their schedule</li>
-                  <li>They'll see schedules from all hosts they work for</li>
-                </ul>
-              </div>
+              {shareLink ? (
+                <>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                    <code className="flex-1 text-sm break-all">
+                      {shareLink}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={copyLinkToClipboard}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>How it works:</strong>
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>This is a direct link - no login required</li>
+                      <li>The cleaner can bookmark it for easy access</li>
+                      <li>They'll see their schedule from your properties</li>
+                      <li>The link is unique to this cleaner</li>
+                    </ul>
+                  </div>
 
-              {selectedCleaner?.phone && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Phone:</strong> {formatPhoneForDisplay(selectedCleaner.phone)}
-                  </p>
+                  {selectedCleaner?.phone && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        You can send this link via text to: {formatPhoneForDisplay(selectedCleaner.phone)}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               )}
             </div>

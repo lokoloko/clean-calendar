@@ -741,6 +741,63 @@ export const db = {
     )
     return result.rows[0]
   },
+
+  async createCleanerShareToken(cleanerId: string, token: string) {
+    // Create a permanent share token for cleaner access
+    const result = await pool.query(
+      `INSERT INTO public.cleaner_sessions (
+        cleaner_id, 
+        session_token, 
+        expires_at,
+        created_at,
+        last_activity
+      ) VALUES (
+        $1, 
+        $2, 
+        NOW() + INTERVAL '10 years', -- Long-lived token
+        NOW(),
+        NOW()
+      ) RETURNING *`,
+      [cleanerId, token]
+    )
+    return result.rows[0]
+  },
+
+  async getCleanerByShareToken(token: string) {
+    const result = await pool.query(
+      `SELECT c.*, cs.session_token, cs.expires_at
+       FROM public.cleaner_sessions cs
+       JOIN public.cleaners c ON cs.cleaner_id = c.id
+       WHERE cs.session_token = $1 
+       AND cs.expires_at > NOW()`,
+      [token]
+    )
+    return result.rows[0]
+  },
+
+  async getCleanerScheduleAllHosts(cleanerId: string) {
+    const result = await pool.query(
+      `SELECT s.*,
+              l.name as listing_name,
+              l.address as listing_address,
+              c.name as cleaner_name,
+              p.email as host_email,
+              cf.completed_at as feedback_completed_at,
+              cf.cleanliness_rating,
+              cf.notes as feedback_notes,
+              CASE WHEN cf.id IS NOT NULL THEN true ELSE false END as is_completed
+       FROM public.schedule_items s
+       JOIN public.listings l ON s.listing_id = l.id
+       JOIN public.cleaners c ON s.cleaner_id = c.id
+       JOIN public.profiles p ON l.user_id = p.id
+       LEFT JOIN public.cleaner_feedback cf ON s.id = cf.schedule_item_id
+       WHERE s.cleaner_id = $1
+         AND s.status != 'cancelled'
+       ORDER BY s.check_out ASC`,
+      [cleanerId]
+    )
+    return result.rows
+  },
   
   // Pool health check
   async checkHealth() {
