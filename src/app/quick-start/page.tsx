@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+import { Button } from '@gostudiom/ui'
+import { Progress } from '@gostudiom/ui'
 import { useQuickStartProgress } from '@/hooks/use-quick-start-progress'
 import { ProgressBar } from '@/components/quick-start/progress-bar'
 import { StepWrapper } from '@/components/quick-start/step-wrapper'
@@ -11,6 +11,7 @@ import { CalendarConnect } from '@/components/quick-start/calendar-connect'
 import { CleanerSetup } from '@/components/quick-start/cleaner-setup'
 import { PropertyAssignment } from '@/components/quick-start/property-assignment'
 import { ScheduleExport } from '@/components/quick-start/schedule-export'
+import { ShareCalendarLinks } from '@/components/quick-start/share-calendar-links'
 import { CompletionCelebration } from '@/components/quick-start/completion-celebration'
 import { ChevronLeft, X } from 'lucide-react'
 import {
@@ -22,7 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from '@gostudiom/ui'
 
 const steps = [
   {
@@ -42,7 +43,12 @@ const steps = [
   },
   {
     id: 'step-4',
-    title: 'Share Schedule',
+    title: 'Export Schedule',
+    description: '1 minute',
+  },
+  {
+    id: 'step-5',
+    title: 'Share Calendar Links',
     description: '1 minute',
   },
 ]
@@ -208,11 +214,11 @@ export default function QuickStartPage() {
           </StepWrapper>
         )}
 
-        {/* Step 4: Share Schedule */}
+        {/* Step 4: Export Schedule */}
         {progress.currentStep === 4 && (
           <StepWrapper
-            title="Share Your First Schedule"
-            description="Export and share this week's cleaning schedule"
+            title="Export Your First Schedule"
+            description="Create and copy this week's cleaning schedule"
             stepNumber={4}
             isActive={true}
             isCompleted={isStepCompleted('step-4')}
@@ -224,7 +230,23 @@ export default function QuickStartPage() {
           </StepWrapper>
         )}
 
-        {/* Step 5: Completion */}
+        {/* Step 5: Share Calendar Links */}
+        {progress.currentStep === 5 && (
+          <StepWrapper
+            title="Share Calendar Links"
+            description="Give cleaners direct access to their schedules"
+            stepNumber={5}
+            isActive={true}
+            isCompleted={isStepCompleted('step-5')}
+          >
+            <ShareCalendarLinks
+              onComplete={() => completeStep('step-5')}
+              isCompleted={isStepCompleted('step-5')}
+            />
+          </StepWrapper>
+        )}
+
+        {/* Step 6: Completion */}
         {isCompleted && (
           <CompletionCelebration stats={stats} />
         )}
