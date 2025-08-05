@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db-edge'
 import crypto from 'crypto'
 
 // Generate a unique share token for a cleaner

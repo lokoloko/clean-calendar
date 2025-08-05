@@ -1062,6 +1062,95 @@ export const db = {
     }
   },
   
+  async createCleanerShareToken(cleanerId: string, token: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('cleaner_sessions')
+      .insert({
+        cleaner_id: cleanerId,
+        session_token: token,
+        expires_at: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 10 years
+        created_at: new Date().toISOString(),
+        last_activity: new Date().toISOString()
+      })
+      .select()
+      .single()
+    
+    if (error) {
+      logger.error('Failed to create cleaner share token', error)
+      throw error
+    }
+    
+    return data
+  },
+
+  async getCleanerByShareToken(token: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('cleaner_sessions')
+      .select(`
+        *,
+        cleaner:cleaners(*)
+      `)
+      .eq('session_token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null // Not found
+      logger.error('Failed to get cleaner by share token', error)
+      throw error
+    }
+    
+    return data?.cleaner ? { ...data.cleaner, session_token: token, expires_at: data.expires_at } : null
+  },
+
+  async getCleanerScheduleAllHosts(cleanerId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('schedule_items')
+      .select(`
+        *,
+        listing:listings!inner(
+          id,
+          name,
+          address,
+          user_id,
+          user:profiles!listings_user_id_fkey(email)
+        ),
+        cleaner:cleaners!inner(
+          id,
+          name
+        ),
+        feedback:cleaner_feedback(
+          id,
+          completed_at,
+          cleanliness_rating,
+          notes
+        )
+      `)
+      .eq('cleaner_id', cleanerId)
+      .neq('status', 'cancelled')
+      .order('check_out', { ascending: true })
+    
+    if (error) {
+      logger.error('Failed to get cleaner schedule across all hosts', error)
+      throw error
+    }
+    
+    return (data || []).map((item: any) => ({
+      ...item,
+      listing_name: item.listing?.name,
+      listing_address: item.listing?.address,
+      cleaner_name: item.cleaner?.name,
+      host_email: item.listing?.user?.email,
+      feedback_completed_at: item.feedback?.[0]?.completed_at,
+      cleanliness_rating: item.feedback?.[0]?.cleanliness_rating,
+      feedback_notes: item.feedback?.[0]?.notes,
+      is_completed: !!item.feedback?.[0]?.id
+    }))
+  },
+
   async close() {
     // No-op for Supabase client
     logger.info('Database close called (no-op for Supabase)')
