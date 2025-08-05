@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db-edge'
+import { createClient } from '@/lib/supabase-server'
+
+export const runtime = 'edge'
 
 export async function GET(
   request: Request,
@@ -7,26 +9,36 @@ export async function GET(
 ) {
   try {
     const { token } = await params
+    const supabase = await createClient()
 
-    // Get cleaner info by share token
-    const cleaner = await db.getCleanerByShareToken(token)
+    // Get cleaner info by share token using the SECURITY DEFINER function
+    const { data: cleanerData, error: cleanerError } = await supabase
+      .rpc('get_cleaner_by_token', { share_token: token })
+      .single()
     
-    if (!cleaner) {
+    if (cleanerError || !cleanerData) {
+      console.error('Error getting cleaner by token:', cleanerError)
       return NextResponse.json(
         { error: 'Invalid or expired share link' },
         { status: 404 }
       )
     }
 
-    // Get the cleaner's schedule across all hosts
-    const schedule = await db.getCleanerScheduleAllHosts(cleaner.id)
+    // Get the cleaner's schedule using the SECURITY DEFINER function
+    const { data: schedule, error: scheduleError } = await supabase
+      .rpc('get_cleaner_schedule_by_token', { share_token: token })
+
+    if (scheduleError) {
+      console.error('Error getting cleaner schedule:', scheduleError)
+      throw scheduleError
+    }
 
     // Format the schedule items
-    const formattedSchedule = schedule.map((item: any) => ({
+    const formattedSchedule = (schedule || []).map((item: any) => ({
       id: item.id,
       listing_name: item.listing_name,
       listing_address: item.listing_address,
-      host_name: item.host_name,
+      host_name: item.host_email, // Using host_email as host_name for display
       check_in: item.check_in,
       check_out: item.check_out,
       checkout_time: item.checkout_time,
@@ -37,8 +49,8 @@ export async function GET(
     }))
 
     return NextResponse.json({
-      cleanerId: cleaner.id,
-      cleanerName: cleaner.name,
+      cleanerId: cleanerData.id,
+      cleanerName: cleanerData.name,
       schedule: formattedSchedule
     })
   } catch (error) {
