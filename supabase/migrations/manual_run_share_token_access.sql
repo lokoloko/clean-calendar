@@ -19,9 +19,9 @@ RETURNS TABLE (
   host_email TEXT,
   cleaner_id UUID,
   cleaner_name TEXT,
-  check_in TIMESTAMP WITH TIME ZONE,
-  check_out TIMESTAMP WITH TIME ZONE,
-  checkout_time TEXT,
+  check_in DATE,
+  check_out DATE,
+  checkout_time TIME,
   guest_name TEXT,
   is_completed BOOLEAN,
   feedback_id UUID,
@@ -29,7 +29,6 @@ RETURNS TABLE (
   feedback_notes TEXT,
   feedback_completed_at TIMESTAMP WITH TIME ZONE,
   booking_uid TEXT,
-  booking_platform TEXT,
   status TEXT
 )
 LANGUAGE plpgsql
@@ -70,7 +69,6 @@ BEGIN
     cf.notes AS feedback_notes,
     cf.completed_at AS feedback_completed_at,
     si.booking_uid,
-    si.booking_platform,
     si.status
   FROM schedule_items si
   INNER JOIN listings l ON si.listing_id = l.id
