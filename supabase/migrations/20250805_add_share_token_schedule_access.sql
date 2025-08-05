@@ -11,16 +11,16 @@ RETURNS TABLE (
   cleaner_name TEXT,
   check_in TIMESTAMP WITH TIME ZONE,
   check_out TIMESTAMP WITH TIME ZONE,
-  checkout_time VARCHAR(5),
-  guest_name VARCHAR(255),
+  checkout_time TEXT,
+  guest_name TEXT,
   is_completed BOOLEAN,
   feedback_id UUID,
-  cleanliness_rating VARCHAR(10),
+  cleanliness_rating TEXT,
   feedback_notes TEXT,
   feedback_completed_at TIMESTAMP WITH TIME ZONE,
-  booking_uid VARCHAR(255),
-  booking_platform VARCHAR(50),
-  status VARCHAR(50)
+  booking_uid TEXT,
+  booking_platform TEXT,
+  status TEXT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -81,9 +81,9 @@ GRANT EXECUTE ON FUNCTION get_cleaner_schedule_by_token(TEXT) TO anon;
 CREATE OR REPLACE FUNCTION get_cleaner_by_token(share_token TEXT)
 RETURNS TABLE (
   id UUID,
-  name VARCHAR(255),
-  phone VARCHAR(20),
-  email VARCHAR(255)
+  name TEXT,
+  phone TEXT,
+  email TEXT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
