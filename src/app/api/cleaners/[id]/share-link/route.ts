@@ -44,7 +44,8 @@ export async function POST(
 
     // Generate a unique token for this cleaner
     // Use Web Crypto API for Edge runtime compatibility
-    const array = new Uint8Array(32)
+    // Generate a shorter, URL-friendly token (16 bytes = 32 chars in hex)
+    const array = new Uint8Array(16)
     crypto.getRandomValues(array)
     const shareToken = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
     

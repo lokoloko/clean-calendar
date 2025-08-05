@@ -47,7 +47,7 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
 
   const fetchSchedule = async () => {
     try {
-      const response = await fetch(`/api/cleaner/schedule/share/${token}`);
+      const response = await fetch(`/api/cleaner/schedule/${token}`);
       
       if (!response.ok) {
         if (response.status === 404) {
