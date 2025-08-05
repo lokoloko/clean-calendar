@@ -17,10 +17,13 @@ interface ScheduleItem {
   listing_name: string;
   listing_address?: string;
   host_name?: string;
+  cleaner_id: string;
+  cleaner_name: string;
   check_in: string;
   check_out: string;
   checkout_time: string;
   guest_name?: string;
+  status: string;
   is_completed: boolean;
   feedback_id?: string;
   cleanliness_rating?: string;

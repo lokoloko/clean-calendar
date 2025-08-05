@@ -9,15 +9,25 @@ GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbn
 **Current Status**: Production-ready at 90% completion. All core functionality complete, security and performance optimized. SMS integration pending A2P approval (1-3 days). Quick start guide planned for seamless user onboarding.
 
 **Latest Session (2025-08-05)**:
-- Fixed cleaner share link generation 500 errors:
-  - Corrected column name from 'session_token' to 'token' in cleaner_sessions table queries
-  - Updated getCleanerByShareToken and createCleanerShareToken functions
-  - Share links now working properly for direct cleaner schedule access
+- Fixed cleaner share link 500 errors and database issues:
+  - Created SECURITY DEFINER PostgreSQL functions to bypass RLS for unauthenticated access
+  - Fixed multiple database schema mismatches:
+    - Type mismatches (VARCHAR vs TEXT)
+    - Non-existent columns (address, booking_platform)
+    - Wrong data types (DATE vs TIMESTAMP WITH TIME ZONE)
+    - Added explicit cast for cleanliness_rating (VARCHAR(10) to TEXT)
+  - Shortened share tokens from 64 to 32 characters for cleaner URLs
+  - Share links now work without authentication
+- Enhanced cleaner share link UI and functionality:
+  - Added refresh button with spinning animation
+  - Optimized mobile view to be edge-to-edge (removed container padding)
+  - Made display consistent with export format
+  - Added "Next: [timing]" information to all views (Today, List, Week)
+  - Shows same timing as exports: "Same day", "Next day", "3 days later", "Monthly", etc.
 - Twilio A2P 10DLC campaign status:
-  - Existing campaign found (CMba872a661f73c51b9083efb214b6a727) in "In progress" status
-  - Campaign is under review by TCR (The Campaign Registry)
-  - Approval may take 2-3 weeks for Sole Proprietor campaigns
-  - Once approved, SMS notifications can be enabled by adding phone number to messaging service MG16c2dd5b961df31963e30492e172f2c1
+  - Campaign still "In progress" (CMba872a661f73c51b9083efb214b6a727)
+  - Waiting for TCR approval (2-3 weeks for Sole Proprietor)
+  - Once approved, add phone to messaging service MG16c2dd5b961df31963e30492e172f2c1
 - **Previous work**:
   - Completed SMS integration and A2P 10DLC registration:
     - Added SMS opt-in tracking columns to production database
