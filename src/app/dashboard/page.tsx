@@ -1,22 +1,22 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@gostudiom/ui";
 import PageHeader from "@/components/page-header";
 import { DollarSign, Home, Users, CalendarCheck2, AlertCircle, RefreshCw, Plus, ArrowRight, Clock, CheckCircle2, UserPlus, Activity, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@gostudiom/ui";
+import { Badge } from "@gostudiom/ui";
 import Link from "next/link";
 import { format, formatRelative, parseISO } from "date-fns";
 import { generateExportForCleaner, getNextCheckIn, parseLocalDate, type ScheduleItem as ExportScheduleItem } from "@/lib/schedule-export";
 import { formatTimeDisplay } from "@/lib/format-utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@gostudiom/ui";
+import { Label } from "@gostudiom/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@gostudiom/ui";
+import { Input } from "@gostudiom/ui";
+import { Textarea } from "@gostudiom/ui";
 import { Loader2 } from "lucide-react";
 import { QuickStartBanner } from "@/components/quick-start-banner";
 

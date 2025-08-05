@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@gostudiom/ui";
 import {
   ResponsiveTable,
   ResponsiveTableHeader,
@@ -17,7 +17,7 @@ import {
   ResponsiveTableHead,
   ResponsiveTableBody,
   ResponsiveTableCell,
-} from "@/components/ui/responsive-table";
+} from "@gostudiom/ui";
 import {
   Table,
   TableBody,
@@ -25,22 +25,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@gostudiom/ui";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   ChartConfig,
-} from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+} from "@gostudiom/ui";
+import { Badge } from "@gostudiom/ui";
+import { Progress } from "@gostudiom/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@gostudiom/ui";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";

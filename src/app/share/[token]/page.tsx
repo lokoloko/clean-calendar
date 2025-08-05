@@ -22,7 +22,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/components/ui/alert";
+} from "@gostudiom/ui";
 import { getTimezoneAbbreviation } from '@/lib/timezones';
 import { formatPhoneForDisplay } from '@/lib/format-utils';
 
