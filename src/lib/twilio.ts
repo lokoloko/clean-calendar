@@ -7,6 +7,14 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
+// Log Twilio configuration status (for debugging)
+console.log('[Twilio Init]', {
+  hasAccountSid: !!accountSid,
+  hasAuthToken: !!authToken,
+  hasFromNumber: !!fromNumber,
+  fromNumberPreview: fromNumber ? fromNumber.substring(0, 7) + '...' : 'not set'
+});
+
 // Only initialize if we have the required environment variables
 const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
