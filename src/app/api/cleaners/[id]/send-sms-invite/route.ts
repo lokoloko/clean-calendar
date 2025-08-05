@@ -9,11 +9,18 @@ export const POST = withApiHandler(async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  console.log('[SMS Invite] Starting request')
+  
   const user = await requireAuth()
+  console.log('[SMS Invite] User authenticated:', user.id)
+  
   const { id: cleanerId } = await params
+  console.log('[SMS Invite] Cleaner ID:', cleanerId)
 
   // Get cleaner
   const cleaner = await db.getCleaner(cleanerId)
+  console.log('[SMS Invite] Cleaner found:', !!cleaner, cleaner?.phone)
+  
   if (!cleaner || cleaner.user_id !== user.id) {
     throw new ApiError(404, 'Cleaner not found')
   }
