@@ -664,7 +664,7 @@ export const db = {
       .from('cleaner_sessions')
       .insert({
         cleaner_id: cleanerId,
-        session_token: token,
+        token: token,
         device_info: deviceInfo,
         expires_at: expiresAt.toISOString()
       })
@@ -687,7 +687,7 @@ export const db = {
         *,
         cleaners!inner(*)
       `)
-      .eq('session_token', token)
+      .eq('token', token)
       .gt('expires_at', new Date().toISOString())
       .single()
     

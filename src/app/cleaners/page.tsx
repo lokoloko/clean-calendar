@@ -205,23 +205,27 @@ export default function CleanersPage() {
   const handleShareCalendarLink = async (cleaner: Cleaner) => {
     setSelectedCleaner(cleaner);
     setGeneratingLink(true);
+    console.log('Generating share link for cleaner:', cleaner.id, cleaner.name);
     
     try {
       const response = await fetch(`/api/cleaners/${cleaner.id}/share-link`, {
         method: 'POST',
       });
 
+      const data = await response.json();
+      console.log('Share link response:', response.status, data);
+
       if (!response.ok) {
-        throw new Error('Failed to generate share link');
+        throw new Error(data.error || data.details || 'Failed to generate share link');
       }
 
-      const data = await response.json();
       setShareLink(data.shareLink);
       setShareModalOpen(true);
     } catch (error) {
+      console.error('Share link error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate share link',
+        description: error instanceof Error ? error.message : 'Failed to generate share link',
         variant: 'destructive',
       });
     } finally {
