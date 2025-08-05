@@ -214,14 +214,13 @@ export default function LandingPage() {
               </div>
             </div>
             <div>
-              {/* Placeholder image for hero section */}
+              {/* Screenshot of the app dashboard */}
               <Image
-                src="https://placehold.co/600x400.png"
+                src="/screen2.png"
                 width={600}
                 height={400}
-                alt="Illustration of a clean home schedule"
+                alt="Clean Calendar dashboard showing schedule and metrics"
                 className="rounded-xl shadow-lg"
-                data-ai-hint="clean schedule abstract"
               />
             </div>
           </div>
@@ -424,14 +423,13 @@ export default function LandingPage() {
           <div className="container">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                {/* Placeholder image for benefits section */}
+                {/* Screenshot of the schedule view */}
                 <Image
-                  src="https://placehold.co/600x500.png"
+                  src="/screen3.png"
                   width={600}
                   height={500}
-                  alt="Illustration of benefits"
+                  alt="Clean Calendar schedule view showing cleaning assignments"
                   className="rounded-xl shadow-lg"
-                  data-ai-hint="benefits checklist happy"
                 />
               </div>
               <div className="space-y-6">
