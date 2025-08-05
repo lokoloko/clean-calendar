@@ -9,7 +9,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth()
+    let user
+    try {
+      user = await requireAuth()
+    } catch (error) {
+      console.error('Auth error in share-link route:', error)
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -18,9 +28,12 @@ export async function POST(
     }
 
     const { id: cleanerId } = await params
+    console.log('Cleaner ID from params:', cleanerId)
+    console.log('User ID:', user.id)
 
     // Verify the cleaner belongs to this user
     const cleaner = await db.getCleaner(cleanerId, user.id)
+    console.log('Cleaner data:', cleaner)
     if (!cleaner) {
       return NextResponse.json(
         { error: 'Cleaner not found' },
@@ -33,7 +46,9 @@ export async function POST(
     
     // Store the share token in the database
     // For now, we'll store it in the cleaner_sessions table with a special type
+    console.log('Creating share token for cleaner:', cleanerId)
     const tokenData = await db.createCleanerShareToken(cleanerId, shareToken)
+    console.log('Token data received:', tokenData)
     
     // Use the token from the database (might be existing or new)
     const actualToken = tokenData.token || shareToken
