@@ -13,6 +13,10 @@ export async function GET() {
     NODE_ENV: process.env.NODE_ENV,
     VERCEL: process.env.VERCEL,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    // Twilio env vars
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ? 'present' : 'missing',
+    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ? 'present' : 'missing',
+    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ? 'present' : 'missing',
   }
   
   // Test auth flow
