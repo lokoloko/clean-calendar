@@ -14,7 +14,7 @@ export async function GET(
     // Get cleaner info by share token using the SECURITY DEFINER function
     const { data: cleanerData, error: cleanerError } = await supabase
       .rpc('get_cleaner_by_token', { share_token: token })
-      .single()
+      .single() as { data: { id: string; name: string; phone: string; email: string } | null; error: any }
     
     if (cleanerError || !cleanerData) {
       console.error('Error getting cleaner by token:', cleanerError)
