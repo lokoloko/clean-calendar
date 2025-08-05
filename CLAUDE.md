@@ -9,11 +9,15 @@ GoStudioM Smart Cleaning Calendar is a Next.js 15 application for managing Airbn
 **Current Status**: Production-ready at 60% completion. Security and performance fully optimized with RLS policies, database indexes, and mobile-first design. Core functionality complete, awaiting external services for notifications and final deployment configuration.
 
 **Latest Session (2025-08-05)**:
-- Discovered SMS migration hasn't run on production database
-  - SMS invite returns 500 error due to missing columns
-  - Created manual migration script: `/supabase/migrations/manual_run_sms_migration.sql`
-  - Created verification endpoint: `/api/test/verify-sms-fields`
-  - Must run migration in Supabase Dashboard SQL Editor
+- Fixed SMS integration issues:
+  - Added missing SMS columns to production database
+  - Normalized phone numbers to 10-digit format
+  - Verified Twilio successfully sending messages
+  - SMS invites now working from /cleaners page
+- Created debugging tools:
+  - Test SMS page: `/test-sms`
+  - Config verification: `/api/test/twilio-config`
+  - Enhanced logging in Twilio module
 - **Previous work (2025-08-04)**:
   - Implemented complete SMS notification system with Twilio:
     - Added SMS opt-in flow where hosts invite cleaners
