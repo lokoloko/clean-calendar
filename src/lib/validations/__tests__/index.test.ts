@@ -69,33 +69,41 @@ describe('Validation Schemas', () => {
   })
 
   describe('phoneSchema', () => {
-    it('should accept valid phone numbers', () => {
+    it('should accept valid phone numbers and normalize them', () => {
       const validPhones = [
-        '+1-555-123-4567',
-        '555 123 4567',
-        '(555) 123-4567',
-        '5551234567'
+        { input: '555 123 4567', expected: '5551234567' },
+        { input: '(555) 123-4567', expected: '5551234567' },
+        { input: '5551234567', expected: '5551234567' },
+        { input: '2134567890', expected: '2134567890' }
       ]
       
-      validPhones.forEach(phone => {
-        expect(phoneSchema.parse(phone)).toBe(phone)
+      validPhones.forEach(({ input, expected }) => {
+        expect(phoneSchema.parse(input)).toBe(expected)
       })
     })
 
-    it('should reject invalid phone numbers', () => {
-      expect(() => phoneSchema.parse('abc-def-ghij')).toThrow('Invalid phone number format')
+    it('should reject phone numbers starting with 0 or 1', () => {
+      expect(() => phoneSchema.parse('1234567890')).toThrow('Phone number cannot start with 0 or 1')
+      expect(() => phoneSchema.parse('0234567890')).toThrow('Phone number cannot start with 0 or 1')
+    })
+
+    it('should handle country code prefix', () => {
+      // Numbers with +1 prefix get stripped to 11 digits, which then fail validation
+      expect(() => phoneSchema.parse('+1-555-123-4567')).toThrow('Phone number must be exactly 10 digits')
+      expect(() => phoneSchema.parse('+12134567890')).toThrow('Phone number must be exactly 10 digits')
     })
 
     it('should reject too short numbers', () => {
-      expect(() => phoneSchema.parse('123')).toThrow('Phone number too short')
+      expect(() => phoneSchema.parse('123')).toThrow('Phone number must be exactly 10 digits')
     })
 
     it('should reject too long numbers', () => {
-      expect(() => phoneSchema.parse('123456789012345678901')).toThrow('Phone number too long')
+      expect(() => phoneSchema.parse('12345678901')).toThrow('Phone number must be exactly 10 digits')
     })
 
     it('should be optional', () => {
       expect(phoneSchema.parse(undefined)).toBeUndefined()
+      expect(phoneSchema.parse('')).toBe('')
     })
   })
 
@@ -116,7 +124,11 @@ describe('Validation Schemas', () => {
         phone: '555-123-4567',
         email: 'john@example.com'
       }
-      expect(cleanerSchema.parse(cleaner)).toEqual(cleaner)
+      expect(cleanerSchema.parse(cleaner)).toEqual({
+        name: 'John Doe',
+        phone: '5551234567', // Phone is normalized
+        email: 'john@example.com'
+      })
     })
 
     it('should require name', () => {
@@ -293,7 +305,10 @@ describe('Validation Schemas', () => {
       const schema = cleanerSchema
       const data = { name: 'Test Cleaner', phone: '555-1234567' }
       
-      expect(validateRequest(schema, data)).toEqual(data)
+      expect(validateRequest(schema, data)).toEqual({
+        name: 'Test Cleaner',
+        phone: '5551234567' // Phone is normalized
+      })
     })
 
     it('should throw formatted error for invalid data', () => {
