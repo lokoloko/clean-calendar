@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    let todayMessages = []
+    let todayMessages: any[] = []
     try {
       todayMessages = await client.messages.list({
         from: process.env.TWILIO_PHONE_NUMBER,
