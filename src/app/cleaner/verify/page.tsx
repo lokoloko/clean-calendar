@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatPhoneForDisplay } from '@/lib/format-utils';
 
 export default function CleanerVerifyPage() {
   const router = useRouter();
@@ -158,10 +159,6 @@ export default function CleanerVerifyPage() {
     }
   };
 
-  const formatPhoneDisplay = (phone: string) => {
-    if (!phone || phone.length !== 10) return phone;
-    return `(${phone.slice(0, 3)}) ${phone.slice(3, 6)}-${phone.slice(6)}`;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
@@ -179,7 +176,7 @@ export default function CleanerVerifyPage() {
           <CardHeader>
             <CardTitle>Enter verification code</CardTitle>
             <CardDescription>
-              We sent a 6-digit code to {formatPhoneDisplay(phoneNumber)}
+              We sent a 6-digit code to {formatPhoneForDisplay(phoneNumber)}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

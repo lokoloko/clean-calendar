@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { formatPhoneForDisplay } from '@/lib/format-utils';
 
 interface Cleaner {
   id: string;
@@ -191,7 +192,7 @@ export function AssignCleanersContent({ listingId, listingName }: AssignCleaners
                       >
                         <div className="font-medium">{cleaner.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {cleaner.phone}
+                          {formatPhoneForDisplay(cleaner.phone)}
                           {cleaner.email && ` • ${cleaner.email}`}
                         </div>
                       </label>

@@ -24,6 +24,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { getTimezoneAbbreviation } from '@/lib/timezones';
+import { formatPhoneForDisplay } from '@/lib/format-utils';
 
 interface Params {
   token: string;
@@ -298,7 +299,7 @@ export default function SharedSchedulePage({ params }: Props) {
                             {item.cleaner_name}
                             {item.cleaner_phone && (
                               <span className="text-sm text-muted-foreground block">
-                                {item.cleaner_phone}
+                                {formatPhoneForDisplay(item.cleaner_phone)}
                               </span>
                             )}
                           </TableCell>

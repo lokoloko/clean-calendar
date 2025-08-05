@@ -36,18 +36,18 @@ export function QuickStartBanner() {
   }
 
   return (
-    <Card className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20 mb-6">
+    <Card className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20 mb-6 overflow-hidden">
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-2 right-2 h-6 w-6"
+        className="absolute top-3 right-3 h-8 w-8 z-10"
         onClick={handleDismiss}
       >
         <X className="h-4 w-4" />
         <span className="sr-only">Dismiss</span>
       </Button>
       
-      <CardContent className="pt-6 pb-4">
+      <CardContent className="pt-6 pb-4 pr-12">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="rounded-full bg-primary/10 p-2">

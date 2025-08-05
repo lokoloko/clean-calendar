@@ -14,7 +14,7 @@ import PageHeader from '@/components/page-header';
 import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck, Home, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { formatTimeDisplay } from '@/lib/format-utils';
+import { formatTimeDisplay, formatPhoneForDisplay } from '@/lib/format-utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -779,7 +779,7 @@ export default function ScheduleContent() {
                         {item.cleaner_name}
                         {item.cleaner_phone && (
                           <span className="text-sm text-muted-foreground block">
-                            {item.cleaner_phone}
+                            {formatPhoneForDisplay(item.cleaner_phone)}
                           </span>
                         )}
                       </TableCell>
@@ -1262,7 +1262,7 @@ export default function ScheduleContent() {
                             <h4 className="font-semibold text-lg">{item.listing_name}</h4>
                             <p className="text-sm text-muted-foreground">
                               Cleaner: {item.cleaner_name}
-                              {item.cleaner_phone && ` • ${item.cleaner_phone}`}
+                              {item.cleaner_phone && ` • ${formatPhoneForDisplay(item.cleaner_phone)}`}
                             </p>
                           </div>
                           <div className="flex gap-2">
