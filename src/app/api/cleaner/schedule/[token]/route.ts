@@ -37,7 +37,7 @@ export async function GET(
     const formattedSchedule = (schedule || []).map((item: any) => ({
       id: item.id,
       listing_name: item.listing_name,
-      listing_address: item.listing_address,
+      listing_address: '', // Address not available in database
       host_name: item.host_email, // Using host_email as host_name for display
       check_in: item.check_in,
       check_out: item.check_out,
