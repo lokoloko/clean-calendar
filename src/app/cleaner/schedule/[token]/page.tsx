@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@gostudiom/ui';
-import { Calendar, Clock, Home, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Home, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@gostudiom/ui';
 import { Badge } from '@gostudiom/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@gostudiom/ui';
@@ -32,6 +32,7 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [token, setToken] = useState<string>('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     params.then((p) => {
@@ -66,7 +67,13 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
       setError('Failed to load schedule');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchSchedule();
   };
 
   const getItemsForDay = (date: Date) => {
@@ -284,16 +291,28 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-4xl mx-auto p-4 space-y-6">
+      <div className="max-w-4xl mx-auto sm:p-4 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Cleaning Schedule</h1>
-          <p className="text-muted-foreground">Welcome, {cleanerName}</p>
+        <div className="p-4 sm:p-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Cleaning Schedule</h1>
+              <p className="text-muted-foreground">Welcome, {cleanerName}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Today's Summary */}
         {todaysCleanings.length > 0 && (
-          <Card>
+          <Card className="mx-4 sm:mx-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -319,11 +338,11 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
         )}
 
         {/* Schedule Views */}
-        <Card>
-          <CardHeader>
+        <Card className="sm:mx-0 sm:rounded-lg rounded-none">
+          <CardHeader className="px-4 sm:px-6">
             <CardTitle>Full Schedule</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <Tabs defaultValue="list" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="list">List</TabsTrigger>
