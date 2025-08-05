@@ -312,14 +312,20 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
               <h1 className="text-2xl font-bold">Cleaning Schedule</h1>
               <p className="text-muted-foreground">Welcome, {cleanerName}</p>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                Tap to sync latest schedule
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                title="Refresh schedule"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </div>
 
