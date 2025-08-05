@@ -722,6 +722,21 @@ export const db = {
     return data
   },
   
+  async getCleanersByPhone(phone: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('cleaners')
+      .select('*')
+      .eq('phone', phone)
+    
+    if (error) {
+      logger.error('Failed to get cleaners by phone', error)
+      throw error
+    }
+    
+    return data || []
+  },
+  
   async getCleanerSchedule(cleanerId: string, fromDate?: Date, toDate?: Date) {
     const supabase = await createClient()
     let query = supabase

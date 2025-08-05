@@ -16,7 +16,8 @@ import {
   MessageSquare,
   Star,
   ChevronRight,
-  Info
+  Info,
+  CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -261,6 +262,27 @@ export default function CleanerDashboard() {
                 {todayStats.total - todayStats.completed} cleaning{todayStats.total - todayStats.completed > 1 ? 's' : ''} remaining today
               </p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Calendar Link */}
+        <Card 
+          className="shadow-md cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
+          onClick={() => router.push('/cleaner/hosts')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <CalendarDays className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">View Calendar</h3>
+                  <p className="text-sm text-gray-600">See all your schedules by host</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </div>
           </CardContent>
         </Card>
 
