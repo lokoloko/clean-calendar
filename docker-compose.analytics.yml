@@ -1,0 +1,57 @@
+# Separate Docker compose for analytics app
+# This won't interfere with the main calendar app
+version: '3.8'
+
+services:
+  analytics:
+    build: 
+      context: ./apps/analytics
+      dockerfile: Dockerfile
+    container_name: airbnb-analytics
+    ports:
+      - "9003:9003"  # Different port from calendar (9002)
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@analytics-db:5432/analytics
+      - NEXT_PUBLIC_APP_URL=http://localhost:9003
+      # AI & Scraping (to be added later)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - BROWSERLESS_API_KEY=${BROWSERLESS_API_KEY:-}
+    volumes:
+      - ./apps/analytics:/app
+      - /app/node_modules
+      - /app/.next
+      - ./uploads:/app/uploads  # Store uploaded files
+      - ./logs/analytics:/app/logs
+    depends_on:
+      - analytics-db
+    networks:
+      - analytics-network
+    command: npm run dev
+
+  analytics-db:
+    image: postgres:16-alpine
+    container_name: analytics-postgres
+    ports:
+      - "5434:5432"  # Different port from calendar DB (5433)
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=analytics
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+      - ./apps/analytics/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - analytics-network
+
+networks:
+  analytics-network:
+    driver: bridge
+
+volumes:
+  analytics_data:  # Separate volume from calendar data
