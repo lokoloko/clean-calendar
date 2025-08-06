@@ -42,8 +42,30 @@ export default function UploadPage() {
   }
 
   const handleProcessFiles = async () => {
-    // TODO: Process files and navigate to property mapping
-    router.push('/dashboard')
+    if (!uploadedFiles.pdf && !uploadedFiles.csv) return
+    
+    const formData = new FormData()
+    if (uploadedFiles.pdf) formData.append('pdf', uploadedFiles.pdf)
+    if (uploadedFiles.csv) formData.append('csv', uploadedFiles.csv)
+    
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Store data in sessionStorage for next page
+        sessionStorage.setItem('uploadData', JSON.stringify(result.data))
+        router.push('/mapping')
+      } else {
+        console.error('Upload failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Error processing files:', error)
+    }
   }
 
   const hasFiles = uploadedFiles.pdf || uploadedFiles.csv
