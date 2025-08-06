@@ -15,6 +15,7 @@ import {
   Activity
 } from 'lucide-react'
 import { calculateHealthScore, getHealthColor, getHealthBgColor, getHealthBorderColor } from '@/lib/analytics/health-score'
+import { generateInsights, getInsightIcon, getInsightColor, type AIInsight } from '@/lib/ai/insights'
 
 interface Property {
   name: string
@@ -37,6 +38,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [insights, setInsights] = useState<AIInsight[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -66,13 +68,18 @@ export default function DashboardPage() {
         }
       })
       
-      setData({
+      const dashboardData = {
         totalRevenue: parsed.summary.totalRevenue,
         activeProperties: parsed.summary.activeProperties,
         inactiveProperties: parsed.summary.inactiveProperties,
         totalNights: parsed.summary.totalNights,
         properties: propertiesWithHealth
-      })
+      }
+      
+      setData(dashboardData)
+      
+      // Generate AI insights
+      generateInsights(dashboardData).then(setInsights)
     }
     setLoading(false)
   }, [])
@@ -113,6 +120,31 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* AI Insights */}
+        {insights.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">AI Insights & Recommendations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {insights.slice(0, 4).map((insight, index) => (
+                <Card key={index} className={`border ${getInsightColor(insight.type)}`}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start space-x-3">
+                      <span className="text-2xl">{getInsightIcon(insight.type)}</span>
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">{insight.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{insight.description}</p>
+                        {insight.impact && (
+                          <p className="text-sm font-semibold text-gray-900">{insight.impact}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-6 mb-8">
           <Card>
