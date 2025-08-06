@@ -30,6 +30,7 @@ import {
   BarChart3,
   CalendarClock,
   MessageSquare,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -50,6 +51,7 @@ const navItems = [
   { href: '/quick-start', label: 'Quick Start', icon: Sparkles, badge: 'NEW' },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/manual-schedules', label: 'Manual Schedules', icon: CalendarClock },
+  { href: '/overrides', label: 'Overrides', icon: AlertTriangle },
   { href: '/listings', label: 'Listings', icon: Home },
   { href: '/cleaners', label: 'Cleaners', icon: Users },
   { href: '/assignments', label: 'Assignments', icon: Link2 },
