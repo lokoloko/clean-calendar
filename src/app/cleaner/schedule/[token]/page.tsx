@@ -7,6 +7,8 @@ import { Button } from '@gostudiom/ui';
 import { Badge } from '@gostudiom/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@gostudiom/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@gostudiom/ui';
+import { Textarea } from '@gostudiom/ui';
+import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, startOfMonth, endOfMonth, addMonths, isToday, isSameDay } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { formatTimeDisplay } from '@/lib/format-utils';
@@ -47,6 +49,14 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
     date: new Date(),
     items: [] as ScheduleItem[]
   });
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    item: null as ScheduleItem | null,
+    cleanlinessRating: '',
+    notes: '',
+    submitting: false
+  });
+  const { toast } = useToast();
 
   useEffect(() => {
     params.then((p) => {
@@ -118,6 +128,62 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchSchedule();
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackModal.cleanlinessRating) {
+      toast({
+        title: 'Rating required',
+        description: 'Please select a cleanliness rating',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setFeedbackModal({ ...feedbackModal, submitting: true });
+
+    try {
+      const response = await fetch(`/api/cleaner/schedule/${token}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scheduleItemId: feedbackModal.item?.id,
+          cleanlinessRating: feedbackModal.cleanlinessRating,
+          notes: feedbackModal.notes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      toast({
+        title: 'Feedback submitted',
+        description: 'Thank you for your feedback!',
+      });
+
+      // Refresh the schedule to show updated status
+      await fetchSchedule();
+      
+      // Close the modal
+      setFeedbackModal({
+        isOpen: false,
+        item: null,
+        cleanlinessRating: '',
+        notes: '',
+        submitting: false
+      });
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit feedback. Please try again.',
+        variant: 'destructive',
+      });
+      setFeedbackModal({ ...feedbackModal, submitting: false });
+    }
   };
 
   const getItemsForDay = (date: Date) => {
@@ -396,7 +462,21 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
               {todaysCleanings.map((item) => {
                 const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id, scheduleItems);
                 return (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      if (!item.is_completed) {
+                        setFeedbackModal({
+                          isOpen: true,
+                          item,
+                          cleanlinessRating: '',
+                          notes: '',
+                          submitting: false
+                        });
+                      }
+                    }}
+                  >
                     <div className="space-y-1">
                       <div className="font-medium">{item.listing_name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -405,6 +485,11 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
                       <div className="text-sm text-muted-foreground">
                         Next: {nextCheckIn}
                       </div>
+                      {!item.is_completed && (
+                        <div className="text-xs text-primary">
+                          Tap to provide feedback
+                        </div>
+                      )}
                     </div>
                     {item.is_completed && (
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -571,6 +656,117 @@ export default function CleanerShareSchedulePage({ params }: { params: Promise<{
                 })}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Modal */}
+      <Dialog open={feedbackModal.isOpen} onOpenChange={(open) => {
+        if (!open && !feedbackModal.submitting) {
+          setFeedbackModal({
+            isOpen: false,
+            item: null,
+            cleanlinessRating: '',
+            notes: '',
+            submitting: false
+          });
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Provide Cleaning Feedback</DialogTitle>
+            <DialogDescription>
+              {feedbackModal.item?.listing_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            {/* Property Details */}
+            <div className="bg-muted p-3 rounded-lg space-y-1">
+              <div className="font-medium">{feedbackModal.item?.listing_name}</div>
+              {feedbackModal.item?.listing_address && (
+                <div className="text-sm text-muted-foreground">
+                  <Home className="h-3 w-3 inline mr-1" />
+                  {feedbackModal.item.listing_address}
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                <Clock className="h-3 w-3 inline mr-1" />
+                Check-out by {feedbackModal.item && formatTimeDisplay(feedbackModal.item.checkout_time)}
+              </div>
+            </div>
+
+            {/* Cleanliness Rating */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                How was the property condition? *
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={feedbackModal.cleanlinessRating === 'clean' ? 'default' : 'outline'}
+                  onClick={() => setFeedbackModal({ ...feedbackModal, cleanlinessRating: 'clean' })}
+                  disabled={feedbackModal.submitting}
+                  className="h-12"
+                >
+                  <span className="text-lg mr-2">😊</span>
+                  Clean
+                </Button>
+                <Button
+                  type="button"
+                  variant={feedbackModal.cleanlinessRating === 'normal' ? 'default' : 'outline'}
+                  onClick={() => setFeedbackModal({ ...feedbackModal, cleanlinessRating: 'normal' })}
+                  disabled={feedbackModal.submitting}
+                  className="h-12"
+                >
+                  <span className="text-lg mr-2">😐</span>
+                  Normal
+                </Button>
+                <Button
+                  type="button"
+                  variant={feedbackModal.cleanlinessRating === 'dirty' ? 'default' : 'outline'}
+                  onClick={() => setFeedbackModal({ ...feedbackModal, cleanlinessRating: 'dirty' })}
+                  disabled={feedbackModal.submitting}
+                  className="h-12"
+                >
+                  <span className="text-lg mr-2">😟</span>
+                  Dirty
+                </Button>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Additional notes (optional)
+              </label>
+              <Textarea
+                placeholder="Any special conditions or issues to note..."
+                value={feedbackModal.notes}
+                onChange={(e) => setFeedbackModal({ ...feedbackModal, notes: e.target.value })}
+                disabled={feedbackModal.submitting}
+                className="min-h-[100px] resize-none"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmitFeedback}
+              disabled={feedbackModal.submitting || !feedbackModal.cleanlinessRating}
+              className="w-full h-12"
+            >
+              {feedbackModal.submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Submit Feedback
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
