@@ -9,9 +9,10 @@ interface DropZoneProps {
   title: string
   accept: string
   icon?: React.ReactNode
-  onUpload: (file: File) => void
+  onUpload: (files: File[]) => void
   status?: 'idle' | 'uploading' | 'success' | 'error'
   hint?: string
+  multiple?: boolean
 }
 
 export function DropZone({ 
@@ -20,20 +21,31 @@ export function DropZone({
   icon = <Upload className="w-8 h-8" />, 
   onUpload, 
   status = 'idle',
-  hint 
+  hint,
+  multiple = false
 }: DropZoneProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      onUpload(acceptedFiles[0])
+      onUpload(acceptedFiles)
     }
   }, [onUpload])
 
+  const getAcceptObject = () => {
+    const acceptObj: any = {}
+    if (accept.includes('.pdf')) {
+      acceptObj['application/pdf'] = ['.pdf']
+    }
+    if (accept.includes('.csv')) {
+      acceptObj['text/csv'] = ['.csv']
+    }
+    return acceptObj
+  }
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: accept === '.pdf' 
-      ? { 'application/pdf': ['.pdf'] }
-      : { 'text/csv': ['.csv'] },
-    maxFiles: 1
+    accept: getAcceptObject(),
+    maxFiles: multiple ? undefined : 1,
+    multiple
   })
 
   return (

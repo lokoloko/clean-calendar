@@ -3,8 +3,20 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 FROM base AS deps
+# Copy root package files
 COPY package*.json ./
-RUN npm ci || npm install
+COPY turbo.json ./
+
+# Create directories for workspace packages
+RUN mkdir -p apps/cleaning apps/analytics packages/ui
+
+# Copy workspace package.json files
+COPY apps/cleaning/package*.json ./apps/cleaning/
+COPY apps/analytics/package*.json ./apps/analytics/
+COPY packages/ui/package*.json ./packages/ui/
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
 FROM base AS dev
 COPY --from=deps /app/node_modules ./node_modules

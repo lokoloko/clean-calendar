@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Airbnb Analytics - GoStudioM',
-  description: 'AI-powered analytics for your Airbnb portfolio',
+  title: 'Smart Analytics - GoStudioM',
+  description: 'AI-powered analytics for your Airbnb portfolio - Built for hosts, by a host',
 }
 
 export default function RootLayout({

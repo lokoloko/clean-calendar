@@ -1,16 +1,29 @@
-# Airbnb Analytics Platform
+# Smart Analytics Platform
 
-AI-powered analytics platform for analyzing Airbnb portfolio performance.
+AI-powered analytics platform for analyzing Airbnb portfolio performance with tiered pricing model - Part of the GoStudioM suite of tools built for hosts, by a host.
 
 ## Features
 
-- 📊 **Upload & Parse**: Process Airbnb earnings PDFs and transaction CSVs
-- 🏠 **Property Detection**: Automatically detects all 21 properties
-- 🗺️ **Property Mapping**: Confirms PDF to CSV name mappings
+### Core Features (All Tiers)
+- 📊 **Upload & Parse**: Process Airbnb earnings PDFs
+- 🏠 **Property Detection**: Automatically detects all properties in your portfolio
 - 💯 **Health Scoring**: 0-100 health score for each property
 - 📈 **Dashboard**: Comprehensive view of portfolio performance
-- 🤖 **AI Insights**: Smart recommendations for optimization
-- 🚨 **Inactive Alerts**: Highlights properties needing attention
+- 🤖 **Basic AI Insights**: Essential recommendations
+
+### Pro Features ($29/month)
+- 📁 **CSV Import**: Transaction history for accurate property metrics
+- 📊 **Historical Analytics**: Multi-year trend analysis
+- 📥 **Unlimited Exports**: PDF and Excel report generation
+- 🎯 **Accurate Metrics**: Individual property nights and average stays
+- 🔍 **Advanced Insights**: Detailed AI recommendations
+- 📈 **Property Comparison**: Side-by-side performance analysis
+
+### Enterprise Features (Custom Pricing)
+- 🔌 **API Access**: Integrate with your systems
+- 🏷️ **White Label**: Custom branding
+- 🤖 **Automated Monitoring**: Set up alerts and reports
+- 🎯 **Priority Support**: Dedicated account manager
 
 ## Quick Start
 
@@ -39,19 +52,36 @@ npm run dev
 
 ## How to Use
 
-1. **Upload Files**: 
-   - Upload your monthly Airbnb earnings PDF
-   - Upload transaction history CSV (optional)
+### Free Tier
+1. **Upload PDF**: 
+   - Upload your monthly Airbnb earnings PDF (3 per month)
+   - System extracts revenue and property list
 
 2. **Confirm Mappings**: 
    - Review detected properties
-   - Confirm property name mappings
+   - Select properties for analysis
 
 3. **View Dashboard**:
-   - See total revenue ($19,758.69 for December)
-   - Review 9 active / 12 inactive properties
-   - Check health scores for all properties
-   - Read AI-generated insights
+   - See total revenue and property count
+   - Review active/inactive properties
+   - Check health scores (with estimated metrics)
+   - Read basic AI insights
+
+### Pro Tier
+1. **Upload Files**: 
+   - Unlimited PDF uploads
+   - Upload transaction CSV for accurate metrics
+   - Access historical data analysis
+
+2. **Enhanced Analysis**:
+   - Accurate property-level nights and average stays
+   - Multi-year trend analysis
+   - Advanced AI recommendations
+
+3. **Export & Share**:
+   - Generate PDF reports
+   - Export to Excel
+   - Share with stakeholders
 
 ## Property Health Scoring
 
@@ -118,14 +148,31 @@ npm run build  # Build for production
 npm run start  # Start production server
 ```
 
-## Future Enhancements
+## Current Implementation Status
 
-- [ ] Gemini AI integration for deeper insights
-- [ ] Monthly comparison views
-- [ ] Automated scraping with BrowserQL
-- [ ] PDF/Excel report generation
-- [ ] Property URL management for scraping
-- [ ] Historical data tracking
+### Completed ✅
+- PDF parsing with clear data limitations
+- CSV transaction processing for accurate metrics
+- Interactive dashboard with health scores
+- Tiered pricing model (Free/Pro/Enterprise)
+- Historical analytics for Pro users
+- Export to PDF/Excel (Pro feature)
+- AI insights with Gemini integration
+- Tier selector for testing (dev mode)
+
+### In Progress 🚧
+- User authentication system
+- Stripe payment integration
+- Database persistence (currently sessionStorage)
+- Property comparison tools
+
+### Planned 📋
+- Property URL mapping for competitor analysis
+- Automated monthly monitoring
+- Email report scheduling
+- Mobile app
+- API access for Enterprise
+- White-label options
 
 ## Troubleshooting
 
@@ -141,11 +188,39 @@ npm run start  # Start production server
 - Ensure port 9003 is available
 - Check Docker logs: `npm run analytics:logs`
 
+## Known Limitations
+
+### PDF Data Extraction
+- Individual property average stays cannot be extracted (format issue)
+- Property nights are estimated based on revenue
+- CSV required for accurate property-level metrics
+
+### Data Storage
+- Currently uses sessionStorage (temporary)
+- Database integration planned for production
+
+## Testing Tiers
+
+In development mode, use the tier selector (bottom-right):
+1. Click the tier badge
+2. Select Free/Pro/Enterprise
+3. Features update based on tier
+
+## Technical Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **UI**: Tailwind CSS + shadcn/ui
+- **Charts**: Recharts
+- **PDF**: pdf-parse
+- **CSV**: PapaParse
+- **AI**: Google Gemini API
+- **State**: React hooks + sessionStorage
+
 ## Notes
 
-This app is completely isolated from the calendar app:
-- Separate branch (`feature/analytics-platform`)
-- Separate Docker container
-- Separate database
-- Different port (9003 vs 9002)
-- No shared code with calendar app
+This app is part of the GoStudioM monorepo:
+- Shares infrastructure with calendar app
+- Separate port (9003 vs 9002)
+- Can be deployed independently
+- Ready for authentication integration

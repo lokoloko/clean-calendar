@@ -1,4 +1,5 @@
-import pdf from 'pdf-parse'
+// Dynamic import to avoid build issues
+let pdf: any = null
 
 export interface PropertyEarnings {
   name: string
@@ -20,6 +21,11 @@ export interface ParsedPDF {
 
 export class AirbnbPDFParser {
   async parse(file: File): Promise<ParsedPDF> {
+    // Dynamic import to avoid build issues
+    if (!pdf) {
+      pdf = (await import('pdf-parse')).default
+    }
+    
     const buffer = await file.arrayBuffer()
     const data = await pdf(Buffer.from(buffer))
     const text = data.text

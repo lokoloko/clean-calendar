@@ -1,23 +1,118 @@
+import { generateAIInsights } from './gemini-client'
+
 export interface AIInsight {
-  type: 'opportunity' | 'warning' | 'success' | 'info'
+  type: 'opportunity' | 'warning' | 'success' | 'info' | 'critical' | 'trend'
   title: string
   description: string
   impact?: string
-  priority: 'high' | 'medium' | 'low'
+  priority?: 'high' | 'medium' | 'low'
 }
 
 export async function generateInsights(data: {
   totalRevenue: number
   activeProperties: number
   inactiveProperties: number
+  totalNights?: number
   properties: Array<{
     name: string
     revenue: number
     nightsBooked: number
     status: string
+    healthScore?: number
   }>
 }): Promise<AIInsight[]> {
-  // Mock AI insights for now - would integrate with Gemini API
+  // Try to get real AI insights from Gemini
+  try {
+    const aiResponse = await generateAIInsights(data)
+    
+    if (aiResponse && (aiResponse.criticalIssues || aiResponse.opportunities)) {
+      const insights: AIInsight[] = []
+      
+      // Add critical issues with high priority
+      if (aiResponse.criticalIssues) {
+        aiResponse.criticalIssues.forEach((issue: any) => {
+          insights.push({
+            type: 'critical' as const,
+            title: issue.title,
+            description: issue.description,
+            impact: issue.impact,
+            priority: 'high'
+          })
+        })
+      }
+      
+      // Add opportunities
+      if (aiResponse.opportunities) {
+        aiResponse.opportunities.forEach((opp: any) => {
+          insights.push({
+            type: 'opportunity',
+            title: opp.title,
+            description: opp.description,
+            impact: opp.impact,
+            priority: 'medium'
+          })
+        })
+      }
+      
+      // Add patterns as trends
+      if (aiResponse.patterns) {
+        aiResponse.patterns.forEach((pattern: any) => {
+          insights.push({
+            type: 'trend' as const,
+            title: pattern.title,
+            description: pattern.description,
+            impact: pattern.trend,
+            priority: 'low'
+          })
+        })
+      }
+      
+      // Add strategic advice as info
+      if (aiResponse.strategicAdvice) {
+        aiResponse.strategicAdvice.forEach((advice: any, index: number) => {
+          if (index < 2) { // Add top 2 strategic advice
+            insights.push({
+              type: 'info' as const,
+              title: advice.category,
+              description: advice.advice,
+              impact: advice.benefit,
+              priority: 'medium'
+            })
+          }
+        })
+      }
+      
+      // Add top risks as warnings
+      if (aiResponse.risks) {
+        aiResponse.risks.forEach((risk: any, index: number) => {
+          if (index < 2) { // Add top 2 risks
+            insights.push({
+              type: 'warning' as const,
+              title: risk.type,
+              description: risk.description,
+              impact: risk.mitigation,
+              priority: 'high'
+            })
+          }
+        })
+      }
+      
+      // Sort by priority and return more insights
+      insights.sort((a, b) => {
+        const priorityOrder = { high: 0, medium: 1, low: 2 }
+        return (priorityOrder[a.priority || 'medium'] || 1) - (priorityOrder[b.priority || 'medium'] || 1)
+      })
+      
+      // Return top insights if we got real AI results (increased to 8)
+      if (insights.length > 0) {
+        return insights.slice(0, 8)
+      }
+    }
+  } catch (error) {
+    console.log('Gemini API not configured or error occurred, using fallback insights')
+  }
+  
+  // Fallback to mock insights if Gemini is not configured or fails
   const insights: AIInsight[] = []
   
   // Analyze inactive properties
@@ -115,6 +210,8 @@ export function getInsightIcon(type: AIInsight['type']): string {
     case 'warning': return '⚠️'
     case 'success': return '✅'
     case 'info': return 'ℹ️'
+    case 'critical': return '🚨'
+    case 'trend': return '📈'
     default: return '📊'
   }
 }
@@ -125,6 +222,8 @@ export function getInsightColor(type: AIInsight['type']): string {
     case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-900'
     case 'success': return 'bg-green-50 border-green-200 text-green-900'
     case 'info': return 'bg-gray-50 border-gray-200 text-gray-900'
+    case 'critical': return 'bg-red-50 border-red-200 text-red-900'
+    case 'trend': return 'bg-purple-50 border-purple-200 text-purple-900'
     default: return 'bg-gray-50 border-gray-200 text-gray-900'
   }
 }
