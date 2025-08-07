@@ -160,19 +160,55 @@ export default function DashboardPage() {
     const propertyMappings = sessionStorage.getItem('propertyMappings')
     const uploadData = sessionStorage.getItem('uploadData')
     
-    // Use selected properties if available, otherwise fall back to all properties
-    const dataSource = propertyMappings || uploadData
+    // Check if uploadData has been updated with CSV data (more recent)
+    let dataSource = uploadData
+    
+    // Only use propertyMappings if uploadData doesn't exist or doesn't have CSV data
+    if (!uploadData && propertyMappings) {
+      dataSource = propertyMappings
+    } else if (uploadData && propertyMappings) {
+      const uploadParsed = JSON.parse(uploadData)
+      const mappingParsed = JSON.parse(propertyMappings)
+      
+      // If uploadData has CSV data but propertyMappings doesn't, use uploadData
+      if (uploadParsed.dataSource === 'pdf-csv' && !mappingParsed[0]?.hasAccurateMetrics) {
+        console.log('Using uploadData with CSV data instead of propertyMappings')
+        console.log('uploadData structure:', uploadParsed)
+        dataSource = uploadData
+      } else {
+        console.log('Using propertyMappings')
+        dataSource = propertyMappings
+      }
+    }
     
     if (dataSource) {
       const parsed = JSON.parse(dataSource)
       
       // Determine if we're using selected properties or all properties
-      const properties = propertyMappings ? parsed : parsed.properties
+      let properties = null
       
-      if (!properties || properties.length === 0) {
+      // Handle different data structures
+      if (dataSource === uploadData && parsed.properties) {
+        // uploadData has properties in parsed.properties
+        properties = parsed.properties
+        console.log('Using properties from uploadData:', properties?.length)
+      } else if (dataSource === propertyMappings && Array.isArray(parsed)) {
+        // propertyMappings is an array of properties
+        properties = parsed
+        console.log('Using properties from propertyMappings:', properties?.length)
+      } else if (parsed.properties) {
+        properties = parsed.properties
+      } else if (Array.isArray(parsed)) {
+        properties = parsed
+      }
+      
+      if (!properties || !Array.isArray(properties) || properties.length === 0) {
+        console.error('Properties is not an array or is empty:', properties)
         setLoading(false)
         return
       }
+      
+      console.log(`Processing ${properties.length} properties for dashboard`)
       
       // Calculate health scores for each property
       const propertiesWithHealth = properties.map((prop: any) => {
@@ -428,6 +464,18 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Property Comparison Button */}
+              {canAccessFeature('propertyComparison') && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/comparison')}
+                  className="flex items-center gap-2"
+                >
+                  <Activity className="w-4 h-4" />
+                  Compare Properties
+                </Button>
+              )}
+              
               <div className="relative">
                 <Button 
                   variant="outline"

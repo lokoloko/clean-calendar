@@ -243,8 +243,9 @@ export class PDFParseWrapper {
             if (grossEarnings > 0) {
               processedProperties.add(propertyName)
               
-              // Get average stay for this property
-              const avgStay = avgStayMap.get(propertyName) || avgStayMap.get('global') || globalAvgStay || 3.0
+              // Individual property average stays cannot be extracted from PDF
+              // Set to 0 to indicate no data available (will show as "N/A" in UI)
+              const avgStay = 0
               
               // IMPORTANT: Individual property nights from performance stats are unreliable
               // due to ambiguous format (e.g., "Unit 133210.4" could be 332 nights or 33 nights)
@@ -294,7 +295,8 @@ export class PDFParseWrapper {
               const propertyName = line.trim()
               if (!processedProperties.has(propertyName)) {
                 processedProperties.add(propertyName)
-                const avgStay = avgStayMap.get(propertyName) || avgStayMap.get('global') || globalAvgStay || 3.0
+                // Set avgStay to 0 since individual property data not available
+                const avgStay = 0
                 properties.push(this.createProperty(propertyName, amount, avgStay))
                 console.log(`Found property (alt): "${propertyName}" - $${amount}, Avg Stay: ${avgStay}`)
               }
@@ -452,7 +454,7 @@ export class PDFParseWrapper {
     return true
   }
   
-  private createProperty(name: string, grossEarnings: number, avgStay: number = 3.0): PropertyEarnings {
+  private createProperty(name: string, grossEarnings: number, avgStay: number = 0): PropertyEarnings {
     // Clean property name
     name = name.replace(/^[\s.\-_]+|[\s.\-_]+$/g, '').trim()
     

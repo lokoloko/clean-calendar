@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TransactionCSVParser } from '@/lib/parsers/csv-parser'
+import { PropertyMatcher } from '@/lib/property-matcher'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,27 +55,53 @@ export async function POST(request: NextRequest) {
     // If we have PDF properties, merge the data
     let mergedProperties = []
     if (pdfData?.properties) {
+      console.log('Using smart matching to merge CSV with existing PDF data...')
+      
+      // Prepare data for smart matching
+      const pdfPropData = pdfData.properties.map((p: any) => ({
+        name: p.name,
+        revenue: p.netEarnings || p.revenue || 0,
+        nights: p.nightsBooked,
+        source: 'pdf' as const
+      }))
+      
+      const csvPropData = csvData.propertyMetrics.map(m => ({
+        name: m.name,
+        revenue: m.totalRevenue,
+        nights: m.totalNights,
+        source: 'csv' as const
+      }))
+      
+      // Use smart matching to find property matches
+      const propertyMatches = PropertyMatcher.matchProperties(pdfPropData, csvPropData)
+      console.log(`Smart matching found ${propertyMatches.size} property matches`)
+      
       // Create a map of CSV metrics for easy lookup
       const csvMetricsMap = new Map<string, any>()
       for (const metric of csvData.propertyMetrics) {
-        const mappedName = csvParser.getPropertyMapping(metric.name)
-        csvMetricsMap.set(metric.name.toLowerCase(), metric)
-        csvMetricsMap.set(mappedName.toLowerCase(), metric)
+        csvMetricsMap.set(metric.name, metric)
       }
       
       // Update PDF properties with CSV data
       mergedProperties = pdfData.properties.map((property: any) => {
-        const csvMetric = csvMetricsMap.get(property.name.toLowerCase())
-        if (csvMetric) {
-          return {
-            ...property,
-            nightsBooked: csvMetric.totalNights,
-            avgNightStay: csvMetric.avgStayLength,
-            bookingCount: csvMetric.bookingCount,
-            avgNightlyRate: csvMetric.avgNightlyRate,
-            hasAccurateMetrics: true
+        // Check if we have a match for this PDF property
+        const csvPropertyName = propertyMatches.get(property.name)
+        
+        if (csvPropertyName) {
+          const csvMetric = csvMetricsMap.get(csvPropertyName)
+          if (csvMetric) {
+            return {
+              ...property,
+              nightsBooked: csvMetric.totalNights,
+              avgNightStay: csvMetric.avgStayLength,
+              bookingCount: csvMetric.bookingCount,
+              avgNightlyRate: csvMetric.avgNightlyRate,
+              hasAccurateMetrics: true,
+              csvName: csvPropertyName // Store the matched CSV name
+            }
           }
         }
+        
         return {
           ...property,
           hasAccurateMetrics: false
