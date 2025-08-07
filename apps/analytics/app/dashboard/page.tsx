@@ -464,6 +464,16 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Properties Dashboard Button */}
+              <Button
+                variant="outline"
+                onClick={() => router.push('/properties')}
+                className="flex items-center gap-2"
+              >
+                <Home className="w-4 h-4" />
+                All Properties
+              </Button>
+              
               {/* Property Comparison Button */}
               {canAccessFeature('propertyComparison') && (
                 <Button
@@ -472,7 +482,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-2"
                 >
                   <Activity className="w-4 h-4" />
-                  Compare Properties
+                  Compare
                 </Button>
               )}
               

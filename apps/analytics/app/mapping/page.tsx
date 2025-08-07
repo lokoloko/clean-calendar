@@ -113,6 +113,33 @@ export default function MappingPage() {
     // Store selected properties immediately for dashboard
     sessionStorage.setItem('propertyMappings', JSON.stringify(selectedProperties))
     
+    // Save to PropertyStore for persistence
+    try {
+      const { PropertyStore } = await import('@/lib/storage/property-store')
+      const uploadData = sessionStorage.getItem('uploadData')
+      const parsed = uploadData ? JSON.parse(uploadData) : {}
+      
+      const dashboardData = {
+        ...parsed,
+        properties: selectedProperties,
+        totalRevenue: selectedProperties.reduce((sum, p) => sum + p.revenue, 0),
+        activeProperties: selectedProperties.filter(p => p.status === 'active').length,
+        inactiveProperties: selectedProperties.filter(p => p.status === 'inactive').length,
+        totalProperties: selectedProperties.length,
+        totalNights: selectedProperties.reduce((sum, p) => sum + p.nightsBooked, 0),
+        dataSource
+      }
+      
+      const createdProperties = PropertyStore.createFromUpload(dashboardData)
+      console.log(`Saved ${createdProperties.length} properties to PropertyStore`)
+      
+      // Sync back to sessionStorage for backwards compatibility
+      const { DataMigration } = await import('@/lib/storage/migrations')
+      DataMigration.syncWithSessionStorage(createdProperties)
+    } catch (error) {
+      console.error('Error saving to PropertyStore:', error)
+    }
+    
     try {
       // Call Gemini API for analysis
       const response = await fetch('/api/analyze', {
