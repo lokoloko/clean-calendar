@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { scrapeAirbnbListing } from '@/lib/scraper-browserql'
+import { scrapeAirbnbListing } from '@/lib/scraper-working'
 import { analyzeListingWithAI } from '@/lib/analyzer'
 
 export async function POST(request: NextRequest) {
