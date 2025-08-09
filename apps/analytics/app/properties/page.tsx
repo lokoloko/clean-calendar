@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { GoStudioMLogo } from '@/components/GoStudioMLogo'
-import { PropertyStore, type Property } from '@/lib/storage/property-store'
+import { type Property } from '@/lib/storage/property-store'
+import PropertyStoreAPI from '@/lib/storage/property-store-api'
 import { DataMigration } from '@/lib/storage/migrations'
 import { DataSync } from '@/lib/utils/data-sync'
 import { formatCurrency } from '@/lib/utils'
@@ -96,33 +97,45 @@ function PropertiesTable({
   })
 
   const getDataSourceIcons = (property: Property) => {
+    // CSV is the primary data source, PDF is optional/redundant when CSV exists
+    const hasCSV = property.dataSources.csv
+    const hasPDF = property.dataSources.pdf
+    
     return (
       <div className="flex items-center gap-1">
-        {property.dataSources.pdf ? (
-          <span title="PDF uploaded" className="text-green-600">✅</span>
+        {/* CSV - Primary financial data source */}
+        {hasCSV ? (
+          <span title="CSV transactions (complete data)" className="text-green-600">✅</span>
         ) : (
-          <span title="PDF missing" className="text-gray-400">⚠️</span>
+          <span title="CSV missing - upload for complete data" className="text-orange-500">⚠️</span>
         )}
-        <FileText className={`w-4 h-4 ${property.dataSources.pdf ? 'text-green-600' : 'text-gray-400'}`} />
+        <Table className={`w-4 h-4 ${hasCSV ? 'text-green-600' : 'text-orange-500'}`} />
         
-        {property.dataSources.csv ? (
-          <span title="CSV uploaded" className="text-green-600">✅</span>
-        ) : (
-          <span title="CSV missing" className="text-gray-400">⚠️</span>
+        {/* PDF - Only show if no CSV (since it's redundant with CSV) */}
+        {!hasCSV && (
+          <>
+            {hasPDF ? (
+              <span title="PDF summary (basic data)" className="text-blue-600">✅</span>
+            ) : (
+              <span title="No financial data" className="text-gray-400">⚠️</span>
+            )}
+            <FileText className={`w-4 h-4 ${hasPDF ? 'text-blue-600' : 'text-gray-400'}`} />
+          </>
         )}
-        <Table className={`w-4 h-4 ${property.dataSources.csv ? 'text-green-600' : 'text-gray-400'}`} />
         
+        {/* URL - Enables syncing */}
         {property.airbnbUrl ? (
           <span title="URL configured" className="text-green-600">✅</span>
         ) : (
-          <span title="URL missing" className="text-red-400">❌</span>
+          <span title="URL missing - add for live sync" className="text-orange-500">⚠️</span>
         )}
         <Link className={`w-4 h-4 ${property.airbnbUrl ? 'text-green-600' : 'text-gray-400'}`} />
         
+        {/* Live sync status */}
         {property.dataSources.scraped ? (
           <span title="Live data synced" className="text-green-600">✅</span>
         ) : (
-          <span title="Not synced" className="text-gray-400">❌</span>
+          <span title="Not synced" className="text-gray-400">⭕</span>
         )}
         <Globe className={`w-4 h-4 ${property.dataSources.scraped ? 'text-green-600' : 'text-gray-400'}`} />
       </div>
@@ -229,7 +242,7 @@ function PropertiesTable({
               </td>
               <td className="px-4 py-3">
                 <button
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-blue-600 hover:underline font-medium text-left"
                   onClick={() => onPropertyClick(property)}
                 >
                   {property.standardName}
@@ -279,7 +292,7 @@ function PropertiesTable({
                     <Eye className="w-4 h-4" />
                   </Button>
                   
-                  {property.dataCompleteness < 100 && (
+                  {property.dataCompleteness < 100 ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -303,9 +316,11 @@ function PropertiesTable({
                        !property.dataSources.csv ? <Table className="w-4 h-4" /> :
                        <FileText className="w-4 h-4" />}
                     </Button>
+                  ) : (
+                    <div className="w-9 h-9" /> 
                   )}
                   
-                  {property.airbnbUrl && (
+                  {property.airbnbUrl ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -314,6 +329,8 @@ function PropertiesTable({
                     >
                       <RefreshCw className="w-4 h-4" />
                     </Button>
+                  ) : (
+                    <div className="w-9 h-9" />
                   )}
                   
                   <div className="relative group">
@@ -355,18 +372,30 @@ export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterComplete, setFilterComplete] = useState<'all' | 'complete' | 'incomplete'>('all')
   const [syncing, setSyncing] = useState(false)
+  const [csvDateRange, setCsvDateRange] = useState<{ start: Date | null, end: Date | null }>({ start: null, end: null })
 
   useEffect(() => {
     loadProperties()
-    // Run auto-migration on page load
-    DataMigration.runAutoMigration().then(() => {
-      loadProperties() // Reload after migration
-    })
+    // Disabled auto-migration to prevent duplicate data
+    // DataMigration.runAutoMigration().then(() => {
+    //   loadProperties() // Reload after migration
+    // })
   }, [])
 
-  const loadProperties = () => {
-    const allProperties = PropertyStore.getAll()
+  const loadProperties = async () => {
+    setLoading(true)
+    const allProperties = await PropertyStoreAPI.getAll()
     setProperties(allProperties)
+    
+    // Extract CSV date range from the first property with CSV data
+    const propertyWithCSV = allProperties.find(p => p.dataSources?.csv?.dateRange)
+    if (propertyWithCSV?.dataSources?.csv?.dateRange) {
+      setCsvDateRange({
+        start: propertyWithCSV.dataSources.csv.dateRange.start,
+        end: propertyWithCSV.dataSources.csv.dateRange.end
+      })
+    }
+    
     setLoading(false)
   }
 
@@ -379,18 +408,18 @@ export default function PropertiesPage() {
     console.log('Edit property:', property)
   }
 
-  const handlePropertyDelete = (property: Property) => {
+  const handlePropertyDelete = async (property: Property) => {
     if (confirm(`Delete ${property.standardName}? This cannot be undone.`)) {
-      PropertyStore.delete(property.id)
-      loadProperties()
+      await PropertyStoreAPI.delete(property.id)
+      await loadProperties()
     }
   }
 
-  const handleAddUrl = (property: Property) => {
+  const handleAddUrl = async (property: Property) => {
     const url = prompt(`Enter Airbnb URL for ${property.standardName}:`)
     if (url) {
-      PropertyStore.updateUrl(property.id, url)
-      loadProperties()
+      await PropertyStoreAPI.updateUrl(property.id, url)
+      await loadProperties()
     }
   }
 
@@ -410,8 +439,13 @@ export default function PropertiesPage() {
     console.log(`Upload ${type} for:`, property)
   }
 
-  const handleExportAll = () => {
-    const data = PropertyStore.exportAll()
+  const handleExportAll = async () => {
+    const properties = await PropertyStoreAPI.getAll()
+    const data = JSON.stringify({
+      version: '2.0.0',
+      exportedAt: new Date().toISOString(),
+      properties
+    }, null, 2)
     const blob = new Blob([data], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -430,6 +464,33 @@ export default function PropertiesPage() {
     alert(`Sync complete: ${result.successful} successful, ${result.failed} failed`)
     loadProperties()
     setSyncing(false)
+  }
+  
+  const handleClearAll = async () => {
+    if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      return
+    }
+    
+    try {
+      // Call the clear API
+      const response = await fetch('/api/clear-data', {
+        method: 'POST',
+        credentials: 'same-origin'
+      })
+      
+      if (response.ok) {
+        // Clear sessionStorage as well
+        sessionStorage.clear()
+        
+        // Redirect to home page
+        router.push('/')
+      } else {
+        alert('Failed to clear data. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error clearing data:', error)
+      alert('Failed to clear data. Please try again.')
+    }
   }
 
   // Filter properties
@@ -454,7 +515,19 @@ export default function PropertiesPage() {
     complete: properties.filter(p => p.dataCompleteness === 100).length,
     incomplete: properties.filter(p => p.dataCompleteness < 100).length,
     withUrls: properties.filter(p => p.airbnbUrl).length,
-    synced: properties.filter(p => p.dataSources.scraped).length
+    synced: properties.filter(p => p.dataSources.scraped).length,
+    totalRevenue: properties.reduce((sum, p) => sum + (p.metrics?.revenue?.value || 0), 0),
+    totalNights: properties.reduce((sum, p) => {
+      // Try to get nights from CSV metrics
+      if (p.dataSources?.csv?.propertyMetrics && p.dataSources.csv.propertyMetrics.length > 0) {
+        // We now store only this property's metrics
+        const thisPropertyMetrics = p.dataSources.csv.propertyMetrics[0]
+        if (thisPropertyMetrics?.totalNights) {
+          return sum + thisPropertyMetrics.totalNights
+        }
+      }
+      return sum
+    }, 0)
   }
 
   if (loading) {
@@ -478,7 +551,15 @@ export default function PropertiesPage() {
               <GoStudioMLogo width={240} height={72} />
               <div className="border-l pl-4 ml-2">
                 <h1 className="text-xl font-semibold text-gray-900">Properties Dashboard</h1>
-                <p className="text-sm text-gray-500">Manage all your properties in one place</p>
+                <p className="text-sm text-gray-500">
+                  {csvDateRange.start && csvDateRange.end ? (
+                    <>
+                      Data from {new Date(csvDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to {new Date(csvDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </>
+                  ) : (
+                    'Manage all your properties in one place'
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -503,12 +584,47 @@ export default function PropertiesPage() {
                 <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
                 Sync All
               </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearAll}
+                title="Clear all data and start fresh"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear All
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Revenue Summary when CSV data is available */}
+        {csvDateRange.start && stats.totalRevenue > 0 && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Portfolio Performance</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Total Revenue: <span className="font-bold text-green-700">${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  {stats.totalNights > 0 && (
+                    <> • Total Nights: <span className="font-bold text-blue-700">{stats.totalNights.toLocaleString()}</span></>
+                  )}
+                  {stats.totalNights > 0 && (
+                    <> • Avg Rate: <span className="font-bold text-purple-700">${(stats.totalRevenue / stats.totalNights).toFixed(2)}/night</span></>
+                  )}
+                </p>
+              </div>
+              <Badge className="bg-green-100 text-green-800">
+                {csvDateRange.start && csvDateRange.end && (
+                  <>
+                    {Math.ceil((new Date(csvDateRange.end).getTime() - new Date(csvDateRange.start).getTime()) / (1000 * 60 * 60 * 24 * 365))} years of data
+                  </>
+                )}
+              </Badge>
+            </div>
+          </div>
+        )}
+        
         {/* Stats Cards */}
         <div className="grid grid-cols-5 gap-4 mb-8">
           <Card>

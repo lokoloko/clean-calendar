@@ -202,9 +202,9 @@ export default function ComparisonPage() {
                   <h1 className="text-xl font-semibold text-gray-900">Property Comparison</h1>
                 </div>
               </div>
-              <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              <Button variant="outline" onClick={() => router.push('/properties')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Back to Properties
               </Button>
             </div>
           </div>
@@ -270,9 +270,9 @@ export default function ComparisonPage() {
                 <p className="text-sm text-gray-500">Live market analysis</p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+            <Button variant="outline" onClick={() => router.push('/properties')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to Properties
             </Button>
           </div>
         </div>

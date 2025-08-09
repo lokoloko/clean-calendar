@@ -1,19 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DropZone } from '@/components/DropZone'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRouter } from 'next/navigation'
 import { InstructionsModal } from '@/components/InstructionsModal'
 import { GoStudioMLogo } from '@/components/GoStudioMLogo'
-import { FileTextIcon, TableIcon, ChevronRightIcon, HelpCircleIcon, BarChart3Icon } from '@/components/Icons'
+import { FileTextIcon, TableIcon, ChevronRightIcon, HelpCircleIcon, BarChart3Icon, ArrowRight } from '@/components/Icons'
+import { UrlInputSection } from '@/components/UrlInputSection'
 
 export default function UploadPage() {
   const router = useRouter()
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
   const [showInstructions, setShowInstructions] = useState(false)
+  const [propertyUrls, setPropertyUrls] = useState<string[]>([])
+  const [hasExistingData, setHasExistingData] = useState(false)
+  
+  // Check if user has existing session data
+  useEffect(() => {
+    async function checkExistingData() {
+      try {
+        const response = await fetch('/api/properties', {
+          credentials: 'same-origin'
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setHasExistingData(data.properties && data.properties.length > 0)
+        }
+      } catch (e) {
+        console.error('Error checking existing data:', e)
+      }
+    }
+    checkExistingData()
+  }, [])
 
   const handleFileUpload = async (files: File[]) => {
     setUploadStatus('uploading')
@@ -47,8 +68,60 @@ export default function UploadPage() {
       const result = await response.json()
       
       if (result.success) {
-        sessionStorage.setItem('uploadData', JSON.stringify(result.data))
-        router.push('/mapping')
+        // Add URLs to the data if provided
+        const dataWithUrls = {
+          ...result.data,
+          propertyUrls: propertyUrls.filter(url => url && url.includes('airbnb.com/rooms/')),
+          // Ensure CSV data is included if present
+          csv: result.data.csv || null
+        }
+        
+        // Skip mapping and save directly to session
+        const properties = result.data.properties || []
+        const dataSource = result.data.dataSource || 'pdf-only'
+        
+        // Prepare data for API (similar to what mapping page does)
+        const dashboardData = {
+          ...dataWithUrls,
+          properties: properties.map((prop: any, index: number) => ({
+            ...prop,
+            selected: true,
+            mapped: true,
+            status: prop.netEarnings > 0 ? 'active' : 'inactive',
+            airbnbUrl: propertyUrls[index] || ''
+          })),
+          totalRevenue: properties.reduce((sum: number, p: any) => sum + (p.netEarnings || 0), 0),
+          activeProperties: properties.filter((p: any) => p.netEarnings > 0).length,
+          inactiveProperties: properties.filter((p: any) => p.netEarnings === 0).length,
+          totalProperties: properties.length,
+          totalNights: properties.reduce((sum: number, p: any) => sum + (p.nightsBooked || 0), 0),
+          dataSource,
+          replace: true,
+          // Include CSV data properly
+          csv: result.data.csv || null
+        }
+        
+        // Save properties to session
+        const saveResponse = await fetch('/api/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(dashboardData)
+        })
+        
+        if (saveResponse.ok) {
+          const saveResult = await saveResponse.json()
+          console.log(`Saved ${saveResult.count} properties to session`)
+          
+          // Clear sessionStorage since we've saved to server
+          sessionStorage.removeItem('uploadData')
+          
+          // Navigate directly to properties
+          router.push('/properties')
+        } else {
+          console.error('Failed to save properties')
+          alert('Failed to save properties. Please try again.')
+        }
       } else {
         console.error('Upload failed:', result.error)
         alert(`Upload failed: ${result.error}\n\nPlease check the console for more details.`)
@@ -73,6 +146,16 @@ export default function UploadPage() {
           <p className="text-lg text-gray-600">
             AI-powered insights for your Airbnb portfolio
           </p>
+          {hasExistingData && (
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => router.push('/properties')}
+            >
+              View Existing Properties
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
         </div>
 
         {/* Upload Section */}
@@ -134,6 +217,11 @@ export default function UploadPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Optional URL Section */}
+        <div className="mb-8">
+          <UrlInputSection onUrlsChange={setPropertyUrls} />
+        </div>
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

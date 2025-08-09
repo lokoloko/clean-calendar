@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Property } from '@/lib/storage/property-store'
 import type { PropertyInsights, ActionItem } from '../page'
+import type { TimePeriod } from '@/lib/utils/period-metrics'
 import { 
   Sparkles,
   TrendingUp,
@@ -24,11 +25,12 @@ import {
 interface GeminiInsightsTabsProps {
   insights: PropertyInsights | null
   property: Property
+  selectedPeriod?: TimePeriod
   onRegenerateInsights: () => void
   isGenerating: boolean
 }
 
-export default function GeminiInsightsTabs({
+export default function GoStudioMInsightsTabs({
   insights,
   property,
   onRegenerateInsights,
@@ -72,7 +74,7 @@ export default function GeminiInsightsTabs({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" />
-            <CardTitle>Gemini AI Insights</CardTitle>
+            <CardTitle>GoStudioM Insights</CardTitle>
           </div>
           <Button
             size="sm"

@@ -77,7 +77,7 @@ export default function HistoricalPage() {
 
     const parsed = JSON.parse(uploadData)
     if (!parsed.csv?.historicalData) {
-      router.push('/dashboard')
+      router.push('/properties')
       return
     }
 
@@ -128,7 +128,7 @@ export default function HistoricalPage() {
                   <h1 className="text-xl font-semibold text-gray-900">Historical Analytics</h1>
                 </div>
               </div>
-              <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              <Button variant="outline" onClick={() => router.push('/properties')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Button>
@@ -219,7 +219,7 @@ export default function HistoricalPage() {
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </Button>
-              <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              <Button variant="outline" onClick={() => router.push('/properties')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Button>

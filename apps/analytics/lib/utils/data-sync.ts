@@ -5,6 +5,7 @@
 
 import { PropertyStore, type Property } from '@/lib/storage/property-store'
 import type { AirbnbListingData } from '@/lib/scrapers/airbnb-parser'
+import { deduplicateTransactions, calculateAverageStay, calculateOccupancy } from './transaction-dedup'
 
 export interface SyncResult {
   success: boolean
@@ -211,30 +212,34 @@ export class DataSync {
       }
     }
     
-    // Nights - prefer CSV data
-    if (property.dataSources.csv) {
-      result.nights = property.dataSources.csv.recordCount || 0
+    // Nights and average stay - prefer CSV data (deduplicated)
+    if (property.dataSources.csv && property.dataSources.csv.data.length > 0) {
+      // Deduplicate transactions by confirmation code
+      const { uniqueBookings, stats } = deduplicateTransactions(property.dataSources.csv.data)
+      
+      result.nights = stats.uniqueNights
       result.confidence.nights = 95
+      
+      // Calculate average stay from unique bookings
+      result.avgStay = calculateAverageStay(uniqueBookings)
+      result.confidence.avgStay = 95
+      
+      // Calculate occupancy based on date range
+      if (property.dataSources.csv.dateRange) {
+        const startDate = new Date(property.dataSources.csv.dateRange.start)
+        const endDate = new Date(property.dataSources.csv.dateRange.end)
+        result.occupancy = calculateOccupancy(uniqueBookings, startDate, endDate)
+      } else {
+        // Default to annual occupancy
+        result.occupancy = Math.min(100, (stats.uniqueNights / 365) * 100)
+      }
     } else if (property.dataSources.pdf) {
+      // Fallback to PDF data
       result.nights = property.dataSources.pdf.data.totalNightsBooked || 0
       result.confidence.nights = 70
-    }
-    
-    // Average stay - prefer CSV data
-    if (property.dataSources.csv && property.dataSources.csv.data.length > 0) {
-      // Calculate from transaction data
-      const stays = property.dataSources.csv.data.map((t: any) => t.nights || 1)
-      result.avgStay = stays.reduce((a: number, b: number) => a + b, 0) / stays.length
-      result.confidence.avgStay = 95
-    } else if (property.dataSources.pdf) {
       result.avgStay = property.dataSources.pdf.data.avgNightStay || 0
       result.confidence.avgStay = 60
-    }
-    
-    // Calculate occupancy
-    if (result.nights > 0) {
-      const daysInPeriod = 365 // Approximate
-      result.occupancy = Math.min(100, (result.nights / daysInPeriod) * 100)
+      result.occupancy = Math.min(100, (result.nights / 365) * 100)
     }
     
     // Calculate average rate

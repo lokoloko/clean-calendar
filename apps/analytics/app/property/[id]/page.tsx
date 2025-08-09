@@ -7,15 +7,16 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GoStudioMLogo } from '@/components/GoStudioMLogo'
-import { PropertyStore, type Property } from '@/lib/storage/property-store'
+import { type Property } from '@/lib/storage/property-store'
 import { DataSync } from '@/lib/utils/data-sync'
 import { formatCurrency } from '@/lib/utils'
 import PropertyHeader from './components/PropertyHeader'
 import MetricsDashboard from './components/MetricsDashboard'
-import GeminiInsightsTabs from './components/GeminiInsightsTabs'
+import GoStudioMInsightsTabs from './components/GoStudioMInsightsTabs'
 import DataSourceCards from './components/DataSourceCards'
 import PerformanceCharts from './components/PerformanceCharts'
 import ActionSidebar from './components/ActionSidebar'
+import { type TimePeriod } from '@/lib/utils/period-metrics'
 import {
   ArrowLeft,
   RefreshCw,
@@ -95,22 +96,81 @@ export default function PropertyDetailPage() {
   const [syncing, setSyncing] = useState(false)
   const [generatingInsights, setGeneratingInsights] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last12months')
   
   useEffect(() => {
     loadProperty()
   }, [propertyId])
   
-  const loadProperty = () => {
-    const prop = PropertyStore.getById(propertyId)
-    if (prop) {
-      setProperty(prop)
+  const loadProperty = async () => {
+    try {
+      setLoading(true)
+      console.log('Loading property with ID:', propertyId)
       
-      // Check if we need to generate insights
-      if (!insights || shouldRegenerateInsights(prop)) {
-        generateInsights(prop)
+      // Fetch property from API instead of localStorage
+      const response = await fetch(`/api/properties/${propertyId}`)
+      const data = await response.json()
+      
+      if (response.ok && data.success && data.property) {
+        const prop = data.property
+        
+        // Convert date strings to Date objects
+        if (prop.updatedAt) prop.updatedAt = new Date(prop.updatedAt)
+        if (prop.createdAt) prop.createdAt = new Date(prop.createdAt)
+        if (prop.lastSyncedAt) prop.lastSyncedAt = new Date(prop.lastSyncedAt)
+        
+        // Convert dates in dataSources
+        if (prop.dataSources?.pdf?.uploadedAt) {
+          prop.dataSources.pdf.uploadedAt = new Date(prop.dataSources.pdf.uploadedAt)
+        }
+        if (prop.dataSources?.csv?.uploadedAt) {
+          prop.dataSources.csv.uploadedAt = new Date(prop.dataSources.csv.uploadedAt)
+        }
+        if (prop.dataSources?.csv?.dateRange) {
+          if (prop.dataSources.csv.dateRange.start) {
+            prop.dataSources.csv.dateRange.start = new Date(prop.dataSources.csv.dateRange.start)
+          }
+          if (prop.dataSources.csv.dateRange.end) {
+            prop.dataSources.csv.dateRange.end = new Date(prop.dataSources.csv.dateRange.end)
+          }
+        }
+        if (prop.dataSources?.scraped?.scrapedAt) {
+          prop.dataSources.scraped.scrapedAt = new Date(prop.dataSources.scraped.scrapedAt)
+        }
+        
+        // Convert dates in metrics
+        if (prop.metrics) {
+          ['revenue', 'occupancy', 'pricing', 'satisfaction'].forEach(metric => {
+            if (prop.metrics[metric]?.lastUpdated) {
+              prop.metrics[metric].lastUpdated = new Date(prop.metrics[metric].lastUpdated)
+            }
+          })
+        }
+        
+        console.log('Loaded property:', {
+          id: prop.id,
+          name: prop.name,
+          hasMetrics: !!prop.metrics,
+          revenue: prop.metrics?.revenue?.value,
+          occupancy: prop.metrics?.occupancy?.value,
+          pricing: prop.metrics?.pricing?.value,
+          hasCSV: !!prop.dataSources?.csv,
+          csvMetricsCount: prop.dataSources?.csv?.propertyMetrics?.length || 0
+        })
+        
+        setProperty(prop)
+        
+        // Check if we need to generate insights
+        if (!insights || shouldRegenerateInsights(prop)) {
+          generateInsights(prop)
+        }
+      } else {
+        // Property not found, redirect to properties list
+        console.log('Property not found, redirecting to properties list')
+        router.push('/properties')
       }
-    } else {
-      // Property not found, redirect to properties list
+    } catch (error) {
+      console.error('Error loading property:', error)
       router.push('/properties')
     }
     setLoading(false)
@@ -160,21 +220,24 @@ export default function PropertyDetailPage() {
   }
   
   const generateMockInsights = (prop: Property): PropertyInsights => {
-    const revenue = prop.metrics?.revenue.value || 0
-    const occupancy = prop.metrics?.occupancy.value || 0
-    const price = prop.metrics?.pricing.value || 0
+    const revenue = prop.metrics?.revenue?.value || 0
+    const occupancy = prop.metrics?.occupancy?.value || 0
+    const price = prop.metrics?.pricing?.value || 0
+    const hasMetrics = revenue > 0 || occupancy > 0
     
     return {
       actionable: [
         {
           id: '1',
-          priority: revenue < 30000 ? 'critical' : 'important',
+          priority: revenue < 30000 && revenue > 0 ? 'critical' : 'important',
           category: 'Pricing',
-          title: 'Optimize Weekend Pricing',
-          description: 'Your weekend rates are 15% below market average',
-          impact: '+$3,600/year',
+          title: hasMetrics ? 'Optimize Weekend Pricing' : 'Add Transaction Data',
+          description: hasMetrics 
+            ? `Your revenue of ${formatCurrency(revenue)} could be improved with dynamic pricing`
+            : 'Upload CSV transaction data to see revenue insights',
+          impact: hasMetrics ? '+$3,600/year' : 'Enable analytics',
           effort: 'low',
-          automatable: true
+          automatable: hasMetrics
         },
         {
           id: '2',
@@ -204,25 +267,35 @@ export default function PropertyDetailPage() {
           id: '1',
           type: 'revenue',
           title: 'Revenue Performance',
-          findings: [
-            `Revenue of ${formatCurrency(revenue)} is ${revenue > 40000 ? 'above' : 'below'} market average`,
-            'Peak months: June-August',
-            'Consider seasonal pricing adjustments'
+          findings: hasMetrics ? [
+            `Annual revenue: ${formatCurrency(revenue)}`,
+            `Data source: ${prop.metrics?.revenue?.source || 'calculated'}`,
+            revenue > 40000 ? '✅ Above market average for similar properties' : 
+            revenue > 20000 ? '⚠️ Room for improvement - consider pricing optimization' :
+            '❌ Significantly below market - review pricing and marketing'
+          ] : [
+            'No revenue data available',
+            'Upload CSV transaction file to see revenue analysis'
           ],
-          trend: revenue > 40000 ? 'up' : 'stable',
-          confidence: 85
+          trend: revenue > 40000 ? 'up' : revenue > 0 ? 'stable' : 'down',
+          confidence: prop.metrics?.revenue?.confidence || 0
         },
         {
           id: '2',
           type: 'occupancy',
           title: 'Occupancy Analysis',
-          findings: [
-            `Current occupancy: ${occupancy.toFixed(1)}%`,
+          findings: hasMetrics ? [
+            `Current occupancy rate: ${occupancy.toFixed(1)}%`,
             `Market average: 75%`,
-            occupancy < 75 ? 'Below market - consider pricing or marketing changes' : 'Strong occupancy rate'
+            occupancy >= 75 ? '✅ Strong occupancy - maintaining good demand' :
+            occupancy >= 60 ? '⚠️ Below market - consider pricing adjustments' :
+            '❌ Low occupancy - review listing and pricing strategy'
+          ] : [
+            'No occupancy data available',
+            'Upload CSV transaction file to see occupancy analysis'
           ],
-          trend: occupancy > 70 ? 'up' : 'down',
-          confidence: 90
+          trend: occupancy > 70 ? 'up' : occupancy > 0 ? 'stable' : 'down',
+          confidence: prop.metrics?.occupancy?.confidence || 0
         }
       ],
       predictions: [
@@ -267,16 +340,55 @@ export default function PropertyDetailPage() {
     if (!property) return
     
     setSyncing(true)
-    const result = await DataSync.syncWithAirbnb(property.id)
     
-    if (result.success) {
-      loadProperty() // Reload to get updated data
+    try {
+      // Call the API directly instead of using DataSync (which tries to use localStorage on server)
+      const response = await fetch('/api/scrape/airbnb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: property.airbnbUrl,
+          propertyId: property.id
+        })
+      })
       
-      // Show success message
-      console.log('Sync successful:', result)
-    } else {
-      // Show error
-      alert(`Sync failed: ${result.errors?.join(', ')}`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || `Scraping failed: ${response.statusText}`)
+      }
+      
+      const scrapeResult = await response.json()
+      
+      if (scrapeResult.success && scrapeResult.data) {
+        // Update property with scraped data via API
+        const updateResponse = await fetch(`/api/properties/${property.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dataSources: {
+              ...property.dataSources,
+              scraped: {
+                data: scrapeResult.data,
+                scrapedAt: new Date().toISOString(),
+                source: 'browserless'
+              }
+            },
+            lastSyncedAt: new Date().toISOString()
+          })
+        })
+        
+        if (updateResponse.ok) {
+          console.log('Sync successful:', scrapeResult)
+          await loadProperty() // Reload to get updated data
+        } else {
+          throw new Error('Failed to update property with scraped data')
+        }
+      } else {
+        throw new Error(scrapeResult.error || 'Unknown scraping error')
+      }
+    } catch (error) {
+      console.error('Sync failed:', error)
+      alert(`Sync failed: ${error}`)
     }
     
     setSyncing(false)
@@ -299,13 +411,23 @@ export default function PropertyDetailPage() {
     a.click()
   }
   
-  const handleAddUrl = () => {
+  const handleAddUrl = async () => {
     if (!property) return
     
     const url = prompt('Enter Airbnb URL:', property.airbnbUrl || '')
     if (url && url !== property.airbnbUrl) {
-      PropertyStore.updateUrl(property.id, url)
-      loadProperty()
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          airbnbUrl: url,
+          airbnbListingId: url.match(/rooms\/(\d+)/)?.[1] || undefined
+        })
+      })
+      
+      if (response.ok) {
+        await loadProperty()
+      }
     }
   }
   
@@ -360,10 +482,20 @@ export default function PropertyDetailPage() {
               <div className="border-l pl-4">
                 <PropertyHeader
                   property={property}
-                  onEditName={(name) => {
-                    property.standardName = name
-                    PropertyStore.save(property)
-                    loadProperty()
+                  onEditName={async (newName) => {
+                    // Update both name and standardName via API
+                    const response = await fetch(`/api/properties/${property.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: newName,
+                        standardName: newName
+                      })
+                    })
+                    
+                    if (response.ok) {
+                      await loadProperty()
+                    }
                   }}
                   onEditUrl={handleAddUrl}
                 />
@@ -400,16 +532,21 @@ export default function PropertyDetailPage() {
       
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Metrics Dashboard */}
-        <MetricsDashboard property={property} />
+        <MetricsDashboard 
+          property={property} 
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+        />
         
         {/* Main Content Area */}
         <div className="grid grid-cols-12 gap-6 mt-8">
           {/* Left Content - 9 columns */}
           <div className="col-span-9 space-y-6">
-            {/* Gemini AI Insights */}
-            <GeminiInsightsTabs
+            {/* GoStudioM Insights */}
+            <GoStudioMInsightsTabs
               insights={insights}
               property={property}
+              selectedPeriod={selectedPeriod}
               onRegenerateInsights={() => generateInsights(property)}
               isGenerating={generatingInsights}
             />
@@ -417,6 +554,7 @@ export default function PropertyDetailPage() {
             {/* Data Sources */}
             <DataSourceCards
               property={property}
+              selectedPeriod={selectedPeriod}
               onUploadPdf={() => handleUploadData('pdf')}
               onUploadCsv={() => handleUploadData('csv')}
               onAddUrl={handleAddUrl}
@@ -424,7 +562,7 @@ export default function PropertyDetailPage() {
             />
             
             {/* Performance Charts */}
-            <PerformanceCharts property={property} />
+            <PerformanceCharts property={property} selectedPeriod={selectedPeriod} />
           </div>
           
           {/* Right Sidebar - 3 columns */}

@@ -1,0 +1,94 @@
+# Unified Docker Compose for Calendar and Analytics Apps
+# This runs both apps with a shared PostgreSQL database
+
+services:
+  # Shared PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cleansweep
+    volumes:
+      - shared_postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+      - ./supabase/migrations/002_analytics_schema.sql:/docker-entrypoint-initdb.d/002_analytics_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cleansweep
+
+  # Calendar App (Port 9002)
+  calendar:
+    build: 
+      context: .
+      target: dev
+    ports:
+      - "9002:9002"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cleansweep
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:9002
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-local-dev
+      - SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-local-dev
+      - NEXT_PUBLIC_USE_AUTH=false
+      - NEXTAUTH_URL=http://localhost:9002
+      - NEXTAUTH_SECRET=development-secret-key-change-in-production
+      - GEMINI_API_KEY=AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k
+      - GOOGLE_AI_API_KEY=AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cleansweep
+    command: npm run dev
+
+  # Analytics App (Port 9003)
+  analytics:
+    build: 
+      context: .
+      target: dev
+    ports:
+      - "9003:9003"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cleansweep
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:9003
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-local-dev
+      - SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-local-dev
+      - NEXT_PUBLIC_USE_AUTH=false
+      - NEXTAUTH_URL=http://localhost:9003
+      - NEXTAUTH_SECRET=development-secret-key-change-in-production
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k}
+      - BROWSERLESS_API_KEY=${BROWSERLESS_API_KEY}
+    env_file:
+      - .env.local  # Load from root directory
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/apps/analytics/.next
+    working_dir: /app/apps/analytics
+    command: npm run dev -- --port 9003
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cleansweep
+
+networks:
+  cleansweep:
+    driver: bridge
+
+volumes:
+  shared_postgres_data:

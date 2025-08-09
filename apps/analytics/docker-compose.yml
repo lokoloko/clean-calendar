@@ -16,8 +16,9 @@ services:
       - NEXTAUTH_SECRET=development-secret-key-change-in-production
       - GEMINI_API_KEY=${GEMINI_API_KEY:-AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k}
       - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k}
+      - BROWSERLESS_API_KEY=${BROWSERLESS_API_KEY}
     env_file:
-      - .env.local
+      - ../../.env.local  # Load from root directory
     volumes:
       - ../..:/app
       - /app/node_modules
@@ -34,13 +35,15 @@ services:
   db:
     image: postgres:16-alpine
     ports:
-      - "5433:5432"
+      - "5434:5432"  # Changed from 5433 to avoid conflict with calendar app
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=cleansweep
     volumes:
       - analytics_postgres_data:/var/lib/postgresql/data
+      - ../../supabase/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+      - ../../supabase/migrations/002_analytics_schema.sql:/docker-entrypoint-initdb.d/002_analytics_schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

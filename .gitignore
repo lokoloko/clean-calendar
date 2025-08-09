@@ -50,3 +50,7 @@ apps/**/.next
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# session storage
+.sessions/
+apps/analytics/.sessions/
