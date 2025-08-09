@@ -28,6 +28,7 @@
     "analytics:docker": "docker-compose -f docker-compose.analytics.yml up",
     "analytics:docker:build": "docker-compose -f docker-compose.analytics.yml build",
     "analytics:docker:down": "docker-compose -f docker-compose.analytics.yml down",
+    "analyzer:dev": "cd apps/listing-analyzer && npm run dev",
     "analytics:logs": "docker logs -f airbnb-analytics --tail 100",
     "supabase:types": "npx supabase gen types typescript --local > src/types/supabase.ts",
     "test": "jest",
