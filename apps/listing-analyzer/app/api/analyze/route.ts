@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { scrapeAirbnbListing } from '@/lib/scraper'
+import { scrapeAirbnbListing } from '@/lib/scraper-browserql'
 import { analyzeListingWithAI } from '@/lib/analyzer'
 
 export async function POST(request: NextRequest) {
@@ -24,13 +24,14 @@ export async function POST(request: NextRequest) {
 
     console.log('Analyzing listing:', url)
 
-    // Step 1: Scrape the listing
+    // Step 1: Scrape the listing with working Browserless API
     const listingData = await scrapeAirbnbListing(url)
     console.log('Scraped data:', {
       title: listingData.title,
-      photos: listingData.photos.count,
-      reviews: listingData.reviews.count,
-      amenities: listingData.amenities.all.length
+      price: listingData.price,
+      rating: listingData.rating,
+      reviewCount: listingData.reviewCount,
+      amenities: listingData.amenities.length
     })
 
     // Step 2: Analyze with AI

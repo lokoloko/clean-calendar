@@ -1,0 +1,19 @@
+# Standalone Dockerfile for listing-analyzer
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only listing-analyzer files
+COPY apps/listing-analyzer/package*.json ./
+
+# Install dependencies for listing-analyzer only
+RUN npm install
+
+# Copy application code
+COPY apps/listing-analyzer/ ./
+
+# Expose port
+EXPOSE 9004
+
+# Start development server
+CMD ["npm", "run", "dev"]

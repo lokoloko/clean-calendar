@@ -1,0 +1,46 @@
+services:
+  listing-analyzer:
+    container_name: listing-analyzer
+    build: 
+      context: ../..
+      dockerfile: apps/listing-analyzer/Dockerfile
+      target: dev
+    ports:
+      - "9004:9004"
+    environment:
+      - NODE_ENV=development
+      - PORT=9004
+      # Browserless API for scraping
+      - BROWSERLESS_API_KEY=${BROWSERLESS_API_KEY}
+      - BROWSERLESS_URL=${BROWSERLESS_URL:-https://production-sfo.browserless.io}
+      # Google Gemini for AI analysis
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+      # Link to analytics app for upgrades
+      - NEXT_PUBLIC_ANALYTICS_URL=${NEXT_PUBLIC_ANALYTICS_URL:-http://localhost:9003}
+    env_file:
+      - ../../.env.local
+    volumes:
+      # Mount the entire monorepo
+      - ../..:/app
+      # Prevent node_modules from being overwritten
+      - /app/node_modules
+      - /app/apps/listing-analyzer/node_modules
+      # Prevent .next build folder from being overwritten
+      - /app/apps/listing-analyzer/.next
+    working_dir: /app/apps/listing-analyzer
+    command: npm run dev
+    networks:
+      - listing-analyzer-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9004/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  listing-analyzer-network:
+    driver: bridge
+    name: listing-analyzer-network

@@ -1,5 +1,23 @@
 # Listing Analyzer Changelog
 
+## [0.2.0] - 2025-08-09
+
+### Added
+- **BrowserQL Integration**: Implemented proper BrowserQL GraphQL endpoint for Browserless.io
+- **GoStudioM Branding**: Added logo and branding to all pages
+- **Enhanced Scraping**: Real-time data fetching without mock fallbacks
+- **Improved Error Handling**: Better error messages for scraping failures
+
+### Changed
+- Replaced mock data scraper with BrowserQL implementation (`scraper-browserql.ts`)
+- Updated API route to use new BrowserQL scraper
+- Fixed type compatibility between scraper and analyzer modules
+- Enhanced UI with GoStudioM branding elements
+
+### Fixed
+- Environment variable configuration in Docker setup
+- Type mismatches between AirbnbData and AirbnbListingData interfaces
+
 ## [0.1.0] - 2025-08-09
 
 ### Initial Release

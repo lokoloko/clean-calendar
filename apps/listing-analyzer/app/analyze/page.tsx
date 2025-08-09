@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import ScoreDisplay from '@/components/ScoreDisplay'
 import RecommendationCard from '@/components/RecommendationCard'
 import UpgradePrompt from '@/components/UpgradePrompt'
 import { ArrowLeft, Download, Share2, RefreshCw } from 'lucide-react'
-import type { ListingData } from '@/lib/scraper'
+import type { AirbnbData } from '@/lib/scraper-puppeteer'
 import type { AnalysisResult } from '@/lib/analyzer'
 
 export default function AnalyzePage() {
   const router = useRouter()
-  const [listing, setListing] = useState<ListingData | null>(null)
+  const [listing, setListing] = useState<AirbnbData | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -58,6 +59,18 @@ export default function AnalyzePage() {
               Analyze Another
             </button>
             
+            {/* Logo in center */}
+            <div className="flex-1 flex justify-center">
+              <Image
+                src="/images/gostudiom-logo.png"
+                alt="GoStudioM - Built for hosts, by a host"
+                width={250}
+                height={60}
+                className="h-10 w-auto"
+                priority
+              />
+            </div>
+            
             <div className="flex items-center gap-3">
               <button className="p-2 hover:bg-gray-100 rounded-lg" title="Download Report">
                 <Download className="w-5 h-5" />
@@ -82,9 +95,9 @@ export default function AnalyzePage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{listing.title}</h1>
           <p className="text-gray-600">
-            {listing.propertyType} · {listing.location.neighborhood || listing.location.city || 'Location'} · 
-            ${listing.pricing.nightly}/night · 
-            {listing.reviews.rating}★ ({listing.reviews.count} reviews)
+            {listing.propertyType} · 
+            ${listing.price}/night · 
+            {listing.rating}★ ({listing.reviewCount} reviews)
           </p>
         </div>
 
@@ -132,38 +145,49 @@ export default function AnalyzePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Metrics</h3>
             <dl className="space-y-3">
               <div className="flex justify-between">
-                <dt className="text-gray-600">Photos</dt>
-                <dd className="font-medium">{listing.photos.count}</dd>
+                <dt className="text-gray-600">Price per Night</dt>
+                <dd className="font-medium">${listing.price}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Rating</dt>
+                <dd className="font-medium">{listing.rating}★</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Reviews</dt>
+                <dd className="font-medium">{listing.reviewCount}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Amenities</dt>
-                <dd className="font-medium">{listing.amenities.all.length}</dd>
+                <dd className="font-medium">{listing.amenities.length}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Superhost</dt>
-                <dd className="font-medium">{listing.host.isSuperhost ? 'Yes ✓' : 'No'}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-600">Instant Book</dt>
-                <dd className="font-medium">{listing.availability.instantBook ? 'Yes ✓' : 'No'}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-600">Min Stay</dt>
-                <dd className="font-medium">{listing.availability.minimumStay || 1} nights</dd>
+                <dd className="font-medium">{listing.isSuperhost ? 'Yes ✓' : 'No'}</dd>
               </div>
             </dl>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Missing Amenities</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Amenities</h3>
             <div className="flex flex-wrap gap-2">
-              {['Workspace', 'Coffee maker', 'Fast wifi', 'Hair dryer', 'Iron', 'TV', 'Parking']
-                .filter(a => !listing.amenities.all.some(la => la.toLowerCase().includes(a.toLowerCase())))
-                .map(amenity => (
-                  <span key={amenity} className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm">
-                    {amenity}
-                  </span>
-                ))}
+              {listing.amenities.slice(0, 10).map(amenity => (
+                <span key={amenity} className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                  {amenity}
+                </span>
+              ))}
+            </div>
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Consider Adding:</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Workspace', 'Coffee maker', 'Fast wifi', 'Hair dryer', 'Iron', 'TV', 'Parking']
+                  .filter(a => !listing.amenities.some(la => la.toLowerCase().includes(a.toLowerCase())))
+                  .slice(0, 5)
+                  .map(amenity => (
+                    <span key={amenity} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-sm">
+                      + {amenity}
+                    </span>
+                  ))}
+              </div>
             </div>
           </div>
         </div>

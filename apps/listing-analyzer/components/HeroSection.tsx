@@ -1,14 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, CheckCircle, Sparkles, TrendingUp, Clock } from 'lucide-react'
+import Image from 'next/image'
+import * as Icons from 'lucide-react'
 
 export default function HeroSection() {
   const [url, setUrl] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState('')
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,11 +60,23 @@ export default function HeroSection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Image
+            src="/images/gostudiom-logo.png"
+            alt="GoStudioM - Built for hosts, by a host"
+            width={400}
+            height={100}
+            className="h-20 w-auto"
+            priority
+          />
+        </div>
+        
         {/* Hero Content */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-6">
-            <Sparkles className="w-4 h-4 mr-2" />
+            {mounted && <Icons.Sparkles className="w-4 h-4 mr-2" />}
             AI-Powered Analysis
           </div>
           
@@ -75,15 +93,15 @@ export default function HeroSection() {
           {/* Trust Badges */}
           <div className="flex items-center justify-center gap-8 mb-12">
             <div className="flex items-center text-gray-700">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              {mounted && <Icons.CheckCircle2 className="w-5 h-5 text-green-500 mr-2" />}
               <span className="font-medium">100% Free</span>
             </div>
             <div className="flex items-center text-gray-700">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              {mounted && <Icons.CheckCircle2 className="w-5 h-5 text-green-500 mr-2" />}
               <span className="font-medium">No Signup Required</span>
             </div>
             <div className="flex items-center text-gray-700">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              {mounted && <Icons.CheckCircle2 className="w-5 h-5 text-green-500 mr-2" />}
               <span className="font-medium">Results in 30 Seconds</span>
             </div>
           </div>
@@ -108,20 +126,19 @@ export default function HeroSection() {
               >
                 {isAnalyzing ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                     Analyzing...
                   </>
                 ) : (
                   <>
                     Analyze Now
-                    <ArrowRight className="w-5 h-5" />
+                    {mounted && <Icons.ArrowRight className="w-5 h-5" />}
                   </>
                 )}
               </button>
             </div>
             
             {error && (
-              <p className="text-red-500 text-sm mt-3 text-center">{error}</p>
+              <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
             )}
             
             <p className="text-gray-500 text-sm mt-3 text-center">
@@ -134,7 +151,7 @@ export default function HeroSection() {
         <div className="grid md:grid-cols-3 gap-8 mt-20">
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-blue-600" />
+              {mounted && <Icons.Sparkles className="w-8 h-8 text-blue-600" />}
             </div>
             <h3 className="text-lg font-semibold mb-2">AI-Powered Insights</h3>
             <p className="text-gray-600">
@@ -144,7 +161,7 @@ export default function HeroSection() {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="w-8 h-8 text-purple-600" />
+              {mounted && <Icons.TrendingUp className="w-8 h-8 text-purple-600" />}
             </div>
             <h3 className="text-lg font-semibold mb-2">Actionable Recommendations</h3>
             <p className="text-gray-600">
@@ -154,7 +171,7 @@ export default function HeroSection() {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Clock className="w-8 h-8 text-green-600" />
+              {mounted && <Icons.Clock className="w-8 h-8 text-green-600" />}
             </div>
             <h3 className="text-lg font-semibold mb-2">Instant Results</h3>
             <p className="text-gray-600">

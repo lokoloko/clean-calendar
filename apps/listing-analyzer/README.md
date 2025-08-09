@@ -1,6 +1,6 @@
-# Free Airbnb Listing Analyzer
+# GoStudioM Free Airbnb Listing Analyzer
 
-A free tool that provides instant AI-powered recommendations to improve Airbnb listings and increase bookings.
+A free tool by GoStudioM that provides instant AI-powered recommendations to improve Airbnb listings and increase bookings. Built for hosts, by a host.
 
 ## Features
 
