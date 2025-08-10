@@ -1,7 +1,7 @@
 // Hybrid scraper - uses vision-based extraction with fallback to simple HTML
 import { ComprehensiveAirbnbListing, AirbnbListingData } from './types/listing'
 import { scrapeWithVision } from './scraper-vision'
-import { scrapeWithWorkingFunction } from './scraper-working-function'
+import { scrapeWithEnhancedFunction } from './scraper-enhanced-function'
 import { scrapeSimple } from './scraper-simple'
 
 export interface ScrapingMetrics {
@@ -82,18 +82,18 @@ export async function scrapeAirbnbHybrid(url: string): Promise<HybridScrapingRes
     }
   }
   
-  // Try working function approach (modals + screenshots)
+  // Try enhanced function approach (modals + screenshots + DOM extraction)
   try {
-    console.log('🔄 Attempting working function extraction...')
+    console.log('🔄 Attempting enhanced function extraction...')
     const hybridStart = Date.now()
-    const listing = await scrapeWithWorkingFunction(url)
+    const listing = await scrapeWithEnhancedFunction(url)
     const hybridEnd = Date.now()
     
     const dataQuality = listing.meta?.dataCompleteness || 0
     const fieldsExtracted = countExtractedFields(listing)
     
     metrics.push({
-      method: 'working-function',
+      method: 'enhanced-function',
       attemptNumber: 1,
       startTime: hybridStart,
       endTime: hybridEnd,
@@ -102,21 +102,21 @@ export async function scrapeAirbnbHybrid(url: string): Promise<HybridScrapingRes
       fieldsExtracted
     })
     
-    console.log(`✅ Working function succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${hybridEnd - hybridStart}ms`)
+    console.log(`✅ Enhanced function succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${hybridEnd - hybridStart}ms`)
     
     // Return this if it's better than previous attempts
     return {
       listing,
       metrics,
-      bestMethod: 'working-function',
+      bestMethod: 'enhanced-function',
       totalTime: hybridEnd - startTime
     }
     
   } catch (hybridError: any) {
-    console.log(`⚠️ Working function failed: ${hybridError.message}`)
+    console.log(`⚠️ Enhanced function failed: ${hybridError.message}`)
     
     metrics.push({
-      method: 'working-function',
+      method: 'enhanced-function',
       attemptNumber: 1,
       startTime: Date.now() - 1000,
       endTime: Date.now(),
