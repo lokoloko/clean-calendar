@@ -1,6 +1,7 @@
 // Enhanced Puppeteer scraper with request interception for API data capture
 import puppeteer from 'puppeteer-core'
 import { ComprehensiveAirbnbListing, AirbnbListingData } from './types/listing'
+import { dismissTranslationModal, waitForContentLoad } from './modal-handler'
 
 interface InterceptedApiData {
   pricing?: any
@@ -130,8 +131,8 @@ export async function scrapeAirbnbWithInterception(url: string): Promise<Compreh
       timeout: 60000 
     })
     
-    // Wait for main content
-    await page.waitForSelector('h1', { timeout: 15000 })
+    // Wait for content and dismiss modals
+    await waitForContentLoad(page)
     
     // Additional wait to capture more API calls
     await new Promise(resolve => setTimeout(resolve, 5000))

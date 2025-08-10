@@ -12,7 +12,10 @@ interface ScrapeOptions {
   url: string
   elements: ScrapeElement[]
   waitForTimeout?: number
-  waitForSelector?: string
+  waitForSelector?: {
+    selector: string
+    timeout?: number
+  }
   waitForFunction?: string
   gotoOptions?: {
     timeout?: number
@@ -118,7 +121,7 @@ export async function scrapeAirbnbWithHttpApi(url: string): Promise<Comprehensiv
       { selector: 'div:has-text("Check-in"):has(span)' },
       { selector: 'div:has-text("Value"):has(span)' }
     ],
-    waitForSelector: 'h1', // Wait for title to ensure page loaded
+    waitForSelector: { selector: 'h1', timeout: 10000 }, // Wait for title to ensure page loaded
     waitForTimeout: 3000, // Additional wait for dynamic content
     gotoOptions: {
       timeout: 30000,

@@ -1,6 +1,7 @@
 // Puppeteer-based scraper using Browserless.io WebSocket connection
 import puppeteer from 'puppeteer-core'
 import { ComprehensiveAirbnbListing, AirbnbListingData } from './types/listing'
+import { dismissTranslationModal, waitForContentLoad } from './modal-handler'
 import { 
   extractFromModal, 
   extractAllAmenities, 
@@ -88,15 +89,12 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       timeout: 60000 
     })
     
-    // Random delay after page load
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000))
+    // Wait for content and dismiss any blocking modals
+    await waitForContentLoad(page)
     
-    // Simulate mouse movement
+    // Simulate mouse movement for human-like behavior
     await page.mouse.move(100, 100)
     await page.mouse.move(200, 300)
-    
-    // Wait for main content
-    await page.waitForSelector('h1', { timeout: 15000 })
     
     // Extract amenities from modal with complete scrolling
     let amenitiesFromModal: string[] = []
