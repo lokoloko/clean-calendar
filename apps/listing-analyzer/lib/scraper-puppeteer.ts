@@ -20,6 +20,7 @@ import {
   extractCancellationPolicy,
   extractAllAdditionalModals
 } from './modal-extractors-enhanced'
+import { extractAllReviewsWithScroll, EnhancedReviewData } from './review-extractor-enhanced'
 
 export async function scrapeAirbnbWithPuppeteer(url: string): Promise<ComprehensiveAirbnbListing> {
   const apiKey = process.env.BROWSERLESS_API_KEY
@@ -179,8 +180,9 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       console.log('Could not extract house rules:', e.message)
     }
     
-    // Try to expand reviews section and extract all reviews
+    // Try to expand reviews section and extract all reviews with enhanced data
     let reviewsFromModal: any[] = []
+    let enhancedReviewData: EnhancedReviewData | null = null
     try {
       // Look for "Show all X reviews" button - this launches the modal
       const buttons = await page.$$('button')
@@ -242,16 +244,21 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           
           console.log('Scrollable container:', scrollableSelector || 'modal itself')
           
-          // Progressive loading: scroll and extract reviews
-          let previousReviewCount = 0
-          let currentReviewCount = 0
-          let scrollAttempts = 0
-          const maxScrollAttempts = 50
-          let allReviewsCollected: any[] = []
+          // Use enhanced review extraction with distribution and categories
+          enhancedReviewData = await extractAllReviewsWithScroll(page, 50)
+          reviewsFromModal = enhancedReviewData.reviews
           
-          do {
-            previousReviewCount = currentReviewCount
-            
+          console.log(`Extracted enhanced review data:`, {
+            rating: enhancedReviewData.overallRating,
+            totalCount: enhancedReviewData.totalCount,
+            distribution: enhancedReviewData.distribution,
+            categories: enhancedReviewData.categories,
+            reviewsCount: reviewsFromModal.length
+          })
+          
+          // Old extraction logic removed - replaced with enhanced version
+          
+          /*
             // Scroll the modal
             await page.evaluate((selector) => {
               if (selector) {
@@ -351,7 +358,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
                       .replace(reviewData.author || '', '')
                       .replace(reviewData.date || '', '')
                       .replace(/Show (more|less)/gi, '')
-                      .replace(/Translated from.*/gi, '')
+                      // .replace(/Translated from.*\gi, '')
                       .trim()
                     
                     if (allText.length > 50) {
@@ -433,6 +440,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           } while (currentReviewCount > previousReviewCount && scrollAttempts < maxScrollAttempts)
           
           console.log(`Extracted ${reviewsFromModal.length} total reviews from modal`)
+          */ // End of old extraction logic
           
           // Close modal
           await page.keyboard.press('Escape')
@@ -501,50 +509,85 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       const title = structuredData.name || metaTitle?.getAttribute('content') || getText('h1')
       const subtitle = getText('h2')
       
-      // Extract rating and reviews
+      // Extract rating and reviews from main page
       let rating = null
       let reviewCount = null
       
-      // Try multiple selectors for ratings
-      const ratingSelectors = [
-        '[aria-label*="rating"]',
-        'button[aria-label*="review"]',
-        'span._17p6nbba', // Common rating class
-        '[data-testid="reviews-summary"]',
-        'div._1s11ltsf', // Review summary container
-        'span._12si43g' // Star rating text
-      ]
-      
-      for (const selector of ratingSelectors) {
-        const element = document.querySelector(selector)
-        if (element) {
-          const ariaLabel = element.getAttribute('aria-label') || ''
-          const text = element.textContent || ''
-          const fullText = ariaLabel + ' ' + text
-          
-          // Look for rating pattern like "4.95" or "4.95 stars"
-          const ratingMatch = fullText.match(/(\d+\.?\d*)\s*(star|rating|out)/i)
-          if (ratingMatch && !rating) {
+      // Method 1: Look for pattern like "4.81 out of 5 stars from 83 reviews" or "4.81 · 83 reviews"
+      const allElements = document.querySelectorAll('span, div, button')
+      for (const el of allElements) {
+        const text = el.textContent || ''
+        const ariaLabel = el.getAttribute('aria-label') || ''
+        const fullText = text + ' ' + ariaLabel
+        
+        // Pattern 1: "X.XX out of 5 stars from Y reviews"
+        const pattern1 = fullText.match(/(\d+\.?\d*)\s*out of 5 stars?\s*from\s*(\d+)\s*reviews?/i)
+        if (pattern1) {
+          rating = parseFloat(pattern1[1])
+          reviewCount = parseInt(pattern1[2])
+          break
+        }
+        
+        // Pattern 2: "X.XX · Y reviews"
+        const pattern2 = fullText.match(/(\d+\.?\d*)\s*[·•]\s*(\d+)\s*reviews?/i)
+        if (pattern2) {
+          rating = parseFloat(pattern2[1])
+          reviewCount = parseInt(pattern2[2])
+          break
+        }
+        
+        // Pattern 3: Just rating and reviews separately
+        if (!rating) {
+          const ratingMatch = fullText.match(/(\d+\.?\d*)\s*(star|rating|out of 5)/i)
+          if (ratingMatch && parseFloat(ratingMatch[1]) <= 5.0) {
             rating = parseFloat(ratingMatch[1])
           }
-          
-          // Look for review count like "123 reviews"
-          const reviewMatch = fullText.match(/(\d+)\s*review/i)
-          if (reviewMatch && !reviewCount) {
+        }
+        
+        if (!reviewCount) {
+          const reviewMatch = fullText.match(/(\d+)\s*reviews?(?!\s*Show)/i)
+          if (reviewMatch) {
             reviewCount = parseInt(reviewMatch[1])
           }
         }
+        
+        if (rating && reviewCount) break
       }
       
-      // If still no rating, check for star rating in any element
-      if (!rating) {
-        const starElements = document.querySelectorAll('[aria-label*="star"], [aria-label*="Star"]')
-        for (const el of starElements) {
-          const label = el.getAttribute('aria-label') || ''
-          const match = label.match(/(\d+\.?\d*)\s*star/i)
-          if (match) {
-            rating = parseFloat(match[1])
-            break
+      // Method 2: Try specific selectors for ratings
+      if (!rating || !reviewCount) {
+        const ratingSelectors = [
+          '[aria-label*="rating"]',
+          'button[aria-label*="review"]',
+          'span._17p6nbba', // Common rating class
+          '[data-testid="reviews-summary"]',
+          'div._1s11ltsf', // Review summary container
+          'span._12si43g', // Star rating text
+          '[data-section-id="REVIEWS"] button'
+        ]
+        
+        for (const selector of ratingSelectors) {
+          const element = document.querySelector(selector)
+          if (element) {
+            const ariaLabel = element.getAttribute('aria-label') || ''
+            const text = element.textContent || ''
+            const fullText = ariaLabel + ' ' + text
+            
+            // Look for rating pattern like "4.95" or "4.95 stars"
+            if (!rating) {
+              const ratingMatch = fullText.match(/(\d+\.?\d*)\s*(star|rating|out)/i)
+              if (ratingMatch && parseFloat(ratingMatch[1]) <= 5.0) {
+                rating = parseFloat(ratingMatch[1])
+              }
+            }
+            
+            // Look for review count like "123 reviews"
+            if (!reviewCount) {
+              const reviewMatch = fullText.match(/(\d+)\s*review/i)
+              if (reviewMatch) {
+                reviewCount = parseInt(reviewMatch[1])
+              }
+            }
           }
         }
       }
@@ -736,30 +779,87 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       // Amenities from modal passed as parameter
       const amenities = [...new Set([...pageAmenities, ...amenitiesFromModal])]
       
-      // Extract review categories
+      // Extract review categories from main page
       const reviewCategories: Record<string, number> = {}
       const categories = ['Cleanliness', 'Accuracy', 'Communication', 'Location', 'Check-in', 'Value']
       
-      // Look for category ratings
-      categories.forEach(cat => {
-        // Find all divs and look for the category name followed by a rating
-        const allDivs = document.querySelectorAll('div, span')
-        for (const el of allDivs) {
-          const text = el.textContent || ''
-          if (text.includes(cat)) {
-            // Look for a number near this category
-            const parent = el.parentElement
-            if (parent) {
-              const parentText = parent.textContent || ''
-              const match = parentText.match(/(\d+\.?\d*)/)
-              if (match) {
+      // Method 1: Look for review categories section with ratings
+      const reviewSection = document.querySelector('[data-section-id="REVIEWS"], section[aria-labelledby*="review"]')
+      if (reviewSection) {
+        categories.forEach(cat => {
+          // Look for pattern like "Cleanliness\n4.9" or "Cleanliness 4.9"
+          const regex = new RegExp(`${cat}[\\s\\n]*(\\d+\\.\\d+)`, 'i')
+          const match = reviewSection.textContent?.match(regex)
+          if (match) {
+            reviewCategories[cat.toLowerCase().replace('-', '')] = parseFloat(match[1])
+          }
+        })
+      }
+      
+      // Method 2: Look for individual category elements
+      if (Object.keys(reviewCategories).length === 0) {
+        categories.forEach(cat => {
+          // Try multiple selector strategies
+          const selectors = [
+            `[aria-label*="${cat}"]`,
+            `div:has-text("${cat}")`,
+            `span:has-text("${cat}")`
+          ]
+          
+          for (const selector of selectors) {
+            try {
+              // Find elements containing the category name
+              const elements = document.querySelectorAll('div, span')
+              for (const el of elements) {
+                const text = el.textContent || ''
+                if (text.includes(cat) && !text.includes('Show more')) {
+                  // Look for rating in same element or nearby
+                  const fullText = el.parentElement?.textContent || text
+                  
+                  // Try multiple patterns for extracting the rating
+                  const patterns = [
+                    new RegExp(`${cat}[\\s\\n]*(\\d+\\.\\d+)`, 'i'),
+                    new RegExp(`(\\d+\\.\\d+)[\\s\\n]*${cat}`, 'i'),
+                    new RegExp(`${cat}.*?(\\d+\\.\\d+)`, 'i')
+                  ]
+                  
+                  for (const pattern of patterns) {
+                    const match = fullText.match(pattern)
+                    if (match && parseFloat(match[1]) <= 5.0) {
+                      reviewCategories[cat.toLowerCase().replace('-', '')] = parseFloat(match[1])
+                      break
+                    }
+                  }
+                  
+                  if (reviewCategories[cat.toLowerCase().replace('-', '')]) break
+                }
+              }
+            } catch (e) {
+              // Continue if selector fails
+            }
+            
+            if (reviewCategories[cat.toLowerCase().replace('-', '')]) break
+          }
+        })
+      }
+      
+      // Method 3: Look for a grid or list of ratings
+      if (Object.keys(reviewCategories).length < 6) {
+        // Sometimes ratings are in a specific container
+        const ratingContainers = document.querySelectorAll('[class*="rating"], [class*="review"], [class*="score"]')
+        ratingContainers.forEach(container => {
+          const text = container.textContent || ''
+          categories.forEach(cat => {
+            if (!reviewCategories[cat.toLowerCase().replace('-', '')]) {
+              const regex = new RegExp(`${cat}[\\s\\n]*(\\d+\\.\\d+)`, 'i')
+              const match = text.match(regex)
+              if (match && parseFloat(match[1]) <= 5.0) {
                 reviewCategories[cat.toLowerCase().replace('-', '')] = parseFloat(match[1])
-                break
               }
             }
-          }
-        }
-      })
+          })
+        })
+      }
       
       // Extract individual reviews - combine modal reviews with any on page
       // Reviews from modal were passed as parameter
@@ -912,7 +1012,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
     
     await page.close()
     
-    return parsePuppeteerResponse(url, data, additionalModals)
+    return parsePuppeteerResponse(url, data, additionalModals, enhancedReviewData)
   } catch (error) {
     console.error('Puppeteer scraping error:', error)
     throw error
@@ -921,7 +1021,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
   }
 }
 
-function parsePuppeteerResponse(url: string, data: any, additionalModals?: any): ComprehensiveAirbnbListing {
+function parsePuppeteerResponse(url: string, data: any, additionalModals?: any, enhancedReviewData?: EnhancedReviewData | null): ComprehensiveAirbnbListing {
   // Use full description from modal if available, otherwise use page description
   const fullDescription = additionalModals?.description?.fullText || 
                          additionalModals?.description?.overview ||
@@ -980,12 +1080,12 @@ function parsePuppeteerResponse(url: string, data: any, additionalModals?: any):
     
     reviews: {
       summary: {
-        rating: data.rating || 4.5,
-        totalCount: data.reviewCount || 0,
-        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-        categories: data.reviewCategories || {}
+        rating: enhancedReviewData?.overallRating || data.rating || 4.5,
+        totalCount: enhancedReviewData?.totalCount || data.reviewCount || 0,
+        distribution: enhancedReviewData?.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        categories: enhancedReviewData?.categories || data.reviewCategories || {}
       },
-      recentReviews: data.reviews || []
+      recentReviews: enhancedReviewData?.reviews || data.reviews || []
     },
     
     houseRules: {
