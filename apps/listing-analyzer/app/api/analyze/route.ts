@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { scrapeAirbnbHybrid, hybridToSimplified } from '@/lib/scraper-hybrid'
-import { analyzeListingWithAI } from '@/lib/analyzer'
+import { scrapeAirbnbHybrid } from '@/lib/scraper-hybrid'
+import { analyzeListingWithEnhancedAI } from '@/lib/analyzer-enhanced'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,37 +24,42 @@ export async function POST(request: NextRequest) {
 
     console.log('Analyzing listing:', url)
 
-    // Use hybrid scraper for maximum reliability
+    // Use hybrid scraper for comprehensive data
     const hybridResult = await scrapeAirbnbHybrid(url)
-    const listingData = hybridToSimplified(hybridResult)
+    const comprehensiveData = hybridResult.listing
     
-    console.log('Scraped data:', {
+    console.log('Scraped comprehensive data:', {
       method: hybridResult.bestMethod,
-      title: listingData.title,
-      price: listingData.price,
-      rating: listingData.rating,
-      reviewCount: listingData.reviewCount,
-      amenities: listingData.amenities.length,
-      dataQuality: listingData.dataQuality,
-      hasReviews: (listingData.recentReviews?.length || 0) > 0,
-      hasCategories: !!listingData.reviewCategories,
+      title: comprehensiveData.title,
+      basePrice: comprehensiveData.pricing?.basePrice,
+      rating: comprehensiveData.reviews?.summary?.rating,
+      reviewCount: comprehensiveData.reviews?.summary?.totalCount,
+      amenities: comprehensiveData.amenities?.basic?.length || 0,
+      dataCompleteness: comprehensiveData.meta?.dataCompleteness,
+      hasReviewDistribution: !!comprehensiveData.reviews?.summary?.distribution,
+      hasReviewCategories: !!comprehensiveData.reviews?.summary?.categories,
       totalTime: `${hybridResult.totalTime}ms`,
       methodsAttempted: hybridResult.metrics.length,
       successfulMethods: hybridResult.metrics.filter(m => m.success).length
     })
 
-    // Step 2: Analyze with AI
-    const analysis = await analyzeListingWithAI(listingData)
+    // Step 2: Analyze with enhanced AI
+    const analysis = await analyzeListingWithEnhancedAI(comprehensiveData)
     console.log('Analysis complete:', {
       score: analysis.score,
       recommendations: analysis.recommendations.length
     })
 
-    // Step 3: Return combined results
+    // Step 3: Return comprehensive results
     return NextResponse.json({
       success: true,
-      listing: listingData,
-      analysis
+      data: comprehensiveData,
+      analysis,
+      metrics: {
+        bestMethod: hybridResult.bestMethod,
+        totalTime: hybridResult.totalTime,
+        dataCompleteness: comprehensiveData.meta?.dataCompleteness || 0
+      }
     })
 
   } catch (error) {

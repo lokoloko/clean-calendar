@@ -1,9 +1,8 @@
-// Hybrid scraper that combines multiple methods for maximum reliability
+// Hybrid scraper - uses vision-based extraction with fallback to simple HTML
 import { ComprehensiveAirbnbListing, AirbnbListingData } from './types/listing'
-import { scrapeAirbnbWithHttpApi, httpApiToSimplified } from './scraper-http-api'
-import { scrapeAirbnbWithInterception } from './scraper-interceptor'
-import { scrapeAirbnbWithProxy } from './scraper-proxy'
-import { scrapeAirbnbWithPuppeteer, puppeteerToSimplified } from './scraper-puppeteer'
+import { scrapeWithVision } from './scraper-vision'
+import { scrapeWithWorkingFunction } from './scraper-working-function'
+import { scrapeSimple } from './scraper-simple'
 
 export interface ScrapingMetrics {
   method: string
@@ -23,255 +22,174 @@ export interface HybridScrapingResult {
   totalTime: number
 }
 
-// Scraping methods in order of preference (fastest to most comprehensive)
-const SCRAPING_METHODS = [
-  { name: 'http-api', fn: scrapeAirbnbWithHttpApi, timeout: 15000 },
-  { name: 'interceptor', fn: scrapeAirbnbWithInterception, timeout: 30000 },
-  { name: 'proxy-residential', fn: (url: string) => scrapeAirbnbWithProxy(url, { type: 'residential', retryWithDifferentProxy: true }), timeout: 45000 },
-  { name: 'puppeteer-standard', fn: scrapeAirbnbWithPuppeteer, timeout: 60000 }
-]
-
 export async function scrapeAirbnbHybrid(url: string): Promise<HybridScrapingResult> {
   const startTime = Date.now()
   const metrics: ScrapingMetrics[] = []
-  let bestListing: ComprehensiveAirbnbListing | null = null
-  let bestQuality = 0
-  let bestMethod = ''
   
-  console.log('Starting hybrid scraping for:', url)
+  console.log('🚀 Starting hybrid scraping for:', url)
   
-  // Try each method sequentially (could be parallel for speed)
-  for (let i = 0; i < SCRAPING_METHODS.length; i++) {
-    const method = SCRAPING_METHODS[i]
-    const methodStartTime = Date.now()
-    
-    console.log(`Attempting method ${i + 1}/${SCRAPING_METHODS.length}: ${method.name}`)
-    
+  // Skip vision-based scraping for now (it's timing out)
+  const skipVision = true
+  
+  if (!skipVision) {
+    // Try vision-based scraping first
     try {
-      // Set up timeout for this method
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error(`Timeout after ${method.timeout}ms`)), method.timeout)
-      })
-      
-      // Race between scraping and timeout
-      const listing = await Promise.race([
-        method.fn(url),
-        timeoutPromise
-      ])
-      
-      const methodEndTime = Date.now()
-      const dataQuality = listing.meta?.dataCompleteness || calculateDataQuality(listing)
-      const fieldsExtracted = countExtractedFields(listing)
-      
-      // Record metrics
-      const metric: ScrapingMetrics = {
-        method: method.name,
-        attemptNumber: i + 1,
-        startTime: methodStartTime,
-        endTime: methodEndTime,
-        success: true,
-        dataQuality,
-        fieldsExtracted
+      console.log('📸 Attempting vision-based extraction...')
+      const visionStart = Date.now()
+      const listing = await scrapeWithVision(url)
+      const visionEnd = Date.now()
+    
+    const dataQuality = listing.meta?.dataCompleteness || 0
+    const fieldsExtracted = countExtractedFields(listing)
+    
+    metrics.push({
+      method: 'vision',
+      attemptNumber: 1,
+      startTime: visionStart,
+      endTime: visionEnd,
+      success: true,
+      dataQuality,
+      fieldsExtracted
+    })
+    
+    console.log(`✅ Vision scraper succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${visionEnd - visionStart}ms`)
+    
+    // If we got good data, return it
+    if (dataQuality >= 30) {
+      return {
+        listing,
+        metrics,
+        bestMethod: 'vision',
+        totalTime: visionEnd - startTime
       }
-      metrics.push(metric)
+    }
+    
+      console.log(`⚠️ Vision quality too low (${dataQuality}%), trying hybrid function approach...`)
       
-      console.log(`✓ ${method.name} succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${methodEndTime - methodStartTime}ms`)
+    } catch (visionError: any) {
+      console.log(`⚠️ Vision scraping failed: ${visionError.message}`)
       
-      // Keep the best result
-      if (dataQuality > bestQuality) {
-        bestListing = listing
-        bestQuality = dataQuality
-        bestMethod = method.name
-      }
-      
-      // If we got excellent quality (>90%), no need to try other methods
-      if (dataQuality >= 90) {
-        console.log('Excellent quality achieved, stopping here')
-        break
-      }
-      
-    } catch (error: any) {
-      const methodEndTime = Date.now()
-      
-      // Record failure metrics
-      const metric: ScrapingMetrics = {
-        method: method.name,
-        attemptNumber: i + 1,
-        startTime: methodStartTime,
-        endTime: methodEndTime,
+      metrics.push({
+        method: 'vision',
+        attemptNumber: 1,
+        startTime,
+        endTime: Date.now(),
         success: false,
         dataQuality: 0,
         fieldsExtracted: 0,
-        error: error.message
-      }
-      metrics.push(metric)
-      
-      console.log(`✗ ${method.name} failed: ${error.message}`)
-      
-      // Continue to next method
+        error: visionError.message
+      })
     }
   }
   
-  // If no method succeeded, try a fallback merge strategy
-  if (!bestListing) {
-    console.log('All methods failed, attempting fallback merge...')
-    bestListing = createFallbackListing(url, metrics)
-    bestMethod = 'fallback'
-  }
-  
-  const totalTime = Date.now() - startTime
-  
-  // Log final results
-  console.log('\n=== Hybrid Scraping Summary ===')
-  console.log(`Total time: ${totalTime}ms`)
-  console.log(`Methods tried: ${metrics.length}`)
-  console.log(`Best method: ${bestMethod} (${bestQuality}% quality)`)
-  console.log(`Success rate: ${metrics.filter(m => m.success).length}/${metrics.length}`)
-  
-  return {
-    listing: bestListing,
-    metrics,
-    bestMethod,
-    totalTime
-  }
-}
-
-// Merge multiple partial results into one comprehensive listing
-export async function scrapeAirbnbWithMerge(url: string): Promise<ComprehensiveAirbnbListing> {
-  const results: ComprehensiveAirbnbListing[] = []
-  
-  // Run multiple methods in parallel for speed
-  const promises = SCRAPING_METHODS.slice(0, 3).map(async (method) => {
-    try {
-      const listing = await Promise.race([
-        method.fn(url),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), method.timeout)
-        )
-      ])
-      return listing
-    } catch {
-      return null
-    }
-  })
-  
-  const parallelResults = await Promise.all(promises)
-  
-  // Filter out nulls
-  parallelResults.forEach(result => {
-    if (result) results.push(result)
-  })
-  
-  if (results.length === 0) {
-    throw new Error('All parallel scraping methods failed')
-  }
-  
-  // Merge all results, prioritizing non-null/non-default values
-  return mergeListings(results)
-}
-
-function mergeListings(listings: ComprehensiveAirbnbListing[]): ComprehensiveAirbnbListing {
-  if (listings.length === 0) throw new Error('No listings to merge')
-  if (listings.length === 1) return listings[0]
-  
-  // Start with the first listing as base
-  const merged = { ...listings[0] }
-  
-  // Merge each subsequent listing
-  for (let i = 1; i < listings.length; i++) {
-    const listing = listings[i]
+  // Try working function approach (modals + screenshots)
+  try {
+    console.log('🔄 Attempting working function extraction...')
+    const hybridStart = Date.now()
+    const listing = await scrapeWithWorkingFunction(url)
+    const hybridEnd = Date.now()
     
-    // Merge basic fields (prefer non-default values)
-    if (!merged.title || merged.title === 'Airbnb Listing') {
-      merged.title = listing.title
-    }
+    const dataQuality = listing.meta?.dataCompleteness || 0
+    const fieldsExtracted = countExtractedFields(listing)
     
-    if (!merged.subtitle && listing.subtitle) {
-      merged.subtitle = listing.subtitle
-    }
-    
-    if (!merged.description && listing.description) {
-      merged.description = listing.description
-    }
-    
-    // Merge pricing (prefer actual values over defaults)
-    if (merged.pricing.basePrice === 150 && listing.pricing.basePrice !== 150) {
-      merged.pricing.basePrice = listing.pricing.basePrice
-    }
-    
-    // Merge reviews (prefer higher counts)
-    if (listing.reviews.summary.totalCount > merged.reviews.summary.totalCount) {
-      merged.reviews = listing.reviews
-    }
-    
-    // Merge amenities (combine unique)
-    const combinedAmenities = new Set([
-      ...(merged.amenities.basic || []),
-      ...(listing.amenities.basic || [])
-    ])
-    merged.amenities.basic = Array.from(combinedAmenities)
-    
-    // Merge photos (combine unique URLs)
-    const photoUrls = new Set(merged.photos.map(p => p.url))
-    listing.photos.forEach(photo => {
-      if (!photoUrls.has(photo.url)) {
-        merged.photos.push(photo)
-        photoUrls.add(photo.url)
-      }
+    metrics.push({
+      method: 'working-function',
+      attemptNumber: 1,
+      startTime: hybridStart,
+      endTime: hybridEnd,
+      success: true,
+      dataQuality,
+      fieldsExtracted
     })
     
-    // Merge host info (prefer complete data)
-    if (listing.host.name !== 'Host' && merged.host.name === 'Host') {
-      merged.host = listing.host
+    console.log(`✅ Working function succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${hybridEnd - hybridStart}ms`)
+    
+    // Return this if it's better than previous attempts
+    return {
+      listing,
+      metrics,
+      bestMethod: 'working-function',
+      totalTime: hybridEnd - startTime
     }
     
-    // Update data completeness
-    merged.meta.dataCompleteness = calculateDataQuality(merged)
+  } catch (hybridError: any) {
+    console.log(`⚠️ Working function failed: ${hybridError.message}`)
+    
+    metrics.push({
+      method: 'working-function',
+      attemptNumber: 1,
+      startTime: Date.now() - 1000,
+      endTime: Date.now(),
+      success: false,
+      dataQuality: 0,
+      fieldsExtracted: 0,
+      error: hybridError.message
+    })
   }
   
-  return merged
-}
-
-function calculateDataQuality(listing: ComprehensiveAirbnbListing): number {
-  let score = 0
-  let total = 0
-  
-  // Check each important field
-  const checks = [
-    { value: listing.title && listing.title !== 'Airbnb Listing', weight: 10 },
-    { value: listing.subtitle, weight: 5 },
-    { value: listing.description && listing.description.length > 50, weight: 10 },
-    { value: listing.pricing.basePrice && listing.pricing.basePrice !== 150, weight: 15 },
-    { value: listing.reviews.summary.rating && listing.reviews.summary.rating !== 4.5, weight: 10 },
-    { value: listing.reviews.summary.totalCount > 0, weight: 10 },
-    { value: listing.amenities.basic && listing.amenities.basic.length > 10, weight: 10 },
-    { value: listing.photos && listing.photos.length > 5, weight: 10 },
-    { value: listing.host.name && listing.host.name !== 'Host', weight: 10 },
-    { value: listing.reviews.recentReviews && listing.reviews.recentReviews.length > 0, weight: 10 }
-  ]
-  
-  checks.forEach(check => {
-    total += check.weight
-    if (check.value) score += check.weight
-  })
-  
-  return Math.round((score / total) * 100)
+  // Fall back to simple HTML scraping
+  try {
+    console.log('📄 Falling back to HTML extraction...')
+    const simpleStart = Date.now()
+    const listing = await scrapeSimple(url)
+    const simpleEnd = Date.now()
+    
+    const dataQuality = listing.meta?.dataCompleteness || 0
+    const fieldsExtracted = countExtractedFields(listing)
+    
+    metrics.push({
+      method: 'simple',
+      attemptNumber: 1,
+      startTime: simpleStart,
+      endTime: simpleEnd,
+      success: true,
+      dataQuality,
+      fieldsExtracted
+    })
+    
+    console.log(`✅ Simple scraper succeeded: Quality=${dataQuality}%, Fields=${fieldsExtracted}, Time=${simpleEnd - simpleStart}ms`)
+    
+    return {
+      listing,
+      metrics,
+      bestMethod: 'simple',
+      totalTime: simpleEnd - startTime
+    }
+    
+  } catch (simpleError: any) {
+    console.log(`❌ All scraping methods failed`)
+    
+    metrics.push({
+      method: 'simple',
+      attemptNumber: 1,
+      startTime: Date.now() - 1000,
+      endTime: Date.now(),
+      success: false,
+      dataQuality: 0,
+      fieldsExtracted: 0,
+      error: simpleError.message
+    })
+    
+    // Return minimal listing on complete failure
+    const fallbackListing = createFallbackListing(url)
+    
+    return {
+      listing: fallbackListing,
+      metrics,
+      bestMethod: 'fallback',
+      totalTime: Date.now() - startTime
+    }
+  }
 }
 
 function countExtractedFields(listing: ComprehensiveAirbnbListing): number {
   let count = 0
   
   if (listing.title && listing.title !== 'Airbnb Listing') count++
-  if (listing.subtitle) count++
-  if (listing.description) count++
   if (listing.pricing.basePrice && listing.pricing.basePrice !== 150) count++
-  if (listing.pricing.cleaningFee) count++
-  if (listing.pricing.serviceFee) count++
   if (listing.reviews.summary.rating && listing.reviews.summary.rating !== 4.5) count++
   if (listing.reviews.summary.totalCount > 0) count++
   if (listing.amenities.basic && listing.amenities.basic.length > 0) count += listing.amenities.basic.length
-  if (listing.photos && listing.photos.length > 0) count += listing.photos.length
-  if (listing.reviews.recentReviews && listing.reviews.recentReviews.length > 0) count += listing.reviews.recentReviews.length
   if (listing.host.name && listing.host.name !== 'Host') count++
   if (listing.host.isSuperhost) count++
   if (listing.spaces.bedrooms > 0) count++
@@ -281,14 +199,13 @@ function countExtractedFields(listing: ComprehensiveAirbnbListing): number {
   return count
 }
 
-function createFallbackListing(url: string, metrics: ScrapingMetrics[]): ComprehensiveAirbnbListing {
-  // Create a minimal listing with error information
+function createFallbackListing(url: string): ComprehensiveAirbnbListing {
   return {
     id: url.match(/rooms\/(\d+)/)?.[1] || '',
     url,
-    title: 'Airbnb Listing (Extraction Failed)',
+    title: 'Airbnb Listing (Unable to Load)',
     subtitle: undefined,
-    description: 'Unable to extract listing details. All scraping methods failed.',
+    description: 'Unable to extract listing details.',
     propertyType: 'Unknown',
     
     guestCapacity: {
@@ -331,13 +248,13 @@ function createFallbackListing(url: string, metrics: ScrapingMetrics[]): Compreh
         totalCount: 0,
         distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
         categories: {
-        cleanliness: 0,
-        accuracy: 0,
-        communication: 0,
-        location: 0,
-        checkIn: 0,
-        value: 0
-      }
+          cleanliness: 0,
+          accuracy: 0,
+          communication: 0,
+          location: 0,
+          checkIn: 0,
+          value: 0
+        }
       },
       recentReviews: []
     },
@@ -358,12 +275,12 @@ function createFallbackListing(url: string, metrics: ScrapingMetrics[]): Compreh
       scrapedAt: new Date().toISOString(),
       scrapeVersion: 'fallback',
       dataCompleteness: 0,
-      errors: metrics.filter(m => !m.success).map(m => `${m.method}: ${m.error}`)
+      errors: ['All scraping methods failed']
     }
   }
 }
 
-// Convert comprehensive to simplified format
+// Convert comprehensive to simplified format (for backward compatibility)
 export function hybridToSimplified(result: HybridScrapingResult): AirbnbListingData {
   const listing = result.listing
   

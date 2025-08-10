@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import ScoreDisplay from '@/components/ScoreDisplay'
-import RecommendationCard from '@/components/RecommendationCard'
+import ScoreDisplayEnhanced from '@/components/ScoreDisplayEnhanced'
+import RecommendationCardEnhanced from '@/components/RecommendationCardEnhanced'
 import ReviewAnalytics from '@/components/ReviewAnalytics'
 import AmenitiesAnalysis from '@/components/AmenitiesAnalysis'
 import PricingInsights from '@/components/PricingInsights'
@@ -13,12 +13,12 @@ import HostMetrics from '@/components/HostMetrics'
 import UpgradePrompt from '@/components/UpgradePrompt'
 import { ArrowLeft, Download, Share2, RefreshCw, TrendingUp, AlertCircle, Star, DollarSign, Home, Users, Calendar, Shield } from 'lucide-react'
 import type { ComprehensiveAirbnbListing } from '@/lib/types/listing'
-import type { AnalysisResult } from '@/lib/analyzer'
+import type { EnhancedAnalysisResult } from '@/lib/analyzer-enhanced'
 
 export default function AnalyzePage() {
   const router = useRouter()
   const [listing, setListing] = useState<ComprehensiveAirbnbListing | null>(null)
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
+  const [analysis, setAnalysis] = useState<EnhancedAnalysisResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -204,13 +204,9 @@ export default function AnalyzePage() {
               </div>
             </div>
 
-            {/* Score Display */}
+            {/* Enhanced Score Display */}
             {analysis && (
-              <ScoreDisplay 
-                score={analysis.score} 
-                summary={analysis.summary} 
-                categories={analysis.categories} 
-              />
+              <ScoreDisplayEnhanced analysis={analysis} />
             )}
 
             {/* Top Recommendations */}
@@ -222,7 +218,7 @@ export default function AnalyzePage() {
                 
                 <div className="space-y-4">
                   {analysis.recommendations.map((rec, index) => (
-                    <RecommendationCard 
+                    <RecommendationCardEnhanced 
                       key={rec.id} 
                       recommendation={rec} 
                       index={index + 1}
@@ -269,7 +265,7 @@ export default function AnalyzePage() {
             host={listing.host}
             cancellationPolicy={listing.cancellationPolicy}
             houseRules={listing.houseRules}
-            safetyFeatures={listing.amenities?.safety || []}
+            safetyFeatures={listing.amenities?.homeSafety || []}
           />
         )}
 

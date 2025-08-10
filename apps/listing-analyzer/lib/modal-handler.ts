@@ -48,7 +48,7 @@ export async function dismissTranslationModal(page: Page): Promise<void> {
       }
     }
   } catch (error) {
-    console.log('Error handling modals:', error.message)
+    console.log('Error handling modals:', error instanceof Error ? error.message : String(error))
   }
 }
 
