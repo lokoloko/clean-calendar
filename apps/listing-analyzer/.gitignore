@@ -1,0 +1,22 @@
+# Test artifacts
+*.jpg
+*.jpeg
+*.png
+reviews-data.json
+reviews-isolated-results.json
+*-screenshot-*.jpg
+
+# Debug files
+debug-*.jpg
+modal-*.jpg
+review-screenshot-*.jpg
+
+# Environment
+.env.local
+.env
+
+# Node
+node_modules/
+
+# Test output
+test-output/

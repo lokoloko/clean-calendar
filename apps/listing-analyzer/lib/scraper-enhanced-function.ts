@@ -1,6 +1,7 @@
 // Enhanced Function API Implementation with Quick Win Improvements
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { ComprehensiveAirbnbListing } from './types/listing'
+import { extractRatingsFromScreenshot } from './extract-ratings-only'
 
 interface ModalScreenshots {
   main?: string
@@ -69,13 +70,45 @@ export async function scrapeWithEnhancedFunction(url: string): Promise<Comprehen
       extractedData.amenities = await extractWithEnhancedVision(screenshots.amenities, geminiKey, 'amenities')
     }
     
+    // Extract review ratings from screenshots
     if (screenshots.reviews && screenshots.reviews.length > 0) {
-      console.log('💬 Extracting all reviews...')
-      extractedData.reviews = []
-      for (let i = 0; i < screenshots.reviews.length; i++) {
-        const reviewData = await extractWithEnhancedVision(screenshots.reviews[i], geminiKey, 'reviews', i)
-        if (reviewData) extractedData.reviews.push(reviewData)
+      console.log('💬 Extracting review ratings from screenshot...')
+      
+      // Use our specialized rating extraction for the first screenshot
+      const ratingSummary = await extractRatingsFromScreenshot(screenshots.reviews[0], geminiKey)
+      
+      if (ratingSummary) {
+        console.log(`  ✅ Overall rating: ${ratingSummary.overallRating}`)
+        console.log(`  ✅ Total reviews: ${ratingSummary.totalReviews}`)
+        console.log(`  ✅ Categories: ${Object.values(ratingSummary.categoryRatings).filter(v => v > 0).length}`)
+        
+        // Store the rating data in a format compatible with our structure
+        extractedData.reviews = [{
+          overall: {
+            rating: ratingSummary.overallRating,
+            totalCount: ratingSummary.totalReviews,
+            categories: ratingSummary.categoryRatings,
+            guestFavorite: ratingSummary.guestFavorite
+          },
+          reviews: [] // Individual reviews would go here if we had them
+        }]
+      } else {
+        // Fallback to Vision AI if rating extraction fails
+        console.log('  ⚠️ Rating extraction failed, falling back to Vision AI...')
+        extractedData.reviews = []
+        for (let i = 0; i < screenshots.reviews.length; i++) {
+          const reviewData = await extractWithEnhancedVision(screenshots.reviews[i], geminiKey, 'reviews', i)
+          if (reviewData) extractedData.reviews.push(reviewData)
+        }
       }
+    } else if (screenshots.reviewsData) {
+      // Use DOM-extracted data if available (shouldn't happen but kept for compatibility)
+      console.log('💬 Using DOM-extracted reviews data...')
+      extractedData.reviews = [{
+        overall: screenshots.reviewsData.summary,
+        reviews: screenshots.reviewsData.reviews
+      }]
+      console.log(`  ✅ Extracted ${screenshots.reviewsData.totalCount} reviews from DOM`)
     }
     
     if (screenshots.safety) {
@@ -406,17 +439,16 @@ export default async function({ page }) {
       logs.push('Amenities error: ' + e.message);
     }
     
-    // REVIEWS MODAL - Enhanced with better scrolling
+    // REVIEWS MODAL - Enhanced with DOM extraction and better scrolling
     try {
       logs.push('Opening reviews modal...');
       
       await dismissAllModals();
       
       const reviewsClicked = await page.evaluate(() => {
-        // Try multiple selectors
+        // Try multiple selectors (fixed - removed invalid :has-text selector)
         const selectors = [
           'a[href*="/reviews"]',
-          'button:has-text("reviews")',
           'button[aria-label*="review"]',
           '[data-testid*="review"]'
         ];
@@ -450,44 +482,380 @@ export default async function({ page }) {
       });
       
       if (reviewsClicked) {
-        await wait(2500);
+        await wait(3000); // Give more time for modal to load
         
         const modalExists = await page.$('[role="dialog"]');
         if (modalExists) {
-          logs.push('Reviews modal opened, capturing multiple pages...');
+          logs.push('Reviews modal opened, waiting for content to load...');
           
-          // QUICK WIN 5: Capture more review pages
-          for (let i = 0; i < 5; i++) { // Increased from 3 to 5
-            const screenshot = await page.screenshot({
-              type: 'jpeg',
-              quality: 85,
-              encoding: 'base64',
-              fullPage: false
+          // Wait for review content to appear
+          await wait(2000);
+          
+          // Extract review summary first
+          const reviewSummary = await page.evaluate(() => {
+            const modal = document.querySelector('[role="dialog"]');
+            if (!modal) return null;
+            
+            const modalText = modal.innerText || '';
+            
+            // Extract overall rating
+            const ratingMatch = modalText.match(/Rated.*?(\\d+\\.\\d+|\\d+)/);
+            const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
+            
+            // Extract total count
+            const countMatch = modalText.match(/(\\d+) of (\\d+) items showing/);
+            const totalCount = countMatch ? parseInt(countMatch[2]) : null;
+            
+            // Extract category ratings
+            const categories = {};
+            const categoryPatterns = {
+              'cleanliness': /Cleanliness.*?(\\d+\\.\\d+|\\d+)/i,
+              'accuracy': /Accuracy.*?(\\d+\\.\\d+|\\d+)/i,
+              'checkin': /Check-?in.*?(\\d+\\.\\d+|\\d+)/i,
+              'communication': /Communication.*?(\\d+\\.\\d+|\\d+)/i,
+              'location': /Location.*?(\\d+\\.\\d+|\\d+)/i,
+              'value': /Value.*?(\\d+\\.\\d+|\\d+)/i
+            };
+            
+            Object.entries(categoryPatterns).forEach(([key, pattern]) => {
+              const match = modalText.match(pattern);
+              if (match) {
+                categories[key] = parseFloat(match[1]);
+              }
             });
-            screenshots.reviews.push(screenshot);
+            
+            return { rating, totalCount, categories };
+          });
+          
+          screenshots.reviewSummary = reviewSummary;
+          logs.push('Review summary: ' + JSON.stringify(reviewSummary));
+          
+          // Find and scroll the actual scrollable area in the modal
+          await page.evaluate(() => {
+            const modal = document.querySelector('[role="dialog"]');
+            if (!modal) return;
+            
+            // The modal structure often has the scrollable content deeper in the DOM
+            // Try multiple strategies to find the scrollable container
+            let scrollContainer = null;
+            
+            // Strategy 1: Look for element with overflow styles
+            const allDivs = modal.querySelectorAll('div');
+            for (const div of allDivs) {
+              const style = window.getComputedStyle(div);
+              if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && 
+                  div.scrollHeight > div.clientHeight) {
+                scrollContainer = div;
+                break;
+              }
+            }
+            
+            // Strategy 2: Look for the largest container that might be scrollable
+            if (!scrollContainer) {
+              const containers = Array.from(modal.querySelectorAll('div')).filter(div => {
+                return div.scrollHeight > 500; // Likely to contain reviews
+              });
+              if (containers.length > 0) {
+                scrollContainer = containers[0];
+              }
+            }
+            
+            // Strategy 3: Just try the modal itself
+            if (!scrollContainer) {
+              scrollContainer = modal;
+            }
+            
+            // Scroll to show reviews (past the rating section)
+            scrollContainer.scrollBy(0, 600);
+          });
+          await wait(1500);
+          
+          // Extract all reviews with DOM parsing and scrolling
+          const allReviews = [];
+          const seenReviews = new Set();
+          let scrollAttempts = 0;
+          const maxScrolls = 10;
+          
+          while (scrollAttempts < maxScrolls) {
+            // Extract visible reviews from DOM with improved parsing
+            const visibleReviews = await page.evaluate(() => {
+              const modal = document.querySelector('[role="dialog"]');
+              if (!modal) return [];
+              
+              const reviews = [];
+              const processedTexts = new Set();
+              
+              // Strategy 1: Look for review containers with avatar images
+              const allDivs = Array.from(modal.querySelectorAll('div'));
+              
+              // Find containers that likely contain reviews (have avatar + text)  
+              const potentialReviews = allDivs.filter(div => {
+                // Look for any image that might be an avatar
+                const hasAvatar = div.querySelector('img');
+                const text = div.innerText || '';
+                const hasReviewContent = text.length > 30 && text.length < 3000;
+                
+                // More flexible review detection - look for date patterns OR stay info
+                const hasDatePattern = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)/i) || 
+                                       text.match(/\\d+\\s+(days?|weeks?|months?)\\s+ago/i);
+                const hasStayInfo = text.includes('Stayed') || text.includes('nights') || text.includes('week');
+                
+                // Exclude overall rating and category rating sections
+                const isRatingSection = text.includes('Overall rating') || 
+                                       text.includes('Cleanliness') && text.includes('Accuracy') && text.includes('Location');
+                
+                return hasAvatar && hasReviewContent && (hasDatePattern || hasStayInfo) && !isRatingSection;
+              });
+              
+              potentialReviews.forEach(container => {
+                const text = container.innerText || '';
+                
+                // Skip if we've already processed this text
+                if (processedTexts.has(text)) return;
+                processedTexts.add(text);
+                
+                const lines = text.split('\\n').map(l => l.trim()).filter(l => l);
+                
+                if (lines.length < 3) return;
+                
+                const review = {
+                  name: '',
+                  location: '',
+                  date: '',
+                  rating: 5,
+                  text: '',
+                  stayDuration: ''
+                };
+                
+                let currentLine = 0;
+                
+                // Parse reviewer name (usually first line)
+                review.name = lines[currentLine++] || '';
+                
+                // Parse location or "X years on Airbnb" (usually second line)
+                if (currentLine < lines.length) {
+                  const secondLine = lines[currentLine];
+                  if (secondLine.includes(',') || secondLine.includes('on Airbnb')) {
+                    review.location = secondLine;
+                    currentLine++;
+                  }
+                }
+                
+                // Find the rating/date line
+                let foundMetadata = false;
+                for (let i = currentLine; i < Math.min(currentLine + 3, lines.length); i++) {
+                  const line = lines[i];
+                  
+                  // This line contains rating and date info
+                  if (line.includes('star') || line.includes('Rating')) {
+                    // Extract rating
+                    const ratingMatch = line.match(/(\\d+)\\s*star/i);
+                    if (ratingMatch) {
+                      review.rating = parseInt(ratingMatch[1]);
+                    }
+                    
+                    // Extract date - look for month names or "ago" patterns
+                    const monthMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{4}/i);
+                    const agoMatch = line.match(/(\\d+\\s+(weeks?|days?|months?)\\s+ago)/i);
+                    
+                    if (monthMatch) {
+                      review.date = monthMatch[0];
+                    } else if (agoMatch) {
+                      review.date = agoMatch[0];
+                    } else {
+                      // Try to extract date from the line (e.g., "· July 2025 ·")
+                      const dateSegment = line.split('·').find(segment => 
+                        segment.match(/(January|February|March|April|May|June|July|August|September|October|November|December|\\d+\\s+(weeks?|days?|months?)\\s+ago)/i)
+                      );
+                      if (dateSegment) {
+                        review.date = dateSegment.trim();
+                      }
+                    }
+                    
+                    // Extract stay duration if present
+                    const stayMatch = line.match(/Stayed\\s+([^·]+)/i);
+                    if (stayMatch) {
+                      review.stayDuration = stayMatch[1].trim();
+                    }
+                    
+                    foundMetadata = true;
+                    currentLine = i + 1;
+                    break;
+                  }
+                }
+                
+                // Collect review text
+                const reviewTextLines = [];
+                let inHostResponse = false;
+                
+                for (let i = currentLine; i < lines.length; i++) {
+                  const line = lines[i];
+                  
+                  // Check for response marker
+                  if (line.startsWith('Response from')) {
+                    inHostResponse = true;
+                    continue;
+                  }
+                  
+                  // Stop at translation markers
+                  if (line === 'Show original' || line.includes('Translated from')) {
+                    break;
+                  }
+                  
+                  // Skip metadata-like lines
+                  if (line.includes('Stayed') && i === currentLine) {
+                    review.stayDuration = line;
+                    continue;
+                  }
+                  
+                  if (!inHostResponse) {
+                    reviewTextLines.push(line);
+                  }
+                }
+                
+                review.text = reviewTextLines.join(' ').trim();
+                
+                // Clean up text - remove any artifacts
+                review.text = review.text
+                  .replace(/^(great place|ok|clean place)/i, '')
+                  .replace(/Rating,?\\s*\\d+\\s*stars?,?/gi, '')
+                  .replace(/,\\s*·\\s*/g, ' ')
+                  .replace(/^[,·\\s]+/, '')
+                  .replace(/[,·\\s]+$/, '')
+                  .trim();
+                
+                // Only add if we have valid content
+                if (review.name && review.text && review.text.length > 5) {
+                  reviews.push(review);
+                }
+              });
+              
+              // Fallback: If no reviews found with avatar method, try simpler text pattern
+              if (reviews.length === 0) {
+                const reviewBlocks = allDivs.filter(div => {
+                  const text = div.innerText || '';
+                  const hasName = text.split('\\n')[0]?.length < 50; // First line should be a name
+                  const hasDateOrLocation = text.includes(',') || text.includes('ago') || text.includes('on Airbnb');
+                  const hasReviewText = text.includes('Stayed') || (text.includes('star') && text.length > 100);
+                  return hasName && hasDateOrLocation && hasReviewText && !processedTexts.has(text);
+                });
+                
+                reviewBlocks.forEach(block => {
+                  const text = block.innerText || '';
+                  if (processedTexts.has(text)) return;
+                  processedTexts.add(text);
+                  
+                  const lines = text.split('\\n').map(l => l.trim()).filter(l => l);
+                  
+                  if (lines.length >= 4) {
+                    const review = {
+                      name: lines[0],
+                      location: lines[1].includes(',') || lines[1].includes('Airbnb') ? lines[1] : '',
+                      date: '',
+                      rating: 5,
+                      text: '',
+                      stayDuration: ''
+                    };
+                    
+                    // Find metadata line
+                    for (let i = 1; i < Math.min(5, lines.length); i++) {
+                      if (lines[i].includes('star') || lines[i].includes('Stayed')) {
+                        const dateMatch = lines[i].match(/(January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{4}|\\d+\\s+(weeks?|days?|months?)\\s+ago/i);
+                        if (dateMatch) {
+                          review.date = dateMatch[0];
+                        }
+                        
+                        const stayMatch = lines[i].match(/Stayed\\s+([^·]+)/i);
+                        if (stayMatch) {
+                          review.stayDuration = stayMatch[1].trim();
+                        }
+                        
+                        // Review text starts after metadata
+                        review.text = lines.slice(i + 1)
+                          .filter(l => !l.includes('Response from') && !l.includes('Translated from'))
+                          .join(' ')
+                          .trim();
+                        break;
+                      }
+                    }
+                    
+                    if (review.text && review.text.length > 5) {
+                      reviews.push(review);
+                    }
+                  }
+                });
+              }
+              
+              return reviews;
+            });
+            
+            // Add unique reviews
+            visibleReviews.forEach(review => {
+              const key = review.name + review.date + (review.text || '').substring(0, 30);
+              if (!seenReviews.has(key)) {
+                seenReviews.add(key);
+                allReviews.push(review);
+              }
+            });
+            
+            logs.push('Scroll ' + scrollAttempts + ': Found ' + visibleReviews.length + ' reviews, Total: ' + allReviews.length);
+            
+            // Take screenshot (only first 3)
+            if (scrollAttempts < 3) {
+              const screenshot = await page.screenshot({
+                type: 'jpeg',
+                quality: 85,
+                encoding: 'base64',
+                fullPage: false
+              });
+              screenshots.reviews.push(screenshot);
+            }
             
             // Scroll for more reviews
             const scrolled = await page.evaluate(() => {
               const modal = document.querySelector('[role="dialog"]');
               if (!modal) return false;
               
-              let scrollContainer = modal;
-              const divs = modal.querySelectorAll('div');
-              for (const div of divs) {
-                if (div.scrollHeight > div.clientHeight) {
+              // Find the actual scrollable container
+              let scrollContainer = null;
+              const allDivs = modal.querySelectorAll('div');
+              
+              for (const div of allDivs) {
+                const style = window.getComputedStyle(div);
+                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && 
+                    div.scrollHeight > div.clientHeight) {
                   scrollContainer = div;
                   break;
                 }
               }
               
+              if (!scrollContainer) {
+                scrollContainer = modal;
+              }
+              
               const before = scrollContainer.scrollTop;
-              scrollContainer.scrollBy(0, 800);
+              scrollContainer.scrollBy(0, 500);
+              
               return scrollContainer.scrollTop > before;
             });
             
-            if (!scrolled) break;
-            await wait(2000); // Wait for new content to load
+            if (!scrolled) {
+              logs.push('No more reviews to scroll');
+              break;
+            }
+            
+            await wait(1500); // Wait for new content
+            scrollAttempts++;
           }
+          
+          // Store extracted reviews data
+          screenshots.reviewsData = {
+            reviews: allReviews,
+            totalCount: allReviews.length,
+            summary: reviewSummary
+          };
+          
+          logs.push('Extracted ' + allReviews.length + ' total reviews from DOM');
           
           await dismissAllModals();
         }
@@ -855,19 +1223,38 @@ function structureEnhancedData(extractedData: ExtractedData, url: string): Compr
     amenityCategories = extractedData.amenities.categories || {}
   }
   
-  // Merge all reviews
+  // Merge all reviews - handling both DOM-extracted and Vision AI formats
   let allReviews: any[] = []
   let reviewSummary: any = {}
   
-  if (extractedData.reviews && extractedData.reviews.length > 0) {
-    const firstPage = extractedData.reviews[0]
-    if (firstPage?.overall) {
-      reviewSummary = firstPage.overall
+  if (extractedData.reviews) {
+    // Check if it's the new rating extraction format or DOM format
+    if (extractedData.reviews.length > 0 && extractedData.reviews[0]?.overall) {
+      const firstPage = extractedData.reviews[0]
+      reviewSummary = firstPage.overall || {}
+      
+      // Check if we have individual reviews
+      if (firstPage.reviews && Array.isArray(firstPage.reviews)) {
+        allReviews = firstPage.reviews
+      }
+      
+      // Add any reviews from additional pages
+      for (let i = 1; i < extractedData.reviews.length; i++) {
+        const page = extractedData.reviews[i]
+        if (page?.reviews && Array.isArray(page.reviews)) {
+          allReviews = allReviews.concat(page.reviews)
+        }
+      }
     }
-    
-    for (const page of extractedData.reviews) {
-      if (page?.reviews && Array.isArray(page.reviews)) {
-        allReviews = allReviews.concat(page.reviews)
+    // Handle any other format
+    else if (Array.isArray(extractedData.reviews)) {
+      for (const page of extractedData.reviews) {
+        if (page?.overall) {
+          reviewSummary = page.overall
+        }
+        if (page?.reviews && Array.isArray(page.reviews)) {
+          allReviews = allReviews.concat(page.reviews)
+        }
       }
     }
   }
@@ -939,21 +1326,28 @@ function structureEnhancedData(extractedData: ExtractedData, url: string): Compr
       ...amenityCategories
     },
     
-    reviews: {
-      summary: {
-        rating: reviewSummary.rating || enhancedData.rating || 0,
-        totalCount: reviewSummary.total || enhancedData.reviewCount || 0,
-        distribution: reviewSummary.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-        categories: reviewSummary.categories || {
-          cleanliness: 0,
-          accuracy: 0,
-          communication: 0,
-          location: 0,
-          checkIn: 0,
-          value: 0
-        }
-      },
-      recentReviews: allReviews
+    reviews: allReviews.map(review => ({
+      reviewer: review.name || review.reviewer || 'Anonymous',
+      reviewerLocation: review.location || review.reviewerLocation || '',
+      date: review.date || '',
+      rating: review.rating || 5,
+      review: review.text || review.review || '',
+      stayDuration: review.stayDuration || '',
+      hostResponse: review.hostResponse || null
+    })),
+    
+    reviewsSummary: {
+      averageRating: reviewSummary.rating || reviewSummary.overallRating || enhancedData.rating || 0,
+      reviewCount: reviewSummary.totalCount || allReviews.length || 0,
+      distribution: reviewSummary.distribution || { 5: allReviews.length, 4: 0, 3: 0, 2: 0, 1: 0 },
+      categoryRatings: reviewSummary.categories || {
+        cleanliness: reviewSummary.categories?.cleanliness || 0,
+        accuracy: reviewSummary.categories?.accuracy || 0,
+        communication: reviewSummary.categories?.communication || 0,
+        location: reviewSummary.categories?.location || 0,
+        checkIn: reviewSummary.categories?.checkin || reviewSummary.categories?.checkIn || 0,
+        value: reviewSummary.categories?.value || 0
+      }
     },
     
     houseRules: extractedData.houseRules || {
