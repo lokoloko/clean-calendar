@@ -95,7 +95,7 @@ function parseBrowserQLResponse(url: string, data: any): ComprehensiveAirbnbList
     id: extractListingId(url),
     url,
     title: title,
-    subtitle: extractFromHTML(html, /<h2[^>]*>([^<]+)<\/h2>/i),
+    subtitle: extractFromHTML(html, /<h2[^>]*>([^<]+)<\/h2>/i) || undefined,
     description: '',
     propertyType: 'Entire place',
     
@@ -182,7 +182,7 @@ function parseBrowserQLResponse(url: string, data: any): ComprehensiveAirbnbList
     listing.host.isSuperhost = html.toLowerCase().includes('superhost')
     
     // Extract amenities
-    const amenities = []
+    const amenities: string[] = []
     const commonAmenities = ['Wifi', 'Kitchen', 'Free parking', 'Air conditioning', 'Washer', 'Dryer', 
                             'Pool', 'Hot tub', 'Gym', 'TV', 'Coffee maker', 'Hair dryer', 'Iron']
     commonAmenities.forEach(amenity => {
@@ -333,7 +333,7 @@ function parseReviews(data: any): any {
         date: dateMatch?.[1] || new Date().toISOString(),
         text: textContent.substring(0, 500) // Limit review text length
       }
-    }).filter(Boolean).filter(r => r.text && r.text.length > 10).slice(0, 100) // Get up to 100 reviews
+    }).filter(Boolean).filter((r: any) => r.text && r.text.length > 10).slice(0, 100) // Get up to 100 reviews
   }
   
   return reviews

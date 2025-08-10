@@ -340,7 +340,7 @@ export async function extractFromModal(
     await closeModal(page)
     
     return data
-  } catch (error) {
+  } catch (error: any) {
     console.log('Error extracting from modal:', error.message)
     return null
   }

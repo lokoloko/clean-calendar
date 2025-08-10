@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { scrapeAirbnbListing } from '@/lib/scraper-working'
-import { scrapeAirbnbWithBrowserQL, browserQLToSimplified } from '@/lib/scraper-browserql-enhanced'
-import { scrapeAirbnbWithFunction, functionToSimplified } from '@/lib/scraper-function'
-import { scrapeAirbnbWithPuppeteer, puppeteerToSimplified } from '@/lib/scraper-puppeteer'
+import { scrapeAirbnbHybrid, hybridToSimplified } from '@/lib/scraper-hybrid'
 import { analyzeListingWithAI } from '@/lib/analyzer'
 
 export async function POST(request: NextRequest) {
@@ -27,55 +24,23 @@ export async function POST(request: NextRequest) {
 
     console.log('Analyzing listing:', url)
 
-    // Try scrapers in order of sophistication
-    let listingData
-    let scrapingMethod = 'basic'
-    
-    try {
-      // Try Puppeteer WebSocket connection first (most comprehensive)
-      console.log('Attempting Puppeteer scrape...')
-      const puppeteerData = await scrapeAirbnbWithPuppeteer(url)
-      listingData = puppeteerToSimplified(puppeteerData)
-      scrapingMethod = 'puppeteer'
-      console.log('Puppeteer scrape successful')
-    } catch (error) {
-      console.log('Puppeteer failed, trying BrowserQL:', error)
-      
-      try {
-        // Try BrowserQL as fallback
-        console.log('Attempting BrowserQL scrape...')
-        const browserQLData = await scrapeAirbnbWithBrowserQL(url)
-        listingData = browserQLToSimplified(browserQLData)
-        scrapingMethod = 'browserql'
-        console.log('BrowserQL scrape successful')
-      } catch (bqlError) {
-        console.log('BrowserQL failed, trying Function endpoint:', bqlError)
-        
-        try {
-          // Try Function endpoint (Puppeteer code)
-          const functionData = await scrapeAirbnbWithFunction(url)
-          listingData = functionToSimplified(functionData)
-          scrapingMethod = 'function'
-          console.log('Function scrape successful')
-        } catch (funcError) {
-          console.log('Function failed, using basic scraper:', funcError)
-          // Fall back to basic working scraper
-          listingData = await scrapeAirbnbListing(url)
-          scrapingMethod = 'basic'
-        }
-      }
-    }
+    // Use hybrid scraper for maximum reliability
+    const hybridResult = await scrapeAirbnbHybrid(url)
+    const listingData = hybridToSimplified(hybridResult)
     
     console.log('Scraped data:', {
-      method: scrapingMethod,
+      method: hybridResult.bestMethod,
       title: listingData.title,
       price: listingData.price,
       rating: listingData.rating,
       reviewCount: listingData.reviewCount,
       amenities: listingData.amenities.length,
       dataQuality: listingData.dataQuality,
-      hasReviews: listingData.recentReviews?.length > 0,
-      hasCategories: !!listingData.reviewCategories
+      hasReviews: (listingData.recentReviews?.length || 0) > 0,
+      hasCategories: !!listingData.reviewCategories,
+      totalTime: `${hybridResult.totalTime}ms`,
+      methodsAttempted: hybridResult.metrics.length,
+      successfulMethods: hybridResult.metrics.filter(m => m.success).length
     })
 
     // Step 2: Analyze with AI

@@ -213,6 +213,8 @@ export interface ComprehensiveAirbnbListing {
     scrapeVersion: string
     dataCompleteness: number // 0-100 percentage
     missingFields?: string[]
+    errors?: string[]
+    proxyUsed?: string
   }
 }
 
@@ -298,4 +300,6 @@ export interface AirbnbListingData {
   // Meta
   lastScraped?: string
   dataQuality?: number // 0-100
+  scrapingMethod?: string
+  scrapingTime?: number
 }

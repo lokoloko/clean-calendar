@@ -7,12 +7,12 @@ import ScoreDisplay from '@/components/ScoreDisplay'
 import RecommendationCard from '@/components/RecommendationCard'
 import UpgradePrompt from '@/components/UpgradePrompt'
 import { ArrowLeft, Download, Share2, RefreshCw } from 'lucide-react'
-import type { AirbnbData } from '@/lib/scraper-puppeteer'
+import type { AirbnbListingData } from '@/lib/types/listing'
 import type { AnalysisResult } from '@/lib/analyzer'
 
 export default function AnalyzePage() {
   const router = useRouter()
-  const [listing, setListing] = useState<AirbnbData | null>(null)
+  const [listing, setListing] = useState<AirbnbListingData | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -170,7 +170,7 @@ export default function AnalyzePage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Amenities</h3>
             <div className="flex flex-wrap gap-2">
-              {listing.amenities.slice(0, 10).map(amenity => (
+              {listing.amenities.slice(0, 10).map((amenity: string) => (
                 <span key={amenity} className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
                   {amenity}
                 </span>
@@ -180,7 +180,7 @@ export default function AnalyzePage() {
               <h4 className="text-sm font-medium text-gray-700 mb-2">Consider Adding:</h4>
               <div className="flex flex-wrap gap-2">
                 {['Workspace', 'Coffee maker', 'Fast wifi', 'Hair dryer', 'Iron', 'TV', 'Parking']
-                  .filter(a => !listing.amenities.some(la => la.toLowerCase().includes(a.toLowerCase())))
+                  .filter(a => !listing.amenities.some((la: string) => la.toLowerCase().includes(a.toLowerCase())))
                   .slice(0, 5)
                   .map(amenity => (
                     <span key={amenity} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-sm">

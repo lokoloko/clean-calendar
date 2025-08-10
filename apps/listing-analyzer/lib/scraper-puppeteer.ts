@@ -127,7 +127,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           await closeModal(page)
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log('Could not extract amenities:', e.message)
     }
     
@@ -149,7 +149,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           await closeModal(page)
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log('Could not extract photos:', e.message)
     }
     
@@ -171,7 +171,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           await closeModal(page)
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log('Could not extract house rules:', e.message)
     }
     
@@ -434,11 +434,11 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
           await page.keyboard.press('Escape')
           await new Promise(resolve => setTimeout(resolve, 1000))
           
-        } catch (modalError) {
+        } catch (modalError: any) {
           console.log('Error with reviews modal:', modalError.message)
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log('Could not expand reviews:', e.message)
     }
     
@@ -1010,7 +1010,7 @@ function parsePuppeteerResponse(url: string, data: any): ComprehensiveAirbnbList
     
     Object.entries(categories).forEach(([category, items]) => {
       if (items.length > 0) {
-        listing.amenities[category] = items
+        (listing.amenities as any)[category] = items
       }
     })
   }
