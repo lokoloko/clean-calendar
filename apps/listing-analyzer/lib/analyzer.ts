@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import type { AirbnbListingData } from './scraper-browserql'
+import type { AirbnbListingData } from './types/listing'
 
 export interface AnalysisResult {
   score: number // 0-100
@@ -38,15 +38,50 @@ export async function analyzeListingWithAI(listing: AirbnbListingData): Promise<
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
     const prompt = `
-    You are an expert Airbnb listing consultant. Analyze this listing data and provide actionable recommendations.
+    You are an expert Airbnb listing consultant. Analyze this comprehensive listing data and provide actionable recommendations.
 
     LISTING DATA:
     Title: ${listing.title}
+    ${listing.subtitle ? `Subtitle: ${listing.subtitle}` : ''}
     Type: ${listing.propertyType}
     Price: $${listing.price}/night
+    ${listing.cleaningFee ? `Cleaning Fee: $${listing.cleaningFee}` : ''}
     Rating: ${listing.rating}/5 (${listing.reviewCount} reviews)
     Amenities: ${listing.amenities.join(', ')}
     Superhost: ${listing.isSuperhost ? 'Yes' : 'No'}
+    ${listing.instantBook ? 'Instant Book: Yes' : ''}
+    ${listing.minimumStay ? `Minimum Stay: ${listing.minimumStay} nights` : ''}
+    
+    HOST DETAILS:
+    ${listing.hostName ? `Name: ${listing.hostName}` : ''}
+    ${listing.hostResponseRate ? `Response Rate: ${listing.hostResponseRate}%` : ''}
+    ${listing.hostResponseTime ? `Response Time: ${listing.hostResponseTime}` : ''}
+    
+    REVIEW BREAKDOWN:
+    ${listing.reviewCategories ? `
+    Cleanliness: ${listing.reviewCategories.cleanliness}/5
+    Accuracy: ${listing.reviewCategories.accuracy}/5
+    Communication: ${listing.reviewCategories.communication}/5
+    Location: ${listing.reviewCategories.location}/5
+    Check-in: ${listing.reviewCategories.checkIn}/5
+    Value: ${listing.reviewCategories.value}/5
+    ` : ''}
+    
+    ${listing.recentReviews && listing.recentReviews.length > 0 ? `
+    RECENT GUEST REVIEWS:
+    ${listing.recentReviews.slice(0, 5).map(r => 
+      `- "${r.text.slice(0, 200)}..." (${r.author}, ${r.date})`
+    ).join('\n')}
+    ` : ''}
+    
+    ${listing.houseRules ? `
+    HOUSE RULES:
+    Smoking: ${listing.houseRules.smoking ? 'Allowed' : 'Not allowed'}
+    Pets: ${listing.houseRules.pets ? 'Allowed' : 'Not allowed'}
+    Parties: ${listing.houseRules.parties ? 'Allowed' : 'Not allowed'}
+    ` : ''}
+    
+    Data Quality Score: ${listing.dataQuality || 'N/A'}%
 
     Provide a JSON response with:
     1. An overall score (0-100)

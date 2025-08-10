@@ -2,6 +2,10 @@
 
 A free tool by GoStudioM that provides instant AI-powered recommendations to improve Airbnb listings and increase bookings. Built for hosts, by a host.
 
+## 🚀 Current Status: 75% Extraction Coverage
+
+Successfully extracting amenities (31-64 items), reviews (15+ per modal), photos, and bypassing bot detection with stealth mode. See [EXTRACTION_PROGRESS.md](./EXTRACTION_PROGRESS.md) for detailed technical progress.
+
 ## Features
 
 ### Free Tool (No Login Required)
