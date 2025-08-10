@@ -14,6 +14,12 @@ import {
   closeModal,
   scrollModalContent
 } from './modal-extractors'
+import {
+  extractCompleteHouseRules,
+  extractSafetyAndProperty,
+  extractCancellationPolicy,
+  extractAllAdditionalModals
+} from './modal-extractors-enhanced'
 
 export async function scrapeAirbnbWithPuppeteer(url: string): Promise<ComprehensiveAirbnbListing> {
   const apiKey = process.env.BROWSERLESS_API_KEY
@@ -438,6 +444,20 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       }
     } catch (e: any) {
       console.log('Could not expand reviews:', e.message)
+    }
+    
+    // Extract additional modals (House Rules, Safety & Property, Cancellation Policy)
+    let additionalModals: any = {}
+    try {
+      console.log('Extracting additional modals...')
+      additionalModals = await extractAllAdditionalModals(page)
+      console.log('Additional modals extracted:', {
+        hasHouseRules: !!additionalModals.houseRules,
+        hasSafety: !!additionalModals.safetyProperty,
+        hasCancellation: !!additionalModals.cancellationPolicy
+      })
+    } catch (e: any) {
+      console.log('Error extracting additional modals:', e.message)
     }
     
     // Extract comprehensive data using page.evaluate for efficiency
@@ -891,7 +911,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
     
     await page.close()
     
-    return parsePuppeteerResponse(url, data)
+    return parsePuppeteerResponse(url, data, additionalModals)
   } catch (error) {
     console.error('Puppeteer scraping error:', error)
     throw error
@@ -900,7 +920,7 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
   }
 }
 
-function parsePuppeteerResponse(url: string, data: any): ComprehensiveAirbnbListing {
+function parsePuppeteerResponse(url: string, data: any, additionalModals?: any): ComprehensiveAirbnbListing {
   const listing: ComprehensiveAirbnbListing = {
     id: extractListingId(url),
     url,
@@ -940,7 +960,9 @@ function parsePuppeteerResponse(url: string, data: any): ComprehensiveAirbnbList
     photos: data.photos || [],
     
     amenities: {
-      basic: data.amenities || []
+      basic: data.amenities || [],
+      safety: additionalModals?.safetyProperty?.safetyFeatures || [],
+      notIncluded: additionalModals?.safetyProperty?.other || []
     },
     
     reviews: {
@@ -955,28 +977,35 @@ function parsePuppeteerResponse(url: string, data: any): ComprehensiveAirbnbList
     
     houseRules: {
       checkIn: {
-        time: extractCheckTime(data.checkIn)
+        time: additionalModals?.houseRules?.checkIn?.time || extractCheckTime(data.checkIn),
+        type: additionalModals?.houseRules?.checkIn?.type,
+        instructions: additionalModals?.houseRules?.checkIn?.instructions?.join('. ')
       },
       checkOut: {
-        time: extractCheckTime(data.checkOut)
+        time: additionalModals?.houseRules?.checkOut?.time || extractCheckTime(data.checkOut)
       },
       during: {
-        smoking: !data.houseRules?.noSmoking,
-        pets: !data.houseRules?.noPets,
-        parties: !data.houseRules?.noParties
+        smoking: additionalModals?.houseRules?.during?.smoking ?? !data.houseRules?.noSmoking,
+        pets: additionalModals?.houseRules?.during?.pets ?? !data.houseRules?.noPets,
+        parties: additionalModals?.houseRules?.during?.parties ?? !data.houseRules?.noParties,
+        visitors: additionalModals?.houseRules?.during?.visitors,
+        quietHours: additionalModals?.houseRules?.during?.quietHours,
+        additionalRules: additionalModals?.houseRules?.during?.additionalRules
       }
     },
     
     bookingSettings: {},
     
     cancellationPolicy: {
-      type: 'Standard'
+      type: additionalModals?.cancellationPolicy?.type || 'Standard',
+      description: additionalModals?.cancellationPolicy?.summary,
+      details: additionalModals?.cancellationPolicy?.timeline
     },
     
     meta: {
       scrapedAt: new Date().toISOString(),
       scrapeVersion: '3.0-puppeteer',
-      dataCompleteness: calculateCompleteness(data)
+      dataCompleteness: calculateCompleteness(data, additionalModals)
     }
   }
   
@@ -1013,6 +1042,20 @@ function parsePuppeteerResponse(url: string, data: any): ComprehensiveAirbnbList
     })
   }
   
+  // Add safety & property information if available
+  if (additionalModals?.safetyProperty) {
+    // Store safety features in the amenities.safety array (already added above)
+    // Store additional property info in meta for now
+    if (additionalModals.safetyProperty.cameras?.hasSecurityCameras) {
+      if (!listing.meta.missingFields) listing.meta.missingFields = []
+      listing.meta.missingFields.push('Security cameras on property')
+    }
+    if (additionalModals.safetyProperty.noiseMonitoring) {
+      if (!listing.meta.missingFields) listing.meta.missingFields = []
+      listing.meta.missingFields.push('Noise monitoring device')
+    }
+  }
+  
   return listing
 }
 
@@ -1027,7 +1070,7 @@ function extractCheckTime(text?: string): string | undefined {
   return match ? match[1] : undefined
 }
 
-function calculateCompleteness(data: any): number {
+function calculateCompleteness(data: any, additionalModals?: any): number {
   let score = 0
   const fields = [
     data.title,
@@ -1039,14 +1082,23 @@ function calculateCompleteness(data: any): number {
     data.reviewCategories && Object.keys(data.reviewCategories).length > 0,
     data.photos?.length > 0,
     data.hostName,
-    data.description
+    data.description,
+    // New modal fields
+    additionalModals?.houseRules?.checkIn?.time,
+    additionalModals?.houseRules?.during?.additionalRules?.length > 0,
+    additionalModals?.safetyProperty?.safetyFeatures?.length > 0,
+    additionalModals?.cancellationPolicy?.type
   ]
   
+  // Adjust scoring to account for more fields
+  const maxScore = 100
+  const scorePerField = maxScore / fields.length
+  
   fields.forEach(field => {
-    if (field) score += 10
+    if (field) score += scorePerField
   })
   
-  return score
+  return Math.round(score)
 }
 
 // Convert to simplified format for backward compatibility
