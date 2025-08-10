@@ -446,12 +446,13 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
       console.log('Could not expand reviews:', e.message)
     }
     
-    // Extract additional modals (House Rules, Safety & Property, Cancellation Policy)
+    // Extract additional modals (Description, House Rules, Safety & Property, Cancellation Policy)
     let additionalModals: any = {}
     try {
       console.log('Extracting additional modals...')
       additionalModals = await extractAllAdditionalModals(page)
       console.log('Additional modals extracted:', {
+        hasDescription: !!additionalModals.description,
         hasHouseRules: !!additionalModals.houseRules,
         hasSafety: !!additionalModals.safetyProperty,
         hasCancellation: !!additionalModals.cancellationPolicy
@@ -921,12 +922,24 @@ export async function scrapeAirbnbWithPuppeteer(url: string): Promise<Comprehens
 }
 
 function parsePuppeteerResponse(url: string, data: any, additionalModals?: any): ComprehensiveAirbnbListing {
+  // Use full description from modal if available, otherwise use page description
+  const fullDescription = additionalModals?.description?.fullText || 
+                         additionalModals?.description?.overview ||
+                         data.description || ''
+  
   const listing: ComprehensiveAirbnbListing = {
     id: extractListingId(url),
     url,
     title: data.title || 'Airbnb Listing',
     subtitle: data.subtitle,
-    description: data.description || '',
+    description: fullDescription,
+    descriptionSections: additionalModals?.description ? {
+      overview: additionalModals.description.overview,
+      theSpace: additionalModals.description.theSpace,
+      guestAccess: additionalModals.description.guestAccess,
+      otherThingsToNote: additionalModals.description.otherThingsToNote,
+      gettingAround: additionalModals.description.gettingAround
+    } : undefined,
     propertyType: 'Entire place',
     
     guestCapacity: {

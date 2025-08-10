@@ -478,12 +478,198 @@ export async function extractCancellationPolicy(page: Page): Promise<any> {
   return policy
 }
 
+// Extract full description/about this space
+export async function extractFullDescription(page: Page): Promise<any> {
+  const description: any = {
+    overview: '',
+    theSpace: '',
+    guestAccess: '',
+    otherThingsToNote: '',
+    gettingAround: '',
+    fullText: '',
+    sections: []
+  }
+  
+  // Scroll and extract all content
+  let previousHeight = 0
+  let currentHeight = 0
+  let scrollAttempts = 0
+  const maxScrolls = 10
+  
+  do {
+    previousHeight = currentHeight
+    
+    const extractedData = await page.evaluate(() => {
+      const modal = document.querySelector('[role="dialog"], [aria-modal="true"]')
+      if (!modal) return null
+      
+      const data: any = {
+        sections: [],
+        fullText: modal.textContent || ''
+      }
+      
+      // Find all sections in the description modal
+      const sections = modal.querySelectorAll('section, div[data-section-id], div[class*="section"]')
+      
+      sections.forEach(section => {
+        const sectionData: any = {
+          title: '',
+          content: ''
+        }
+        
+        // Get section title
+        const heading = section.querySelector('h2, h3, div[class*="title"]')
+        if (heading) {
+          sectionData.title = heading.textContent?.trim() || ''
+        }
+        
+        // Get section content
+        const paragraphs = section.querySelectorAll('span[dir="ltr"], div[dir="ltr"], p')
+        const texts: string[] = []
+        
+        paragraphs.forEach(p => {
+          const text = p.textContent?.trim()
+          // Avoid duplicates and filter out UI elements
+          if (text && text.length > 10 && !texts.includes(text)) {
+            texts.push(text)
+          }
+        })
+        
+        sectionData.content = texts.join('\n\n')
+        
+        if (sectionData.content) {
+          data.sections.push(sectionData)
+        }
+      })
+      
+      // Also try to extract by looking for specific patterns
+      const allText = modal.textContent || ''
+      
+      // Extract specific sections by keywords
+      const patterns = [
+        { key: 'theSpace', pattern: /About this space[\s\S]*?(?=Guest access|Other things|The neighborhood|Getting around|$)/i },
+        { key: 'guestAccess', pattern: /Guest access[\s\S]*?(?=Other things|The neighborhood|Getting around|$)/i },
+        { key: 'otherThings', pattern: /Other things to note[\s\S]*?(?=The neighborhood|Getting around|$)/i },
+        { key: 'neighborhood', pattern: /The neighborhood[\s\S]*?(?=Getting around|$)/i },
+        { key: 'gettingAround', pattern: /Getting around[\s\S]*?$/i }
+      ]
+      
+      data.extractedSections = {}
+      patterns.forEach(({ key, pattern }) => {
+        const match = allText.match(pattern)
+        if (match) {
+          data.extractedSections[key] = match[0].trim()
+        }
+      })
+      
+      return data
+    })
+    
+    if (extractedData) {
+      // Process sections
+      extractedData.sections?.forEach((section: any) => {
+        const title = section.title.toLowerCase()
+        
+        if (title.includes('about this space') || title.includes('description')) {
+          description.overview = section.content
+        } else if (title.includes('the space')) {
+          description.theSpace = section.content
+        } else if (title.includes('guest access')) {
+          description.guestAccess = section.content
+        } else if (title.includes('other things')) {
+          description.otherThingsToNote = section.content
+        } else if (title.includes('getting around') || title.includes('transportation')) {
+          description.gettingAround = section.content
+        }
+        
+        description.sections.push(section)
+      })
+      
+      // Apply extracted sections if not already filled
+      if (extractedData.extractedSections) {
+        if (!description.theSpace && extractedData.extractedSections.theSpace) {
+          description.theSpace = extractedData.extractedSections.theSpace
+        }
+        if (!description.guestAccess && extractedData.extractedSections.guestAccess) {
+          description.guestAccess = extractedData.extractedSections.guestAccess
+        }
+        if (!description.otherThingsToNote && extractedData.extractedSections.otherThings) {
+          description.otherThingsToNote = extractedData.extractedSections.otherThings
+        }
+        if (!description.gettingAround && extractedData.extractedSections.gettingAround) {
+          description.gettingAround = extractedData.extractedSections.gettingAround
+        }
+      }
+      
+      description.fullText = extractedData.fullText
+    }
+    
+    // Scroll the modal
+    currentHeight = await scrollModalContent(page)
+    scrollAttempts++
+    
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+  } while (currentHeight > previousHeight && scrollAttempts < maxScrolls)
+  
+  console.log('Extracted description:', {
+    hasOverview: !!description.overview,
+    hasTheSpace: !!description.theSpace,
+    hasGuestAccess: !!description.guestAccess,
+    sectionsCount: description.sections.length,
+    fullTextLength: description.fullText.length
+  })
+  
+  return description
+}
+
 // Main function to extract all additional modals
 export async function extractAllAdditionalModals(page: Page): Promise<any> {
   const results: any = {
+    description: null,
     houseRules: null,
     safetyProperty: null,
     cancellationPolicy: null
+  }
+  
+  // Extract Full Description
+  try {
+    // Try to find description Show more button with specific selector first
+    const altButton = await page.$('[data-section-id="DESCRIPTION"] button, [data-testid="show-more-description"]')
+    if (altButton) {
+      console.log('Found description button via selector, clicking...')
+      await altButton.click()
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    } else {
+      // Fallback to text search but only in description section
+      const descButton = await page.evaluateHandle(() => {
+        const descSection = document.querySelector('[data-section-id="DESCRIPTION"]')
+        if (!descSection) return null
+        
+        const buttons = descSection.querySelectorAll('button')
+        for (const button of buttons) {
+          const text = button.textContent || ''
+          if (text.includes('Show more') && !text.includes('amenities')) {
+            return button
+          }
+        }
+        return null
+      })
+      
+      if (descButton) {
+        console.log('Found description show more button via text, clicking...')
+        await clickWithHumanBehavior(page, descButton)
+      }
+    }
+    
+    if (await waitForModal(page)) {
+      console.log('Description modal appeared, extracting...')
+      results.description = await extractFullDescription(page)
+      await closeModal(page)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait after closing
+    }
+  } catch (e: any) {
+    console.log('Could not extract full description:', e.message)
   }
   
   // Extract House Rules

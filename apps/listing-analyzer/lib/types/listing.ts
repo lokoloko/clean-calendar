@@ -6,6 +6,13 @@ export interface ComprehensiveAirbnbListing {
   title: string
   subtitle?: string
   description: string
+  descriptionSections?: {
+    overview?: string
+    theSpace?: string
+    guestAccess?: string
+    otherThingsToNote?: string
+    gettingAround?: string
+  }
   propertyType: string // Entire place, Private room, Shared room
   roomType?: string // Studio, 1 bedroom, 2 bedrooms, etc.
   listingType?: string // Entire home, Apartment, House, Condo, Villa, etc.
