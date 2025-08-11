@@ -2,7 +2,7 @@
 // This version focuses on getting past the rating section to the review content
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { extractRatingsFromScreenshot } from './extract-ratings-only'
+// import { extractRatingsFromScreenshot } from './extract-ratings-only' // Module not found - commented out for build
 
 interface ReviewData {
   reviewer: string
@@ -44,15 +44,16 @@ export async function scrapeReviewsV2(url: string): Promise<ReviewsResult> {
     
     console.log(`📸 Captured ${captureResult.screenshots.length} screenshots`)
     
-    // Step 2: Extract ratings from first screenshot
-    let ratingSummary = null
-    if (captureResult.screenshots.length > 0) {
-      console.log('🎯 Extracting ratings from first screenshot...')
-      ratingSummary = await extractRatingsFromScreenshot(captureResult.screenshots[0], geminiKey)
-      if (ratingSummary) {
-        console.log(`  ✅ Rating: ${ratingSummary.overallRating}, Reviews: ${ratingSummary.totalReviews}`)
-      }
-    }
+    // Step 2: Extract ratings from first screenshot - DISABLED (missing module)
+    // let ratingSummary = null
+    // if (captureResult.screenshots.length > 0) {
+    //   console.log('🎯 Extracting ratings from first screenshot...')
+    //   ratingSummary = await extractRatingsFromScreenshot(captureResult.screenshots[0], geminiKey)
+    //   if (ratingSummary) {
+    //     console.log(`  ✅ Rating: ${ratingSummary.overallRating}, Reviews: ${ratingSummary.totalReviews}`)
+    //   }
+    // }
+    const ratingSummary = null // Placeholder for missing functionality
     
     // Step 3: Extract individual reviews from all screenshots
     const allReviews: ReviewData[] = []
@@ -87,9 +88,9 @@ export async function scrapeReviewsV2(url: string): Promise<ReviewsResult> {
     
     return {
       reviews: allReviews,
-      totalCount: ratingSummary?.totalReviews || captureResult.totalCount || 0,
-      overallRating: ratingSummary?.overallRating || 0,
-      categoryRatings: ratingSummary?.categoryRatings,
+      totalCount: captureResult.totalCount || 0,
+      overallRating: 0, // Disabled - missing rating extraction module
+      categoryRatings: undefined, // Disabled - missing rating extraction module
       screenshots: captureResult.screenshots,
       logs: captureResult.logs,
       success: true
