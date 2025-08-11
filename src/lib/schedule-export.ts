@@ -12,6 +12,7 @@ export interface ScheduleItem {
   status: string;
   source?: string;
   manual_rule_frequency?: string;
+  is_completed?: boolean;
 }
 
 // Helper to parse date strings as local dates (avoiding timezone issues)
@@ -55,9 +56,10 @@ export const getNextCheckIn = (
     const currentItem = scheduleItems.find(item => item.id === currentBookingId);
     const isRecurring = currentItem?.source === 'manual_recurring';
     
-    // Look for a booking that checks in on the same day as this checkout
+    // Look for a booking that checks in on the same day as this checkout (excluding completed)
     const sameDay = scheduleItems.find(item => {
       if (item.listing_id !== listingId || item.id === currentBookingId) return false;
+      if (item.status === 'completed' || item.is_completed) return false;
       const checkinDate = parseLocalDate(item.check_in);
       const checkinStr = !isNaN(checkinDate.getTime()) ? format(checkinDate, 'yyyy-MM-dd') : '';
       return checkinStr === checkoutDateStr;
@@ -67,10 +69,11 @@ export const getNextCheckIn = (
       return 'Same day';
     }
     
-    // Find the next booking for this listing (excluding same-day turnarounds already found)
+    // Find the next booking for this listing (excluding same-day turnarounds already found and completed items)
     const futureBookings = scheduleItems
       .filter(item => {
         if (item.listing_id !== listingId || item.id === currentBookingId) return false;
+        if (item.status === 'completed' || item.is_completed) return false;
         const checkinDate = parseLocalDate(item.check_in);
         // Check-in must be after or on the checkout date
         return !isNaN(checkinDate.getTime()) && checkinDate >= checkoutDateObj;
@@ -166,12 +169,17 @@ export interface ExportOptions {
 export const generateExportForCleaner = (options: ExportOptions): string => {
   const { cleanerId, startDate, endDate, exportType, scheduleItems, smsMode, hostName } = options;
   
-  // Filter schedule items for the selected cleaner and date range, excluding cancelled bookings
+  // Filter schedule items for the selected cleaner and date range, excluding cancelled and completed bookings
   const cleanerItems = scheduleItems.filter(item => {
     if (item.cleaner_id !== cleanerId) return false;
     if (item.status === 'cancelled') {
       console.log('Excluding cancelled booking:', item.listing_name, item.check_out);
       return false; // Exclude cancelled bookings
+    }
+    // Also exclude completed bookings (check both status and is_completed flag)
+    if (item.status === 'completed' || item.is_completed) {
+      console.log('Excluding completed booking:', item.listing_name, item.check_out);
+      return false;
     }
     const checkoutDate = parseLocalDate(item.check_out);
     const checkoutDateStr = format(checkoutDate, 'yyyy-MM-dd');

@@ -1,0 +1,147 @@
+{
+  "url": "https://www.airbnb.com/rooms/726982912243440937",
+  "timestamp": "2025-08-11T00:36:25.651Z",
+  "executionTime": "67.167s",
+  "dataCompleteness": 100,
+  "fieldsExtracted": 9,
+  "totalFields": 11,
+  "extractionPercentage": 82,
+  "result": {
+    "id": "726982912243440937",
+    "url": "https://www.airbnb.com/rooms/726982912243440937",
+    "title": "L Modern Cozy Studio With Full Bath & Kitchen",
+    "description": "L Modern Cozy Studio With Full Bath & Kitchen",
+    "propertyType": "Entire guest suite",
+    "guestCapacity": {
+      "adults": 2,
+      "children": 0,
+      "infants": 0,
+      "total": 2
+    },
+    "spaces": {
+      "bedrooms": 1,
+      "beds": 2,
+      "bathrooms": 1
+    },
+    "host": {
+      "name": "Jimmy",
+      "isSuperhost": true
+    },
+    "pricing": {
+      "basePrice": 150,
+      "currency": "USD"
+    },
+    "location": {
+      "city": "West Covina",
+      "country": "United States"
+    },
+    "photos": [],
+    "amenities": {
+      "basic": [
+        "Garden view",
+        "Hair dryer",
+        "Cleaning products",
+        "Pantene shampoo",
+        "Pantene conditioner",
+        "Olay body soap",
+        "Hot water",
+        "Shower gel",
+        "Essentials",
+        "Hangers",
+        "Bed linens",
+        "Extra pillows and blankets",
+        "Room-darkening shades",
+        "Iron",
+        "Drying rack for clothing",
+        "Clothing storage: wardrobe",
+        "50 inch HDTV with Netflix",
+        "Game console: PS4",
+        "Books and reading material",
+        "Crib",
+        "Children’s books and toys for ages 2-5 years old",
+        "Children’s dinnerware",
+        "Board games",
+        "Table corner guards",
+        "AC - split type ductless system",
+        "Heating - split type ductless system",
+        "Exterior security cameras on property",
+        "Smoke alarm",
+        "Carbon monoxide alarm",
+        "First aid kit",
+        "Fast wifi – 443 Mbps",
+        "Kitchen",
+        "Kitchen Aid refrigerator",
+        "Microwave",
+        "Cooking basics",
+        "Dishes and silverware",
+        "Freezer",
+        "Whirlpool stainless steel electric stove",
+        "Whirlpool stainless steel oven",
+        "Hot water kettle",
+        "Coffee maker: Nespresso",
+        "Wine glasses",
+        "Rice maker",
+        "Dining table",
+        "Coffee",
+        "Private entrance",
+        "Laundromat nearby",
+        "Free street parking",
+        "Single level home",
+        "Luggage dropoff allowed",
+        "Long term stays allowed",
+        "Self check-in",
+        "Smart lock"
+      ]
+    },
+    "reviews": [],
+    "reviewsSummary": {
+      "averageRating": 4.94,
+      "reviewCount": 131,
+      "distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "categoryRatings": {
+        "cleanliness": 4.9,
+        "accuracy": 4.9,
+        "checkIn": 5,
+        "communication": 5,
+        "location": 4.9,
+        "value": 4.9
+      }
+    },
+    "houseRules": {
+      "checkIn": "4:00 PM",
+      "checkOut": "11:00 AM",
+      "rules": [
+        "No pets",
+        "Treat the home with care and respect."
+      ],
+      "additionalRules": "Only access to the entire studio (Suite A). DO NOT access to the back yard, pool and...",
+      "maxGuests": 3
+    },
+    "bookingSettings": {},
+    "cancellationPolicy": {
+      "type": "Standard"
+    },
+    "safety": {
+      "safetyFeatures": [
+        "Exterior security cameras on property",
+        "Carbon monoxide alarm installed",
+        "Smoke alarm installed"
+      ],
+      "propertyInfo": [],
+      "emergencyInfo": {}
+    },
+    "meta": {
+      "scrapedAt": "2025-08-11T00:36:25.400Z",
+      "scrapeVersion": "enhanced-function-v1",
+      "dataCompleteness": 100,
+      "modalsCaptured": 4,
+      "hasStructuredData": true
+    }
+  }
+}

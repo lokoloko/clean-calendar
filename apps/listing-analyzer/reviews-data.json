@@ -1,0 +1,34 @@
+{
+  "totalFound": 4,
+  "reviews": [
+    {
+      "name": "Nam",
+      "date": "3 years on Airbnb",
+      "text": "Rating, 5 stars , · July 2025 , · Stayed a few nights Clean place, nice and cozy set up! ☺️ Very close to downtown LA and chinatown!",
+      "method": "container"
+    },
+    {
+      "name": "Karla",
+      "date": "Hayward, California",
+      "text": "Rating, 5 stars , · 3 weeks ago , · Stayed a few nights great place Response from Dream Vacation 3 weeks ago Thank you, Karla, for choosing our guesthouse and leaving such a kind review. We’re glad you enjoyed your stay and would love to welcome you back anytime you’re in Alhambra.",
+      "method": "container"
+    },
+    {
+      "name": "Juan",
+      "date": "Bogota, Colombia",
+      "text": "Rating, 5 stars , · July 2025 , · Stayed about a week A very pleasant place with all the necessary amenities. I loved the accommodation, everyone was very attentive to us. Translated from Spanish  Show original",
+      "method": "container"
+    },
+    {
+      "name": "Anna",
+      "date": "Łódź, Poland",
+      "text": "Rating, 5 stars , · 5 days ago , · Stayed over a week ok",
+      "method": "container"
+    }
+  ],
+  "scrollAttempts": 1,
+  "uniqueReviews": 4,
+  "summary": {
+    "categories": {}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "success": false,
+  "reviews": [],
+  "rating": null,
+  "totalReviews": 0,
+  "logs": [
+    "Page loaded",
+    "Title: Airbnb | Vacation rentals, cabins, beach houses, & more",
+    "Error: page.waitForTimeout is not a function"
+  ],
+  "pageTitle": "Airbnb | Vacation rentals, cabins, beach houses, & more",
+  "currentUrl": "https://www.airbnb.com/"
+}

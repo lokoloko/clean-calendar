@@ -1,0 +1,122 @@
+{
+  "id": "645598452510568412",
+  "url": "https://www.airbnb.com/rooms/645598452510568412",
+  "title": "Cozy Traveler's Pad - Pet-friendly",
+  "description": "Cozy Traveler’s Pad • Pet-friendly",
+  "propertyType": "Entire guesthouse",
+  "guestCapacity": {
+    "adults": 2,
+    "children": 0,
+    "infants": 0,
+    "total": 2
+  },
+  "spaces": {
+    "bedrooms": 1,
+    "beds": 1,
+    "bathrooms": 1
+  },
+  "host": {
+    "name": "David Wai",
+    "isSuperhost": true
+  },
+  "pricing": {
+    "basePrice": 150,
+    "currency": "USD"
+  },
+  "location": {
+    "city": "Covina",
+    "country": "United States"
+  },
+  "photos": [],
+  "amenities": {
+    "basic": [
+      "Hair dryer",
+      "Shampoo",
+      "Hot water",
+      "Washer",
+      "Dryer",
+      "Essentials",
+      "Hangers",
+      "Bed linens",
+      "Extra pillows and blankets",
+      "Iron",
+      "Air conditioning",
+      "Heating",
+      "Exterior security cameras on property",
+      "Smoke alarm",
+      "Carbon monoxide alarm",
+      "Fire extinguisher",
+      "First aid kit",
+      "Wifi",
+      "Dedicated workspace",
+      "Kitchen",
+      "Refrigerator",
+      "Microwave",
+      "Cooking basics",
+      "Dishes and silverware",
+      "Stove",
+      "Coffee maker",
+      "Toaster",
+      "Dining table",
+      "Private entrance",
+      "Free parking on premises",
+      "Single level home",
+      "Pets allowed",
+      "Self check-in",
+      "Smart lock"
+    ]
+  },
+  "reviews": [],
+  "reviewsSummary": {
+    "averageRating": 4.84,
+    "reviewCount": 166,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "categoryRatings": {
+      "cleanliness": 4.9,
+      "accuracy": 4.9,
+      "checkIn": 4.9,
+      "communication": 4.9,
+      "location": 4.9,
+      "value": 4.8
+    }
+  },
+  "houseRules": {
+    "checkIn": "4:00 PM - 1:00 AM",
+    "checkOut": "10:00 AM",
+    "rules": [
+      "Treat the home with care and respect.",
+      "Pets allowed",
+      "No parties or events"
+    ],
+    "additionalRules": null,
+    "maxGuests": 2
+  },
+  "bookingSettings": {},
+  "cancellationPolicy": {
+    "type": "Standard"
+  },
+  "safety": {
+    "safetyFeatures": [
+      "Exterior security cameras on property",
+      "Carbon monoxide alarm installed",
+      "Smoke alarm installed"
+    ],
+    "propertyInfo": [
+      "Some spaces are shared"
+    ],
+    "emergencyInfo": {}
+  },
+  "meta": {
+    "scrapedAt": "2025-08-11T00:23:53.782Z",
+    "scrapeVersion": "enhanced-function-v1",
+    "dataCompleteness": 100,
+    "modalsCaptured": 4,
+    "hasStructuredData": true
+  }
+}

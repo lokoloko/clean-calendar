@@ -1,0 +1,120 @@
+{
+  "listing": {
+    "id": "645598452510568412",
+    "url": "https://www.airbnb.com/rooms/645598452510568412",
+    "title": "Cozy Traveler’s Pad • Pet-friendly",
+    "description": "See full listing for details",
+    "propertyType": "Room",
+    "guestCapacity": {
+      "adults": 2,
+      "children": 0,
+      "infants": 0,
+      "total": 2
+    },
+    "spaces": {
+      "bedrooms": 1,
+      "beds": 1,
+      "bathrooms": 1
+    },
+    "host": {
+      "name": "David Wai",
+      "isSuperhost": true
+    },
+    "pricing": {
+      "basePrice": 150,
+      "currency": "USD",
+      "cleaningFee": 23,
+      "serviceFee": 21
+    },
+    "location": {
+      "city": " Guesthouses for Rent in Covina",
+      "country": "California"
+    },
+    "photos": [],
+    "amenities": {
+      "basic": [
+        "Wifi",
+        "Internet",
+        "Kitchen",
+        "Free parking",
+        "Parking",
+        "Washer",
+        "Dryer",
+        "Heating",
+        "Workspace",
+        "Dedicated workspace",
+        "Coffee maker",
+        "Microwave",
+        "Stove",
+        "Hair dryer",
+        "Shampoo",
+        "Towels",
+        "Essentials",
+        "Smoke alarm",
+        "Carbon monoxide alarm",
+        "Safe",
+        "Security cameras",
+        "Crib"
+      ]
+    },
+    "reviews": {
+      "summary": {
+        "rating": 4.84,
+        "totalCount": 166,
+        "distribution": {
+          "1": 2,
+          "2": 3,
+          "3": 5,
+          "4": 20,
+          "5": 70
+        },
+        "categories": {
+          "cleanliness": 4.74,
+          "accuracy": 4.84,
+          "communication": 4.9399999999999995,
+          "location": 4.84,
+          "checkIn": 4.84,
+          "value": 4.64
+        }
+      },
+      "recentReviews": []
+    },
+    "houseRules": {
+      "checkIn": {},
+      "checkOut": {},
+      "during": {}
+    },
+    "bookingSettings": {},
+    "cancellationPolicy": {
+      "type": "Flexible"
+    },
+    "meta": {
+      "scrapedAt": "2025-08-11T00:20:01.776Z",
+      "scrapeVersion": "simple-v2",
+      "dataCompleteness": 75
+    }
+  },
+  "metrics": [
+    {
+      "method": "enhanced-function",
+      "attemptNumber": 1,
+      "startTime": 1754871594344,
+      "endTime": 1754871595344,
+      "success": false,
+      "dataQuality": 0,
+      "fieldsExtracted": 0,
+      "error": "Cannot read properties of undefined (reading 'rating')"
+    },
+    {
+      "method": "simple",
+      "attemptNumber": 1,
+      "startTime": 1754871595344,
+      "endTime": 1754871601776,
+      "success": true,
+      "dataQuality": 75,
+      "fieldsExtracted": 30
+    }
+  ],
+  "bestMethod": "simple",
+  "totalTime": 54040
+}

@@ -1,0 +1,17 @@
+{
+  "url": "https://www.airbnb.com/rooms/1265375125128052388?check_in=2025-09-16&check_out=2025-09-30",
+  "timestamp": "2025-08-10T22:48:32.753Z",
+  "totalExtracted": 0,
+  "totalCount": 29,
+  "overallRating": 4.86,
+  "categoryRatings": {
+    "cleanliness": 5,
+    "accuracy": 4.9,
+    "checkIn": 4.9,
+    "communication": 4.9,
+    "location": 5,
+    "value": 0
+  },
+  "reviews": [],
+  "screenshotCount": 1
+}

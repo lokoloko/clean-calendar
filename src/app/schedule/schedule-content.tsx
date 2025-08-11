@@ -72,6 +72,7 @@ interface ScheduleItem extends ExportScheduleItem {
   cleanliness_rating?: 'clean' | 'normal' | 'dirty';
   feedback_notes?: string;
   feedback_completed_at?: string;
+  is_completed?: boolean;
 }
 
 interface Listing {
@@ -243,8 +244,8 @@ export default function ScheduleContent() {
     // Filter out cancelled bookings unless explicitly showing them
     if (!showCancelled && item.status === 'cancelled') return false;
     
-    // Filter out completed/past bookings in list view
-    if (item.status === 'completed') return false;
+    // Filter out completed/past bookings (check both status and is_completed flag)
+    if (item.status === 'completed' || item.is_completed) return false;
     
     // In list view, filter out past cleanings (checkout date before today)
     if (viewType === 'list') {
@@ -278,6 +279,9 @@ export default function ScheduleContent() {
       
       // Filter out cancelled bookings unless explicitly showing them
       if (!showCancelled && item.status === 'cancelled') return false;
+      
+      // Filter out completed bookings (check both status and is_completed flag)
+      if (item.status === 'completed' || item.is_completed) return false;
       
       const itemDate = parseLocalDate(item.check_out);
       return isSameDay(itemDate, targetDate);
