@@ -461,7 +461,7 @@ export default function LandingPage() {
             <Card>
               <CardContent className="pt-6">
                 <p className="italic">
-                  "Saved me 5 hours a week coordinating cleaners. No more spreadsheets, missed cleanings, or confused cleaners. This just works."
+                  &quot;Saved me 5 hours a week coordinating cleaners. No more spreadsheets, missed cleanings, or confused cleaners. This just works.&quot;
                 </p>
                 <p className="text-right font-semibold mt-4">— Maria S., 6 properties</p>
               </CardContent>
@@ -470,7 +470,7 @@ export default function LandingPage() {
             <Card>
               <CardContent className="pt-6">
                 <p className="italic">
-                  "My cleaners love getting their schedule via SMS. No more double bookings or last-minute confusion. Worth every penny."
+                  &quot;My cleaners love getting their schedule via SMS. No more double bookings or last-minute confusion. Worth every penny.&quot;
                 </p>
                 <p className="text-right font-semibold mt-4">— David L., 12 properties</p>
               </CardContent>
@@ -478,7 +478,7 @@ export default function LandingPage() {
             <Card>
               <CardContent className="pt-6">
                 <p className="italic">
-                  "No more missed cleanings or angry guests. The automated sync means I can focus on hosting, not scheduling."
+                  &quot;No more missed cleanings or angry guests. The automated sync means I can focus on hosting, not scheduling.&quot;
                 </p>
                 <p className="text-right font-semibold mt-4">— Lisa P., 4 properties</p>
               </CardContent>
@@ -527,13 +527,13 @@ export default function LandingPage() {
               <AccordionItem value="item-6">
                 <AccordionTrigger className="text-lg">Who built this and why?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  I've been an Airbnb Superhost for over 10 years. Over that time, I built a handful of small tools to help me stay organized, automate tasks, and work better as a host — mostly for myself.
+                  I&apos;ve been an Airbnb Superhost for over 10 years. Over that time, I built a handful of small tools to help me stay organized, automate tasks, and work better as a host — mostly for myself.
                   <br /><br />
-                  Now, I'm releasing them publicly — one by one — as I make each tool scalable and simple enough for other hosts to use too.
+                  Now, I&apos;m releasing them publicly — one by one — as I make each tool scalable and simple enough for other hosts to use too.
                   <br /><br />
-                  GoStudioM, my platform where these tools live. It's not a bloated corporate product — it's a host-built toolkit focused on real-world hosting needs.
+                  GoStudioM, my platform where these tools live. It&apos;s not a bloated corporate product — it&apos;s a host-built toolkit focused on real-world hosting needs.
                   <br /><br />
-                  This is just the start. I've got more tools coming. Stay tuned.
+                  This is just the start. I&apos;ve got more tools coming. Stay tuned.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

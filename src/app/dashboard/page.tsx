@@ -516,7 +516,7 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <CalendarCheck2 className="h-5 w-5" />
-                Today's Cleanings
+                Today&apos;s Cleanings
               </span>
               <Badge variant="secondary">{Array.isArray(todaysCleanings) ? todaysCleanings.length : 0}</Badge>
             </CardTitle>

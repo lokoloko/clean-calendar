@@ -61,7 +61,7 @@ export function CompletionCelebration({ stats }: CompletionCelebrationProps) {
         <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
           <Sparkles className="h-10 w-10 text-primary" />
         </div>
-        <h2 className="text-3xl font-bold">You're All Set! 🎉</h2>
+        <h2 className="text-3xl font-bold">You&apos;re All Set! 🎉</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
           Congratulations! Your cleaning schedule is now automated. 
           Your cleaners will always know when and where to clean.
@@ -126,7 +126,7 @@ export function CompletionCelebration({ stats }: CompletionCelebrationProps) {
       </div>
 
       <div className="pt-6 border-t">
-        <h3 className="font-semibold mb-3">What's Next?</h3>
+        <h3 className="font-semibold mb-3">What&apos;s Next?</h3>
         <div className="text-left space-y-2 max-w-md mx-auto">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />

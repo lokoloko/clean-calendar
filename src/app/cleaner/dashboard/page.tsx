@@ -228,7 +228,7 @@ export default function CleanerDashboard() {
         <Card className="shadow-md">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-lg">
-              <span>Today's Progress</span>
+              <span>Today&apos;s Progress</span>
               <Calendar className="h-5 w-5 text-gray-400" />
             </CardTitle>
           </CardHeader>

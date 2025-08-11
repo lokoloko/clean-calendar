@@ -155,7 +155,7 @@ function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-muted-foreground text-center">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/signup" className="text-primary hover:underline">
               Sign up
             </a>

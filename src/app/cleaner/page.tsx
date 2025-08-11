@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Phone, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,7 +99,7 @@ export default function CleanerLoginPage() {
             <CardHeader>
               <CardTitle>Sign in with your phone</CardTitle>
               <CardDescription>
-                We'll send you a verification code to confirm your identity
+                We&apos;ll send you a verification code to confirm your identity
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -143,7 +144,7 @@ export default function CleanerLoginPage() {
         </Card>
 
         <p className="text-center text-sm text-gray-600 mt-4">
-          Not a cleaner? <a href="/" className="text-blue-600 hover:underline">Go to main site</a>
+          Not a cleaner? <Link href="/" className="text-blue-600 hover:underline">Go to main site</Link>
         </p>
       </div>
     </div>

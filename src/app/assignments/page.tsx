@@ -190,7 +190,7 @@ export default function AssignmentsPage() {
               ) : !Array.isArray(assignments) || assignments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground">
-                    No assignments yet. Click "Assign Cleaner to Listing" to create one.
+                    No assignments yet. Click &quot;Assign Cleaner to Listing&quot; to create one.
                   </TableCell>
                 </TableRow>
               ) : (

@@ -368,7 +368,7 @@ export default function SettingsPage() {
                           checked={settings.require_confirmation}
                           onCheckedChange={(checked) => setSettings({...settings, require_confirmation: checked})}
                         />
-                        <Label htmlFor="require-reply">Require cleaners to reply 'DONE' after each cleaning</Label>
+                        <Label htmlFor="require-reply">Require cleaners to reply &apos;DONE&apos; after each cleaning</Label>
                     </div>
                 </div>
 

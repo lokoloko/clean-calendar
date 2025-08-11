@@ -98,7 +98,7 @@ export function ScheduleExport({ onComplete, isCompleted }: ScheduleExportProps)
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
-            Great job! You've exported your first schedule. Your cleaners can now see their upcoming work.
+            Great job! You&apos;ve exported your first schedule. Your cleaners can now see their upcoming work.
           </AlertDescription>
         </Alert>
         <Button 
@@ -126,7 +126,7 @@ export function ScheduleExport({ onComplete, isCompleted }: ScheduleExportProps)
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>This Week's Schedule</CardTitle>
+          <CardTitle>This Week&apos;s Schedule</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {cleaners.length > 1 && (

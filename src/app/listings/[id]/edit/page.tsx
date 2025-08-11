@@ -183,7 +183,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           <CardHeader>
             <CardTitle>Listing Details</CardTitle>
             <CardDescription>
-              Update the details for this listing. Click save when you're done.
+              Update the details for this listing. Click save when you&apos;re done.
             </CardDescription>
           </CardHeader>
           <CardContent>

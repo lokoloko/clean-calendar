@@ -223,7 +223,7 @@ export function ShareCalendarLinks({ onComplete, isCompleted }: ShareCalendarLin
             How to share with cleaners:
           </h4>
           <ol className="space-y-2 text-sm text-muted-foreground">
-            <li>1. Click "Copy Link" for each cleaner</li>
+            <li>1. Click &quot;Copy Link&quot; for each cleaner</li>
             <li>2. Send them the link via text, WhatsApp, or email</li>
             <li>3. They can bookmark it for instant access</li>
             <li>4. No login or verification required!</li>

@@ -536,7 +536,7 @@ export default function CleanersPage() {
                     <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                       <li>This is a direct link - no login required</li>
                       <li>The cleaner can bookmark it for easy access</li>
-                      <li>They'll see their schedule from your properties</li>
+                      <li>They&apos;ll see their schedule from your properties</li>
                       <li>The link is unique to this cleaner</li>
                     </ul>
                   </div>

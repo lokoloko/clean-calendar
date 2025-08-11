@@ -270,7 +270,7 @@ export function CleanerSetup({ onComplete, isCompleted }: CleanerSetupProps) {
       {/* SMS info */}
       <Alert>
         <AlertDescription className="text-sm">
-          <strong>SMS Notifications:</strong> Once approved, you'll be able to send automated schedule reminders via SMS. 
+          <strong>SMS Notifications:</strong> Once approved, you&apos;ll be able to send automated schedule reminders via SMS. 
           Cleaners will need to opt-in to receive messages.
         </AlertDescription>
       </Alert>

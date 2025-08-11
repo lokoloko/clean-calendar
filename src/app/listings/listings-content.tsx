@@ -614,7 +614,7 @@ export default function ListingsContent() {
                     onChange={(e) => setFormData({ ...formData, ics_url: e.target.value })}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Find this in your Airbnb listing settings under "Calendar Sync"
+                    Find this in your Airbnb listing settings under &quot;Calendar Sync&quot;
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -778,7 +778,7 @@ export default function ListingsContent() {
             <DialogHeader>
               <DialogTitle>Delete Listing</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{deletingListing?.name}"? This will also delete all associated schedule items and cannot be undone.
+                Are you sure you want to delete &quot;{deletingListing?.name}&quot;? This will also delete all associated schedule items and cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

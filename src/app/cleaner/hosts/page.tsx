@@ -180,7 +180,7 @@ export default function CleanerHostsPage() {
                   No hosts found
                 </h3>
                 <p className="text-sm text-gray-600">
-                  You haven't been assigned to any hosts yet
+                  You haven&apos;t been assigned to any hosts yet
                 </p>
               </CardContent>
             </Card>

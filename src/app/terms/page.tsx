@@ -151,7 +151,7 @@ export default function TermsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              GoStudioM is provided "as is" without warranties of any kind. We are not liable for any 
+              GoStudioM is provided &quot;as is&quot; without warranties of any kind. We are not liable for any 
               indirect, incidental, special, or consequential damages arising from your use of the Service.
             </p>
           </CardContent>

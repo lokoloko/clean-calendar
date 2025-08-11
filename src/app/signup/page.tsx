@@ -79,7 +79,7 @@ function SignUpForm() {
           </CardHeader>
           <CardContent>
             <p className="text-center text-gray-600">
-              We've sent you an email with a confirmation link. 
+              We&apos;ve sent you an email with a confirmation link. 
               Please check your inbox and click the link to complete your registration.
             </p>
           </CardContent>

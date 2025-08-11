@@ -47,7 +47,7 @@ export function AirbnbCalendarPreview({ stats, preview, onSignIn }: AirbnbCalend
       <Alert className="border-green-200 bg-green-50">
         <CheckCircle2 className="h-4 w-4 text-green-600" />
         <AlertDescription className="text-green-800">
-          Valid Airbnb calendar found! Here's your cleaning schedule preview.
+          Valid Airbnb calendar found! Here&apos;s your cleaning schedule preview.
         </AlertDescription>
       </Alert>
 

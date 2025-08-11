@@ -153,7 +153,7 @@ export function ScheduleClient({ initialSchedule, cleaners }: ScheduleClientProp
                           // Show a message if no schedule has been generated
                           <TableRow>
                               <TableCell colSpan={4} className="h-24 text-center">
-                              No optimized schedule generated yet. Click "Optimize with AI" to begin.
+                              No optimized schedule generated yet. Click &quot;Optimize with AI&quot; to begin.
                               </TableCell>
                           </TableRow>
                           )}
