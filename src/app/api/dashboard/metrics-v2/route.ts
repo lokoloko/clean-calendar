@@ -46,7 +46,7 @@ async function fetchMetrics(userId: string) {
           notes,
           completed_at
         ),
-        manual_schedule_rules(
+        manual_schedule_rules!manual_rule_id(
           frequency
         )
       `).eq('listings.user_id', userId).gte('check_out', thirtyDaysAgo.toISOString()).order('check_out'),

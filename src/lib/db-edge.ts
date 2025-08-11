@@ -919,7 +919,7 @@ export const db = {
           cleanliness_rating,
           notes
         ),
-        manual_schedule_rules(
+        manual_schedule_rules!manual_rule_id(
           frequency
         )
       `)
@@ -959,7 +959,7 @@ export const db = {
           cleanliness_rating,
           notes
         ),
-        manual_schedule_rules(
+        manual_schedule_rules!manual_rule_id(
           frequency
         )
       `)
