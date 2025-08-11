@@ -259,7 +259,7 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Paste your Airbnb iCal link and we'll sync your bookings automatically. No guest names or private data.
+                    Paste your Airbnb iCal link and we&apos;ll sync your bookings automatically. No guest names or private data.
                   </p>
                 </CardContent>
               </Card>

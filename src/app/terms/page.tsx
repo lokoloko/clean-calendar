@@ -37,7 +37,7 @@ export default function TermsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              By accessing and using GoStudioM ("Service"), you agree to be bound by these Terms of Service. 
+              By accessing and using GoStudioM (&quot;Service&quot;), you agree to be bound by these Terms of Service. 
               If you do not agree to these terms, please do not use our Service.
             </p>
           </CardContent>
