@@ -49,6 +49,20 @@ export class PropertyStoreAdapter {
   }
 
   /**
+   * Get all properties for a specific user
+   */
+  static async getAllForUser(userId: string): Promise<Property[]> {
+    const store = this.getStore()
+    
+    if (store === PropertyStoreDB) {
+      return await PropertyStoreDB.getAllForUser(userId)
+    } else {
+      // LocalStorage doesn't have user separation, return all
+      return PropertyStoreLocal.getAll()
+    }
+  }
+
+  /**
    * Get all properties (synchronous version for compatibility)
    */
   static getAllSync(): Property[] {
@@ -82,6 +96,39 @@ export class PropertyStoreAdapter {
       return null
     }
     return PropertyStoreLocal.getById(id)
+  }
+
+  /**
+   * Save a property for a specific user
+   */
+  static async saveForUser(property: Property, userId: string): Promise<Property> {
+    // Add userId to property
+    const propertyWithUser = { ...property, userId }
+    
+    // Dual-write mode: write to both stores
+    if (this.isDualWriteEnabled()) {
+      try {
+        // Write to localStorage first (synchronous)
+        PropertyStoreLocal.save(propertyWithUser)
+        
+        // Then write to database (async)
+        await PropertyStoreDB.saveForUser(propertyWithUser, userId)
+        
+        console.log(`Dual-write successful for property ${property.id}`)
+      } catch (error) {
+        console.error('Dual-write failed:', error)
+        // Continue with single store
+      }
+    }
+    
+    // Normal mode: write to active store
+    const store = this.getStore()
+    
+    if (store === PropertyStoreDB) {
+      return await PropertyStoreDB.saveForUser(propertyWithUser, userId)
+    } else {
+      return PropertyStoreLocal.save(propertyWithUser)
+    }
   }
 
   /**

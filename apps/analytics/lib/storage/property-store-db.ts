@@ -141,6 +141,59 @@ export class PropertyStoreDB {
   }
 
   /**
+   * Get all properties for a specific user
+   */
+  static async getAllForUser(userId: string): Promise<Property[]> {
+    try {
+      // Get properties with their latest metrics
+      const { data: properties, error } = await supabase
+        .schema('analytics')
+        .from('properties')
+        .select('*')
+        .eq('user_id', userId)
+        .order('name')
+
+      if (error) {
+        console.error('Error fetching properties:', error)
+        return []
+      }
+
+      if (!properties || properties.length === 0) {
+        return []
+      }
+
+      // Transform database properties to our Property interface
+      const transformedProperties = await Promise.all(
+        properties.map(async (dbProp) => {
+          // Get latest metrics for this property
+          const { data: metrics } = await supabase
+            .schema('analytics')
+            .from('property_metrics')
+            .select('*')
+            .eq('property_id', dbProp.id)
+            .order('period_end', { ascending: false })
+            .limit(1)
+
+          // Get data sources
+          const { data: dataSources } = await supabase
+            .schema('analytics')
+            .from('data_sources')
+            .select('*')
+            .eq('property_id', dbProp.id)
+            .order('uploaded_at', { ascending: false })
+
+          return this.transformToProperty(dbProp, metrics?.[0], dataSources || [])
+        })
+      )
+
+      return transformedProperties
+    } catch (error) {
+      console.error('Error in getAllForUser:', error)
+      return []
+    }
+  }
+
+  /**
    * Get a single property by ID
    */
   static async getById(id: string): Promise<Property | null> {
@@ -196,6 +249,52 @@ export class PropertyStoreDB {
     } catch (error) {
       console.error('Error in getById:', error)
       return null
+    }
+  }
+
+  /**
+   * Save a property for a specific user
+   */
+  static async saveForUser(property: Property, userId: string): Promise<Property> {
+    try {
+      // Prepare database format
+      const dbProperty: DBPropertyInsert = {
+        id: property.id,
+        user_id: userId,
+        name: property.name,
+        standard_name: property.standardName,
+        airbnb_url: property.airbnbUrl,
+        listing_id: property.airbnbListingId,
+        data_completeness: property.dataCompleteness || 0
+      }
+
+      // Upsert property
+      const { data: savedProperty, error } = await supabase
+        .schema('analytics')
+        .from('properties')
+        .upsert(dbProperty)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Save metrics if present
+      if (property.metrics) {
+        await this.saveMetrics(property.id, property.metrics)
+      }
+
+      // Save data sources
+      if (property.dataSources) {
+        await this.saveDataSources(property.id, property.dataSources)
+      }
+
+      // Update cache
+      this.cache.set(property.id, property)
+
+      return property
+    } catch (error) {
+      console.error('Error in saveForUser:', error)
+      throw error
     }
   }
 

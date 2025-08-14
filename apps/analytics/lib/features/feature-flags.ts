@@ -19,8 +19,8 @@ const FLAGS: Record<FeatureFlag, FeatureFlagConfig> = {
   [FeatureFlag.USE_DATABASE_STORAGE]: {
     name: 'Use Database Storage',
     description: 'Switch from localStorage to database storage',
-    defaultValue: false,
-    rolloutPercentage: 0 // Start with 0%, increase gradually
+    defaultValue: true, // Enable by default for MVP
+    rolloutPercentage: 100 // Enable for all users
   },
   [FeatureFlag.DUAL_WRITE_MODE]: {
     name: 'Dual Write Mode',

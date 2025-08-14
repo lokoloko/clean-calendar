@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionId } from '@/lib/session-helper'
-import { 
-  getSession, 
-  saveToSession, 
-  addPropertiesToSession,
-  updateSessionMetadata 
-} from '@/lib/session-store-persistent'
-import { PropertyStore, type Property } from '@/lib/storage/property-store'
+import { getCurrentUser } from '@/lib/auth-helper'
+import { PropertyStoreAdapter } from '@/lib/storage/property-store-adapter'
+import type { Property } from '@/lib/storage/property-store'
 
 /**
  * GET /api/properties
- * Get all properties for the current session
+ * Get all properties for the current user
  */
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = await getSessionId()
-    const session = getSession(sessionId)
+    const user = getCurrentUser()
     
-    console.log(`GET /api/properties - Session ID: ${sessionId.substring(0, 8)}...`)
-    console.log(`Session has ${session.properties.length} properties`)
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
+    console.log(`GET /api/properties - User: ${user.email}`)
+    
+    // Get properties from database
+    const properties = await PropertyStoreAdapter.getAllForUser(user.id)
+    
+    console.log(`Found ${properties.length} properties for user ${user.email}`)
     
     return NextResponse.json({
       success: true,
-      properties: session.properties,
-      metadata: session.metadata
+      properties,
+      metadata: {
+        count: properties.length,
+        userId: user.id
+      }
     })
   } catch (error) {
     console.error('Error fetching properties:', error)
@@ -44,48 +52,49 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const sessionId = await getSessionId()
+    const user = getCurrentUser()
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const data = await request.json()
     
-    console.log(`POST /api/properties - Session ID: ${sessionId.substring(0, 8)}...`)
+    console.log(`POST /api/properties - User: ${user.email}`)
     console.log(`Creating properties from upload data:`, {
       hasProperties: !!data.properties,
       propertyCount: data.properties?.length || 0,
       replace: data.replace
     })
     
-    // Create properties using the existing PropertyStore logic
-    // This maintains compatibility with the current data processing
-    const properties = PropertyStore.createFromUpload(data)
+    // Create properties with user_id
+    const propertiesData = data.properties || []
+    const savedProperties: Property[] = []
     
-    console.log(`Created ${properties.length} properties from upload data`)
-    
-    // Save to session instead of localStorage
-    if (data.replace) {
-      // Replace all properties
-      saveToSession(sessionId, properties)
-      console.log(`Replaced all properties in session ${sessionId.substring(0, 8)}...`)
-    } else {
-      // Add to existing properties
-      addPropertiesToSession(sessionId, properties)
-      console.log(`Added ${properties.length} properties to session ${sessionId.substring(0, 8)}...`)
+    for (const propData of propertiesData) {
+      const property: Property = {
+        ...propData,
+        id: propData.id || PropertyStoreAdapter.generateId(),
+        userId: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      
+      const saved = await PropertyStoreAdapter.saveForUser(property, user.id)
+      if (saved) {
+        savedProperties.push(saved)
+      }
     }
     
-    // Update session metadata if provided
-    if (data.csv?.dateRange) {
-      updateSessionMetadata(sessionId, {
-        csvDateRange: data.csv.dateRange
-      })
-    }
-    
-    // Verify save
-    const session = getSession(sessionId)
-    console.log(`Session ${sessionId.substring(0, 8)}... now has ${session.properties.length} properties`)
+    console.log(`Saved ${savedProperties.length} properties for user ${user.email}`)
     
     return NextResponse.json({
       success: true,
-      properties,
-      count: properties.length
+      properties: savedProperties,
+      count: savedProperties.length
     })
   } catch (error) {
     console.error('Error creating properties:', error)
