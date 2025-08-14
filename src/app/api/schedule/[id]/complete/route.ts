@@ -4,11 +4,20 @@ import { createClient } from '@/lib/supabase-server'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const user = await requireAuth()
     const supabase = await createClient()
+    
+    // First get user's listings
+    const { data: userListings } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('user_id', user.id)
+    
+    const listingIds = userListings?.map(l => l.id) || []
     
     // Update the schedule item to mark it as completed
     const { error } = await supabase
@@ -19,13 +28,7 @@ export async function POST(
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)
-      // Verify the user owns this schedule item through the listing
-      .in('listing_id', 
-        supabase
-          .from('listings')
-          .select('id')
-          .eq('user_id', user.id)
-      )
+      .in('listing_id', listingIds)
     
     if (error) {
       console.error('Error marking cleaning as completed:', error)
@@ -47,11 +50,20 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const user = await requireAuth()
     const supabase = await createClient()
+    
+    // First get user's listings
+    const { data: userListings } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('user_id', user.id)
+    
+    const listingIds = userListings?.map(l => l.id) || []
     
     // Mark as not completed (undo)
     const { error } = await supabase
@@ -62,13 +74,7 @@ export async function DELETE(
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)
-      // Verify the user owns this schedule item through the listing
-      .in('listing_id', 
-        supabase
-          .from('listings')
-          .select('id')
-          .eq('user_id', user.id)
-      )
+      .in('listing_id', listingIds)
     
     if (error) {
       console.error('Error unmarking cleaning as completed:', error)

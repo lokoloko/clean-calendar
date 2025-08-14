@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/page-header';
 import { Calendar as CalendarIcon, Check, FileDown, Printer, Share, Loader2, Plus, List, CalendarDays, CalendarRange, MoreVertical, UserCheck, Home, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
+import { format, parseISO, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatTimeDisplay, formatPhoneForDisplay } from '@/lib/format-utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
