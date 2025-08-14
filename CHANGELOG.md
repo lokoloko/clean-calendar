@@ -1,5 +1,27 @@
 # Changelog
 
+## [2025-08-14] - Schedule View Improvements
+
+### Fixed
+- **Monthly Calendar View**: Fixed issue where past/historical cleanings were not displayed in the monthly calendar view. Calendar views now show all cleanings for proper historical context while list view still respects the "Show completed" filter.
+  - Created separate `getItemsForCalendarDate()` function that doesn't filter completed items
+  - Calendar views (weekly and monthly) now use this function to display all historical data
+  - List view continues to use the filtered version respecting user preferences
+
+- **Properties Dropdown**: Fixed the properties filter dropdown in `/schedule` that was only showing "All Properties" instead of the actual property list.
+  - The `/api/listings` endpoint returns `{listings, subscription}` structure
+  - Updated schedule page to correctly extract listings from the API response
+
+### Technical Changes
+- Added `getItemsForCalendarDate()` and `hasSameDayTurnaroundCalendar()` functions in `src/app/schedule/schedule-content.tsx`
+- Updated both `WeeklyView` and `ContinuousMonthlyView` components to use calendar-specific functions
+- Fixed listings data extraction to handle the correct API response structure
+
+### Testing
+- All 83 tests passing
+- Verified monthly view displays historical cleanings
+- Confirmed properties dropdown populates correctly
+
 ## [Unreleased] - 2025-07-31
 
 ### Added

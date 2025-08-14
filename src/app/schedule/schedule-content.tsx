@@ -100,6 +100,7 @@ export default function ScheduleContent() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [viewType, setViewType] = useState<'list' | 'week' | 'month'>('list');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -194,7 +195,8 @@ export default function ScheduleContent() {
       // Extract data from response wrapper with array validation
       setScheduleItems(Array.isArray(scheduleData?.data) ? scheduleData.data : Array.isArray(scheduleData) ? scheduleData : []);
       setCleaners(Array.isArray(cleanersData?.data) ? cleanersData.data : Array.isArray(cleanersData) ? cleanersData : []);
-      setListings(Array.isArray(listingsData?.data) ? listingsData.data : Array.isArray(listingsData) ? listingsData : []);
+      // The listings API returns { listings, subscription } not { data }
+      setListings(Array.isArray(listingsData?.listings) ? listingsData.listings : Array.isArray(listingsData?.data) ? listingsData.data : Array.isArray(listingsData) ? listingsData : []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -244,8 +246,8 @@ export default function ScheduleContent() {
     // Filter out cancelled bookings unless explicitly showing them
     if (!showCancelled && item.status === 'cancelled') return false;
     
-    // Filter out completed/past bookings (check both status and is_completed flag)
-    if (item.status === 'completed' || item.is_completed) return false;
+    // Filter out completed bookings unless explicitly showing them
+    if (!showCompleted && (item.status === 'completed' || item.is_completed)) return false;
     
     // In list view, filter out past cleanings (checkout date before today)
     if (viewType === 'list') {
@@ -280,8 +282,30 @@ export default function ScheduleContent() {
       // Filter out cancelled bookings unless explicitly showing them
       if (!showCancelled && item.status === 'cancelled') return false;
       
-      // Filter out completed bookings (check both status and is_completed flag)
-      if (item.status === 'completed' || item.is_completed) return false;
+      // Filter out completed bookings unless explicitly showing them
+      if (!showCompleted && (item.status === 'completed' || item.is_completed)) return false;
+      
+      const itemDate = parseLocalDate(item.check_out);
+      return isSameDay(itemDate, targetDate);
+    });
+  };
+
+  // Get items for calendar views (doesn't filter completed items for historical context)
+  const getItemsForCalendarDate = (date: Date) => {
+    const targetDate = startOfDay(date);
+    return scheduleItems.filter(item => {
+      const matchesCleaner = selectedCleaner === 'all' || item.cleaner_id === selectedCleaner;
+      if (!matchesCleaner) return false;
+      
+      // Filter by selected listings
+      const matchesListing = selectedListings.length === 0 || selectedListings.includes(item.listing_id);
+      if (!matchesListing) return false;
+      
+      // Filter out cancelled bookings unless explicitly showing them
+      if (!showCancelled && item.status === 'cancelled') return false;
+      
+      // For calendar views, always show completed items for historical context
+      // Don't filter by completion status
       
       const itemDate = parseLocalDate(item.check_out);
       return isSameDay(itemDate, targetDate);
@@ -305,6 +329,15 @@ export default function ScheduleContent() {
   // Check if a date has same-day turnaround
   const hasSameDayTurnaround = (date: Date) => {
     const items = getItemsForDate(date);
+    return items.some(item => {
+      const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
+      return nextCheckIn === 'Same day';
+    });
+  };
+  
+  // Check if a date has same-day turnaround (for calendar views)
+  const hasSameDayTurnaroundCalendar = (date: Date) => {
+    const items = getItemsForCalendarDate(date);
     return items.some(item => {
       const nextCheckIn = getNextCheckIn(item.listing_id, item.check_out, item.id);
       return nextCheckIn === 'Same day';
@@ -668,6 +701,17 @@ export default function ScheduleContent() {
                 </Label>
               </div>
               
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="show-completed" 
+                  checked={showCompleted} 
+                  onCheckedChange={(checked) => setShowCompleted(checked as boolean)}
+                />
+                <Label htmlFor="show-completed" className="text-sm font-normal cursor-pointer">
+                  Show completed
+                </Label>
+              </div>
+              
               {viewType === 'list' && (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -734,7 +778,8 @@ export default function ScheduleContent() {
                     
                     return (
                     <TableRow key={item.id} className={cn(
-                      item.status === 'cancelled' && "opacity-60"
+                      item.status === 'cancelled' && "opacity-60",
+                      (item.status === 'completed' || item.is_completed) && "opacity-50 bg-muted/30"
                     )}>
                       <TableCell className="font-medium">
                         {isValidDate ? format(checkoutDate, 'MMM d, yyyy') : 'Invalid date'}
@@ -788,9 +833,12 @@ export default function ScheduleContent() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusMap[item.status as ScheduleStatus]?.variant || 'outline'} className="gap-1 items-center">
-                          {statusMap[item.status as ScheduleStatus]?.icon}
-                          {statusMap[item.status as ScheduleStatus]?.text || item.status}
+                        <Badge 
+                          variant={item.is_completed ? 'default' : statusMap[item.status as ScheduleStatus]?.variant || 'outline'} 
+                          className="gap-1 items-center"
+                        >
+                          {item.is_completed ? <Check className="h-3 w-3" /> : statusMap[item.status as ScheduleStatus]?.icon}
+                          {item.is_completed ? 'Completed' : statusMap[item.status as ScheduleStatus]?.text || item.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -818,14 +866,41 @@ export default function ScheduleContent() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {['pending', 'confirmed'].includes(item.status) && new Date(item.check_in) > new Date() && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/schedule/${item.id}/complete`, {
+                                    method: 'POST'
+                                  });
+                                  if (res.ok) {
+                                    toast({
+                                      title: 'Success',
+                                      description: 'Cleaning marked as completed',
+                                    });
+                                    await fetchData(); // Refresh the schedule
+                                  } else {
+                                    throw new Error('Failed to mark as complete');
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    title: 'Error',
+                                    description: 'Failed to mark cleaning as completed',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Mark as Done
+                            </DropdownMenuItem>
+                            {['pending', 'confirmed'].includes(item.status) && new Date(item.check_in) > new Date() && (
                               <DropdownMenuItem
                                 onClick={() => setReassignModal({
                                   isOpen: true,
@@ -836,9 +911,9 @@ export default function ScheduleContent() {
                                 <UserCheck className="mr-2 h-4 w-4" />
                                 Reassign Cleaner
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                     );
@@ -851,8 +926,8 @@ export default function ScheduleContent() {
           <TabsContent value="week" className="mt-0">
             <WeeklyView
               weekDays={getWeekDays()}
-              getItemsForDate={getItemsForDate}
-              hasSameDayTurnaround={hasSameDayTurnaround}
+              getItemsForDate={getItemsForCalendarDate}
+              hasSameDayTurnaround={hasSameDayTurnaroundCalendar}
               currentWeek={currentWeek}
               setCurrentWeek={setCurrentWeek}
               onDateClick={handleShowDayDetails}
@@ -862,8 +937,8 @@ export default function ScheduleContent() {
           <TabsContent value="month" className="mt-0 overflow-visible">
             <div className="overflow-visible">
               <ContinuousMonthlyView
-                getItemsForDate={getItemsForDate}
-                hasSameDayTurnaround={hasSameDayTurnaround}
+                getItemsForDate={getItemsForCalendarDate}
+                hasSameDayTurnaround={hasSameDayTurnaroundCalendar}
                 currentMonth={currentMonth}
                 setCurrentMonth={setCurrentMonth}
                 onDateClick={handleShowDayDetails}
