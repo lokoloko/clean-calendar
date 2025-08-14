@@ -14,6 +14,8 @@ services:
       - NEXT_PUBLIC_USE_AUTH=false
       - NEXTAUTH_URL=http://localhost:9002
       - NEXTAUTH_SECRET=development-secret-key-change-in-production
+      - GEMINI_API_KEY=AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k
+      - GOOGLE_AI_API_KEY=AIzaSyD2xTZABp-UxH0355ZWRSW_UPhItTBgB4k
     volumes:
       - .:/app
       - /app/node_modules
