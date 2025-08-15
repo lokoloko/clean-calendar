@@ -279,7 +279,7 @@ export class PropertyStoreDBPG {
         property.metrics = await this.calculateMetrics(property)
         property.dataCompleteness = this.calculateCompleteness(property)
 
-        console.log(`Created property "${property.name}" with metrics:`, {
+        console.log(`✅ Created property "${property.name}" with calculated metrics:`, {
           revenue: property.metrics?.revenue?.value,
           occupancy: property.metrics?.occupancy?.value,
           pricing: property.metrics?.pricing?.value,
@@ -333,7 +333,15 @@ export class PropertyStoreDBPG {
         ]
       )
     } catch (error) {
-      console.error('Error saving metrics:', error)
+      console.error('❌ Error saving metrics to database:', error)
+      console.error('Metrics data that failed to save:', {
+        propertyId,
+        revenue: metrics.revenue?.value,
+        occupancy: metrics.occupancy?.value,
+        pricing: metrics.pricing?.value,
+        source: metrics.revenue?.source
+      })
+      // Don't throw - continue with save even if metrics fail
     }
   }
 
