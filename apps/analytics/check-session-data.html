@@ -1,0 +1,36 @@
+<\!DOCTYPE html>
+<html>
+<head>
+    <title>Check Session Data</title>
+</head>
+<body>
+    <h1>Check SessionStorage Data</h1>
+    <button onclick="checkData()">Check SessionStorage</button>
+    <pre id="output"></pre>
+    
+    <script>
+    function checkData() {
+        const output = document.getElementById('output');
+        const processedData = sessionStorage.getItem('processedData');
+        
+        if (processedData) {
+            const data = JSON.parse(processedData);
+            output.textContent = 'ProcessedData found:\n';
+            output.textContent += 'Properties count: ' + (data.properties?.length || 0) + '\n';
+            output.textContent += 'Total revenue: ' + (data.totalRevenue || 0) + '\n\n';
+            
+            if (data.properties && data.properties.length > 0) {
+                output.textContent += 'First 3 properties:\n';
+                data.properties.slice(0, 3).forEach((p, i) => {
+                    output.textContent += (i+1) + '. ' + (p.name || p.standardName || 'Unknown') + '\n';
+                    output.textContent += '   Revenue: ' + (p.revenue || 0) + '\n';
+                    output.textContent += '   Nights: ' + (p.nightsBooked || 0) + '\n';
+                });
+            }
+        } else {
+            output.textContent = 'No processedData in sessionStorage';
+        }
+    }
+    </script>
+</body>
+</html>

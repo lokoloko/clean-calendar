@@ -230,8 +230,9 @@ export class PropertyStoreDBPG {
           }
         }
 
-        // Add PDF data if available
-        if (prop.netEarnings !== undefined) {
+        // Add PDF data if available (handle both PDF and CSV field names)
+        const hasFinancialData = prop.netEarnings !== undefined || prop.revenue !== undefined
+        if (hasFinancialData) {
           property.dataSources.pdf = {
             data: {
               period: uploadData.period || '',
@@ -240,9 +241,12 @@ export class PropertyStoreDBPG {
               totalServiceFees: prop.serviceFees || 0,
               totalAdjustments: prop.adjustments || 0,
               totalTaxWithheld: prop.taxWithheld || 0,
-              totalNetEarnings: prop.netEarnings || 0,
+              totalNetEarnings: prop.revenue || prop.netEarnings || 0,  // Handle both CSV (revenue) and PDF (netEarnings)
               totalNightsBooked: prop.nightsBooked || 0,
-              properties: [prop]
+              properties: [{
+                ...prop,
+                netEarnings: prop.revenue || prop.netEarnings || 0  // Ensure netEarnings is set for metrics calculation
+              }]
             } as ParsedPDF,
             uploadedAt: new Date(),
             period: uploadData.period || '',
@@ -253,6 +257,11 @@ export class PropertyStoreDBPG {
         // Add CSV data if available
         if (uploadData.csv?.propertyMetrics) {
           const csvDateRange = uploadData.csv?.dateRange || {}
+          // Find the CSV metrics for THIS specific property
+          const thisPropertyMetrics = uploadData.csv.propertyMetrics.find(
+            (m: any) => m.name === standardName || m.name === prop.name
+          )
+          
           property.dataSources.csv = {
             data: [],
             uploadedAt: new Date(),
@@ -261,7 +270,8 @@ export class PropertyStoreDBPG {
               end: csvDateRange.end ? new Date(csvDateRange.end) : new Date()
             },
             recordCount: 0,
-            propertyMetrics: uploadData.csv.propertyMetrics || []
+            // Only include this property's metrics, not all properties
+            propertyMetrics: thisPropertyMetrics ? [thisPropertyMetrics] : []
           }
         }
 

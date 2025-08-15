@@ -1,0 +1,33 @@
+<\!DOCTYPE html>
+<html>
+<head>
+    <title>Clear and Test</title>
+</head>
+<body>
+    <h1>Clear Session and Test</h1>
+    <button onclick="clearSession()">Clear SessionStorage</button>
+    <button onclick="checkSession()">Check Current Data</button>
+    <button onclick="window.location.href='/'">Go to Upload</button>
+    <pre id="output"></pre>
+    
+    <script>
+    function clearSession() {
+        sessionStorage.clear();
+        document.getElementById('output').textContent = 'SessionStorage cleared\! Now upload CSV again.';
+    }
+    
+    function checkSession() {
+        const output = document.getElementById('output');
+        const processedData = sessionStorage.getItem('processedData');
+        
+        if (processedData) {
+            const data = JSON.parse(processedData);
+            output.textContent = 'ProcessedData found:\n';
+            output.textContent += JSON.stringify(data, null, 2).substring(0, 1000);
+        } else {
+            output.textContent = 'No processedData in sessionStorage';
+        }
+    }
+    </script>
+</body>
+</html>
