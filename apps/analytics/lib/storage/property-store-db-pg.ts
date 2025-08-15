@@ -158,7 +158,11 @@ export class PropertyStoreDBPG {
 
       // Save metrics if present
       if (property.metrics) {
+        console.log(`💾 Attempting to save metrics for ${property.name}...`)
         await this.saveMetrics(property.id, property.metrics)
+        console.log(`✅ Metrics saved for ${property.name}`)
+      } else {
+        console.log(`⚠️ No metrics to save for ${property.name}`)
       }
 
       // Save data sources
@@ -256,10 +260,18 @@ export class PropertyStoreDBPG {
 
         // Add CSV data if available
         if (uploadData.csv?.propertyMetrics) {
+          console.log(`📊 CSV propertyMetrics available: ${uploadData.csv.propertyMetrics.length} properties`)
           const csvDateRange = uploadData.csv?.dateRange || {}
           // Find the CSV metrics for THIS specific property
+          console.log(`🔍 Looking for CSV metrics for "${standardName}" (or "${prop.name}")`)
           const thisPropertyMetrics = uploadData.csv.propertyMetrics.find(
-            (m: any) => m.name === standardName || m.name === prop.name
+            (m: any) => {
+              const match = m.name === standardName || m.name === prop.name || m.name === prop.csvName
+              if (match) {
+                console.log(`  ✅ Found match: "${m.name}"`)
+              }
+              return match
+            }
           )
           
           property.dataSources.csv = {
