@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CSV Upload Flow</title>
+</head>
+<body>
+    <h1>CSV Upload Flow Test</h1>
+    <input type="file" id="csvFile" accept=".csv">
+    <button onclick="testUpload()">Test Upload</button>
+    <pre id="output"></pre>
+
+    <script>
+    async function testUpload() {
+        const output = document.getElementById('output');
+        const fileInput = document.getElementById('csvFile');
+        
+        if (!fileInput.files[0]) {
+            output.textContent = 'Please select a CSV file';
+            return;
+        }
+        
+        output.textContent = 'Testing upload flow...\n\n';
+        
+        // Step 1: Upload file
+        const formData = new FormData();
+        formData.append('csv', fileInput.files[0]);
+        
+        try {
+            output.textContent += '1. Uploading to /api/upload...\n';
+            const response = await fetch('http://localhost:9003/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                output.textContent += '✅ Upload successful!\n\n';
+                output.textContent += '2. Data returned:\n';
+                output.textContent += `   Properties: ${result.data.properties?.length || 0}\n`;
+                output.textContent += `   CSV metrics: ${result.data.csv?.propertyMetrics?.length || 0}\n`;
+                output.textContent += `   Total revenue: $${result.data.summary?.totalRevenue || 0}\n\n`;
+                
+                // Step 2: Simulate what gets stored
+                const uploadData = {
+                    ...result.data,
+                    propertyUrls: [],
+                    isAppend: false
+                };
+                
+                output.textContent += '3. Storing in sessionStorage...\n';
+                sessionStorage.setItem('uploadData', JSON.stringify(uploadData));
+                
+                // Step 3: Check what mapping page would see
+                const stored = JSON.parse(sessionStorage.getItem('uploadData'));
+                output.textContent += '4. What mapping page sees:\n';
+                output.textContent += `   Properties: ${stored.properties?.length || 0}\n`;
+                output.textContent += `   CSV present: ${!!stored.csv}\n\n`;
+                
+                // Step 4: Simulate saving to processedData
+                const dashboardData = {
+                    ...stored,
+                    totalRevenue: stored.properties?.reduce((sum, p) => sum + (p.revenue || 0), 0) || 0,
+                    totalNights: stored.properties?.reduce((sum, p) => sum + (p.nightsBooked || 0), 0) || 0
+                };
+                
+                sessionStorage.setItem('processedData', JSON.stringify(dashboardData));
+                
+                output.textContent += '5. What properties page would see:\n';
+                const processed = JSON.parse(sessionStorage.getItem('processedData'));
+                output.textContent += `   Properties: ${processed.properties?.length || 0}\n`;
+                output.textContent += `   Total revenue: $${processed.totalRevenue || 0}\n`;
+                output.textContent += `   Total nights: ${processed.totalNights || 0}\n\n`;
+                
+                // Show first 3 properties
+                if (processed.properties?.length > 0) {
+                    output.textContent += '6. First 3 properties:\n';
+                    processed.properties.slice(0, 3).forEach((p, i) => {
+                        output.textContent += `   ${i+1}. ${p.name || 'Unknown'}\n`;
+                        output.textContent += `      Revenue: $${p.revenue || 0}\n`;
+                        output.textContent += `      Nights: ${p.nightsBooked || 0}\n`;
+                    });
+                }
+                
+            } else {
+                output.textContent += `❌ Upload failed: ${result.error}\n`;
+            }
+            
+        } catch (error) {
+            output.textContent += `Error: ${error.message}\n`;
+        }
+    }
+    </script>
+</body>
+</html>

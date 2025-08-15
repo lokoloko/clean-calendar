@@ -83,10 +83,10 @@ export default function MappingPage() {
         pdfName: prop.name,
         csvName: PROPERTY_MAPPINGS[prop.name] || '',
         standardName: prop.name,
-        revenue: prop.netEarnings,
+        revenue: prop.revenue || prop.netEarnings || 0,  // Handle both CSV (revenue) and PDF (netEarnings)
         nightsBooked: prop.nightsBooked || 0,
         avgNightStay: prop.avgNightStay || 0, // Will be 0 if not available from CSV
-        status: prop.netEarnings > 0 ? 'active' : 'inactive',
+        status: (prop.revenue || prop.netEarnings || 0) > 0 ? 'active' : 'inactive',  // Check both fields
         mapped: true, // Auto-mapped since we know the mappings
         selected: true, // Default to all selected
         hasAccurateMetrics: prop.hasAccurateMetrics || false,
