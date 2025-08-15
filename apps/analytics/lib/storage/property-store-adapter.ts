@@ -6,6 +6,7 @@
 
 import { PropertyStore as PropertyStoreLocal } from './property-store'
 import { PropertyStoreDB } from './property-store-db'
+import { PropertyStoreDBPG } from './property-store-db-pg'
 import { FeatureFlag, isFeatureEnabled } from '@/lib/features/feature-flags'
 import type { Property, PropertyDataSource, PropertyMetrics } from './property-store'
 
@@ -14,8 +15,14 @@ export class PropertyStoreAdapter {
    * Get the active store based on feature flags
    */
   private static getStore() {
+    // Always use database on server-side (localStorage doesn't exist in Node.js)
+    if (typeof window === 'undefined') {
+      return PropertyStoreDBPG as any
+    }
+    
     if (isFeatureEnabled(FeatureFlag.USE_DATABASE_STORAGE)) {
-      return PropertyStoreDB
+      // Use direct PostgreSQL implementation for analytics app
+      return PropertyStoreDBPG as any
     }
     return PropertyStoreLocal
   }
@@ -54,7 +61,10 @@ export class PropertyStoreAdapter {
   static async getAllForUser(userId: string): Promise<Property[]> {
     const store = this.getStore()
     
-    if (store === PropertyStoreDB) {
+    // Check if it's the PG version (cast for comparison)
+    if ((store as any) === PropertyStoreDBPG) {
+      return await PropertyStoreDBPG.getAllForUser(userId)
+    } else if (store === PropertyStoreDB) {
       return await PropertyStoreDB.getAllForUser(userId)
     } else {
       // LocalStorage doesn't have user separation, return all
@@ -184,7 +194,7 @@ export class PropertyStoreAdapter {
   /**
    * Create properties from upload
    */
-  static async createFromUpload(uploadData: any): Promise<Property[]> {
+  static async createFromUpload(uploadData: any, userId?: string): Promise<Property[]> {
     // Dual-write mode
     if (this.isDualWriteEnabled()) {
       try {
@@ -197,7 +207,10 @@ export class PropertyStoreAdapter {
     }
 
     const store = this.getStore()
-    if (store === PropertyStoreDB) {
+    // Check if we're using the PG version (cast check)
+    if ((store as any) === PropertyStoreDBPG) {
+      return await PropertyStoreDBPG.createFromUpload(uploadData, userId || '')
+    } else if (store === PropertyStoreDB) {
       return await PropertyStoreDB.createFromUpload(uploadData)
     } else {
       return PropertyStoreLocal.createFromUpload(uploadData)

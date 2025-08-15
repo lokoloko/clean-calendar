@@ -136,10 +136,12 @@ export class TransactionCSVParser {
   }
   
   private analyzeTransactions(transactions: Transaction[]): ParsedCSV {
-    // Calculate totals by type
-    const totalRevenue = transactions
-      .filter(t => t.type === 'Reservation')
-      .reduce((sum, t) => sum + (t.grossEarnings || t.amount), 0)
+    // Group reservations by confirmation code to handle duplicate payment rows
+    const groupedReservations = this.groupReservationsByConfirmationCode(transactions)
+    
+    // Calculate totals using grouped data for accurate metrics
+    const totalRevenue = Array.from(groupedReservations.values())
+      .reduce((sum, booking) => sum + booking.totalRevenue, 0)
     
     const totalPayouts = transactions
       .filter(t => t.type === 'Payout')
@@ -156,8 +158,8 @@ export class TransactionCSVParser {
         .filter(Boolean)
     )].sort()
     
-    // Calculate property metrics
-    const propertyMetrics = this.getPropertyMetrics(transactions)
+    // Calculate property metrics using grouped data
+    const propertyMetrics = this.getPropertyMetricsFromGrouped(groupedReservations)
     
     // Find date range
     const dates = transactions.map(t => t.date).filter(Boolean).sort()
@@ -175,6 +177,144 @@ export class TransactionCSVParser {
       propertyMetrics,
       dateRange
     }
+  }
+  
+  // Group reservations by confirmation code to handle duplicate payment rows
+  private groupReservationsByConfirmationCode(transactions: Transaction[]): Map<string, {
+    listing: string
+    nights: number
+    totalRevenue: number
+    startDate: string
+    endDate: string
+    bookingDate: string
+    guest: string
+  }> {
+    const grouped = new Map<string, any>()
+    
+    // Only process reservation transactions
+    const reservations = transactions.filter(t => t.type === 'Reservation')
+    
+    for (const transaction of reservations) {
+      const code = transaction.confirmationCode
+      
+      // If no confirmation code, treat as unique transaction
+      if (!code) {
+        const uniqueKey = `no-code-${Math.random()}`
+        grouped.set(uniqueKey, {
+          listing: transaction.listing,
+          nights: transaction.nights || 0,
+          totalRevenue: transaction.grossEarnings || transaction.amount || 0,
+          startDate: transaction.startDate || transaction.date,
+          endDate: transaction.endDate || transaction.date,
+          bookingDate: transaction.date,
+          guest: transaction.guest || ''
+        })
+        continue
+      }
+      
+      if (!grouped.has(code)) {
+        // First occurrence - initialize the booking
+        grouped.set(code, {
+          listing: transaction.listing,
+          nights: transaction.nights || 0, // Take nights value once
+          totalRevenue: 0,
+          startDate: transaction.startDate || transaction.date,
+          endDate: transaction.endDate || transaction.date,
+          bookingDate: transaction.date,
+          guest: transaction.guest || ''
+        })
+      }
+      
+      // Add revenue from this row (handles multiple payments)
+      const booking = grouped.get(code)
+      booking.totalRevenue += transaction.grossEarnings || transaction.amount || 0
+      
+      // Update dates if earlier/later (using proper date comparison)
+      const transStart = transaction.startDate ? new Date(transaction.startDate) : null
+      const transEnd = transaction.endDate ? new Date(transaction.endDate) : null
+      const bookingStart = booking.startDate ? new Date(booking.startDate) : null
+      const bookingEnd = booking.endDate ? new Date(booking.endDate) : null
+      
+      if (transStart && (!bookingStart || transStart < bookingStart)) {
+        booking.startDate = transaction.startDate
+      }
+      if (transEnd && (!bookingEnd || transEnd > bookingEnd)) {
+        booking.endDate = transaction.endDate
+      }
+    }
+    
+    return grouped
+  }
+  
+  // Calculate property metrics from grouped reservations
+  private getPropertyMetricsFromGrouped(groupedReservations: Map<string, any>): PropertyMetrics[] {
+    const propertyMap = new Map<string, PropertyMetrics>()
+    
+    for (const booking of groupedReservations.values()) {
+      const propertyName = booking.listing
+      if (!propertyName) continue
+      
+      if (!propertyMap.has(propertyName)) {
+        propertyMap.set(propertyName, {
+          name: propertyName,
+          totalNights: 0,
+          bookingCount: 0,
+          avgStayLength: 0,
+          totalRevenue: 0,
+          avgNightlyRate: 0,
+          dateRange: {
+            start: booking.startDate,
+            end: booking.endDate
+          }
+        })
+      }
+      
+      const metrics = propertyMap.get(propertyName)!
+      
+      // Update metrics with correct values
+      metrics.totalNights += booking.nights
+      metrics.bookingCount += 1
+      metrics.totalRevenue += booking.totalRevenue
+      
+      // Update date range to encompass all bookings (using proper date comparison)
+      const bookingStart = booking.startDate ? new Date(booking.startDate) : null
+      const bookingEnd = booking.endDate ? new Date(booking.endDate) : null
+      const currentStart = metrics.dateRange.start ? new Date(metrics.dateRange.start) : null
+      const currentEnd = metrics.dateRange.end ? new Date(metrics.dateRange.end) : null
+      
+      if (bookingStart && (!currentStart || bookingStart < currentStart)) {
+        metrics.dateRange.start = booking.startDate
+      }
+      if (bookingEnd && (!currentEnd || bookingEnd > currentEnd)) {
+        metrics.dateRange.end = booking.endDate
+      }
+    }
+    
+    // Calculate averages and occupancy correctly
+    for (const metrics of propertyMap.values()) {
+      if (metrics.bookingCount > 0) {
+        metrics.avgStayLength = metrics.totalNights / metrics.bookingCount
+      }
+      if (metrics.totalNights > 0) {
+        metrics.avgNightlyRate = metrics.totalRevenue / metrics.totalNights
+      }
+      
+      // Validate date range
+      if (metrics.dateRange.start && metrics.dateRange.end) {
+        const start = new Date(metrics.dateRange.start)
+        const end = new Date(metrics.dateRange.end)
+        
+        // If end is before start, swap them
+        if (end < start) {
+          const temp = metrics.dateRange.start
+          metrics.dateRange.start = metrics.dateRange.end
+          metrics.dateRange.end = temp
+        }
+      }
+    }
+    
+    // Sort by revenue descending
+    return Array.from(propertyMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue)
   }
   
   // Calculate accurate metrics for each property from transactions
@@ -234,7 +374,8 @@ export class TransactionCSVParser {
   
   // Calculate historical analytics from all transactions
   private calculateHistoricalData(transactions: Transaction[]): ParsedCSV['historicalData'] {
-    const reservations = transactions.filter(t => t.type === 'Reservation')
+    // Group reservations by confirmation code for accurate metrics
+    const groupedReservations = this.groupReservationsByConfirmationCode(transactions)
     
     // Get date range
     const dates = transactions.map(t => t.date).filter(Boolean).sort()
@@ -242,28 +383,32 @@ export class TransactionCSVParser {
     // Calculate yearly breakdown
     const yearlyData = new Map<number, { revenue: number, nights: number, bookings: number }>()
     
-    reservations.forEach(t => {
-      if (!t.date) return
-      const year = new Date(t.date).getFullYear()
+    for (const booking of groupedReservations.values()) {
+      const bookingDate = booking.bookingDate
+      if (!bookingDate) continue
+      
+      const year = new Date(bookingDate).getFullYear()
       
       if (!yearlyData.has(year)) {
         yearlyData.set(year, { revenue: 0, nights: 0, bookings: 0 })
       }
       
       const yearData = yearlyData.get(year)!
-      yearData.revenue += t.grossEarnings || t.amount || 0
-      yearData.nights += t.nights || 0
+      yearData.revenue += booking.totalRevenue
+      yearData.nights += booking.nights
       yearData.bookings += 1
-    })
+    }
     
     // Convert to array and sort by year
     const yearlyBreakdown = Array.from(yearlyData.entries())
       .map(([year, data]) => ({ year, ...data }))
       .sort((a, b) => a.year - b.year)
     
-    // Calculate totals
-    const totalRevenue = reservations.reduce((sum, t) => sum + (t.grossEarnings || t.amount || 0), 0)
-    const totalNights = reservations.reduce((sum, t) => sum + (t.nights || 0), 0)
+    // Calculate totals from grouped data
+    const totalRevenue = Array.from(groupedReservations.values())
+      .reduce((sum, booking) => sum + booking.totalRevenue, 0)
+    const totalNights = Array.from(groupedReservations.values())
+      .reduce((sum, booking) => sum + booking.nights, 0)
     
     return {
       totalTransactions: transactions.length,

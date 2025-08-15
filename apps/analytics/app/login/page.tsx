@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,10 +11,13 @@ import { GoStudioMLogo } from '@/components/GoStudioMLogo'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  const from = searchParams.get('from') || '/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,9 +36,11 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Redirect to dashboard
-        router.push('/dashboard')
+        console.log('✅ Login successful, redirecting to:', from)
+        // Redirect to where they came from or dashboard
+        router.push(from)
       } else {
+        console.log('❌ Login failed:', data.error)
         setError(data.error || 'Invalid credentials')
       }
     } catch (err) {

@@ -347,12 +347,19 @@ export class PropertyStoreDB {
   }
 
   /**
-   * Create properties from uploaded data
+   * Create properties from uploaded data  
    */
-  static async createFromUpload(uploadData: any): Promise<Property[]> {
+  static async createFromUpload(uploadData: any, userId?: string): Promise<Property[]> {
     const properties: Property[] = []
-    const user = await getCurrentUser()
-    if (!user) throw new Error('User not authenticated')
+    let user: any = null
+    
+    // Try to get user from context or use provided userId
+    if (userId) {
+      user = { id: userId }
+    } else {
+      user = await getCurrentUser()
+      if (!user) throw new Error('User not authenticated')
+    }
 
     console.log('PropertyStoreDB.createFromUpload received:', {
       hasCSV: !!uploadData.csv,
@@ -428,9 +435,13 @@ export class PropertyStoreDB {
       }
     }
 
-    // Save all properties to database
+    // Save all properties to database with user context
     for (const property of properties) {
-      await this.save(property)
+      if (userId || user?.id) {
+        await this.saveForUser(property, userId || user.id)
+      } else {
+        await this.save(property)
+      }
     }
 
     return properties
@@ -646,6 +657,14 @@ export class PropertyStoreDB {
     if (property.dataSources.scraped) score += weights.scraped
 
     return Math.min(100, score)
+  }
+
+  private static async transformToProperty(
+    dbProp: any,
+    metrics?: any,
+    dataSources?: any[]
+  ): Promise<Property> {
+    return this.transformDBToProperty(dbProp, dataSources || [], metrics)
   }
 
   private static async transformDBToProperty(

@@ -107,7 +107,7 @@ export default function PropertyDetailPage() {
       setLoading(true)
       console.log('Loading property with ID:', propertyId)
       
-      // Fetch property from API instead of localStorage
+      // Try to fetch property from API first
       const response = await fetch(`/api/properties/${propertyId}`)
       const data = await response.json()
       
@@ -165,7 +165,95 @@ export default function PropertyDetailPage() {
           generateInsights(prop)
         }
       } else {
-        // Property not found, redirect to properties list
+        // Try to load from individual property in sessionStorage first
+        const individualProp = sessionStorage.getItem(`property-${propertyId}`)
+        if (individualProp) {
+          const prop = JSON.parse(individualProp)
+          console.log('Loaded individual property from session storage')
+          setProperty(prop)
+          generateInsights(prop)
+          setLoading(false)
+          return
+        }
+        
+        // Try to load from sessionStorage for unauthenticated users
+        const sessionData = sessionStorage.getItem('processedData')
+        if (sessionData) {
+          const data = JSON.parse(sessionData)
+          const prop = data.properties?.find((p: any) => p.id === propertyId)
+          
+          if (prop) {
+            console.log('Loaded property from session storage')
+            // Transform to Property format
+            const transformedProp: Property = {
+              id: prop.id || propertyId,
+              name: prop.name || prop.standardName || prop.pdfName || 'Unnamed Property',
+              standardName: prop.standardName || prop.name || prop.pdfName || 'Unnamed Property',
+              airbnbUrl: prop.airbnbUrl || '',
+              metrics: {
+                revenue: { 
+                  value: prop.netEarnings || prop.revenue || 0,
+                  source: 'csv' as const,
+                  confidence: 100,
+                  lastUpdated: new Date()
+                },
+                occupancy: { 
+                  value: (() => {
+                    // Calculate occupancy based on actual date range if available
+                    if (prop.nightsBooked && data.csv?.dateRange) {
+                      const start = new Date(data.csv.dateRange.start)
+                      const end = new Date(data.csv.dateRange.end)
+                      const daySpan = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 365
+                      return (prop.nightsBooked / daySpan) * 100
+                    }
+                    return prop.nightsBooked ? (prop.nightsBooked / 365) * 100 : 0
+                  })(),
+                  source: 'csv' as const,
+                  confidence: 100,
+                  lastUpdated: new Date()
+                },
+                pricing: { 
+                  value: prop.avgNightlyRate || (prop.revenue && prop.nightsBooked ? prop.revenue / prop.nightsBooked : 0),
+                  source: 'csv' as const,
+                  confidence: 100,
+                  lastUpdated: new Date()
+                },
+                satisfaction: {
+                  value: 0,
+                  source: 'calculated' as const,
+                  confidence: 0,
+                  lastUpdated: new Date()
+                },
+                health: 80
+              },
+              dataSources: {
+                pdf: !!data.pdf,
+                csv: data.csv ? {
+                  dateRange: data.csv.dateRange,
+                  propertyMetrics: [{
+                    name: prop.name || prop.standardName || prop.pdfName || 'Unnamed Property',
+                    totalRevenue: prop.netEarnings || prop.revenue || 0,
+                    totalNights: prop.nightsBooked || 0,
+                    avgStayLength: prop.avgNightStay || 2.5,
+                    bookingCount: prop.bookingCount || 0,
+                    avgNightlyRate: prop.avgNightlyRate || 0
+                  }]
+                } : null,
+                scraped: false
+              },
+              dataCompleteness: data.csv ? 100 : (data.pdf ? 50 : 0),
+              updatedAt: new Date(),
+              createdAt: new Date()
+            }
+            
+            setProperty(transformedProp)
+            generateInsights(transformedProp)
+            setLoading(false)
+            return
+          }
+        }
+        
+        // Property not found anywhere, redirect to properties list
         console.log('Property not found, redirecting to properties list')
         router.push('/properties')
       }
@@ -209,7 +297,7 @@ export default function PropertyDetailPage() {
         })
       } else {
         // Use mock insights as fallback
-        setInsights(generateMockInsights(prop))
+        setInsights(generateRealInsights(prop))
       }
     } catch (error) {
       console.error('Error generating insights:', error)
@@ -219,25 +307,56 @@ export default function PropertyDetailPage() {
     setGeneratingInsights(false)
   }
   
-  const generateMockInsights = (prop: Property): PropertyInsights => {
-    const revenue = prop.metrics?.revenue?.value || 0
-    const occupancy = prop.metrics?.occupancy?.value || 0
-    const price = prop.metrics?.pricing?.value || 0
-    const hasMetrics = revenue > 0 || occupancy > 0
+  const generateRealInsights = (prop: Property): PropertyInsights => {
+    // Extract real data from CSV if available
+    const csvData = prop.dataSources?.csv?.propertyMetrics?.[0]
+    const revenue = (typeof prop.metrics?.revenue?.value === 'number' ? prop.metrics.revenue.value : prop.metrics?.revenue?.value?.value) || csvData?.totalRevenue || 0
+    const totalNights = csvData?.totalNights || prop.dataSources?.csv?.propertyMetrics?.[0]?.totalNights || 0
+    const avgStayLength = csvData?.avgStayLength || 2.5
+    const bookingCount = csvData?.bookingCount || 0
+    const avgNightlyRate = csvData?.avgNightlyRate || (revenue && totalNights ? revenue / totalNights : 0)
+    
+    // Calculate real metrics with actual date range
+    let occupancyRate = 0
+    if (totalNights > 0) {
+      // Try to use actual date range from CSV data
+      if (prop.dataSources?.csv?.dateRange) {
+        const start = new Date(prop.dataSources.csv.dateRange.start)
+        const end = new Date(prop.dataSources.csv.dateRange.end)
+        const daySpan = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+        occupancyRate = daySpan > 0 ? (totalNights / daySpan) * 100 : 0
+      } else {
+        // Fallback to 365 days if no date range available
+        occupancyRate = (totalNights / 365) * 100
+      }
+    }
+    const monthlyRevenue = revenue / 12
+    const bookingFrequency = bookingCount / 12 // bookings per month
+    const hasMetrics = revenue > 0 || totalNights > 0
     
     return {
       actionable: [
         {
           id: '1',
-          priority: revenue < 30000 && revenue > 0 ? 'critical' : 'important',
-          category: 'Pricing',
-          title: hasMetrics ? 'Optimize Weekend Pricing' : 'Add Transaction Data',
-          description: hasMetrics 
-            ? `Your revenue of ${formatCurrency(revenue)} could be improved with dynamic pricing`
-            : 'Upload CSV transaction data to see revenue insights',
-          impact: hasMetrics ? '+$3,600/year' : 'Enable analytics',
-          effort: 'low',
-          automatable: hasMetrics
+          priority: occupancyRate < 50 ? 'critical' : revenue < 30000 && revenue > 0 ? 'important' : 'opportunity',
+          category: occupancyRate < 50 ? 'Occupancy' : 'Pricing',
+          title: occupancyRate < 50 
+            ? `Improve Occupancy (Current: ${occupancyRate.toFixed(1)}%)`
+            : hasMetrics 
+              ? `Optimize Pricing (Current: $${avgNightlyRate.toFixed(0)}/night)` 
+              : 'Add Transaction Data',
+          description: occupancyRate < 50
+            ? `Your occupancy rate of ${occupancyRate.toFixed(1)}% is below market average. Review pricing, listing quality, and availability.`
+            : hasMetrics 
+              ? `With ${totalNights} nights booked and ${avgStayLength.toFixed(1)} avg stay, dynamic pricing could increase revenue`
+              : 'Upload CSV transaction data to see revenue insights',
+          impact: occupancyRate < 50 
+            ? `+${Math.round((70 - occupancyRate) * 365 / 100)} nights/year`
+            : hasMetrics 
+              ? `+$${(revenue * 0.15).toFixed(0)}/year` 
+              : 'Enable analytics',
+          effort: occupancyRate < 50 ? 'medium' : 'low',
+          automatable: hasMetrics && occupancyRate >= 50
         },
         {
           id: '2',
@@ -253,7 +372,7 @@ export default function PropertyDetailPage() {
         },
         {
           id: '3',
-          priority: occupancy < 60 ? 'important' : 'opportunity',
+          priority: occupancyRate < 60 ? 'important' : 'opportunity',
           category: 'Marketing',
           title: 'Enable Instant Book',
           description: 'Increase visibility and bookings by 20%',
@@ -268,8 +387,8 @@ export default function PropertyDetailPage() {
           type: 'revenue',
           title: 'Revenue Performance',
           findings: hasMetrics ? [
-            `Annual revenue: ${formatCurrency(revenue)}`,
-            `Data source: ${prop.metrics?.revenue?.source || 'calculated'}`,
+            `Annual revenue: ${formatCurrency(revenue)} from ${totalNights} nights`,
+            `Average rate: $${avgNightlyRate.toFixed(0)}/night • ${bookingCount} total bookings`,
             revenue > 40000 ? '✅ Above market average for similar properties' : 
             revenue > 20000 ? '⚠️ Room for improvement - consider pricing optimization' :
             '❌ Significantly below market - review pricing and marketing'
@@ -285,16 +404,16 @@ export default function PropertyDetailPage() {
           type: 'occupancy',
           title: 'Occupancy Analysis',
           findings: hasMetrics ? [
-            `Current occupancy rate: ${occupancy.toFixed(1)}%`,
-            `Market average: 75%`,
-            occupancy >= 75 ? '✅ Strong occupancy - maintaining good demand' :
-            occupancy >= 60 ? '⚠️ Below market - consider pricing adjustments' :
+            `Occupancy rate: ${occupancyRate.toFixed(1)}% (${totalNights} nights/365)`,
+            `Average stay: ${avgStayLength.toFixed(1)} nights • ${bookingFrequency.toFixed(1)} bookings/month`,
+            occupancyRate >= 75 ? '✅ Strong occupancy - maintaining good demand' :
+            occupancyRate >= 60 ? '⚠️ Below market - consider pricing adjustments' :
             '❌ Low occupancy - review listing and pricing strategy'
           ] : [
             'No occupancy data available',
             'Upload CSV transaction file to see occupancy analysis'
           ],
-          trend: occupancy > 70 ? 'up' : occupancy > 0 ? 'stable' : 'down',
+          trend: occupancyRate > 70 ? 'up' : occupancyRate > 0 ? 'stable' : 'down',
           confidence: prop.metrics?.occupancy?.confidence || 0
         }
       ],
@@ -311,7 +430,7 @@ export default function PropertyDetailPage() {
           id: '2',
           period: 'Next Quarter',
           metric: 'Occupancy',
-          value: occupancy + 5,
+          value: occupancyRate + 5,
           confidence: 70,
           factors: ['Historical patterns', 'Local events', 'Competition']
         }

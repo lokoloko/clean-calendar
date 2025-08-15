@@ -5,6 +5,8 @@ import {
   updatePropertyInSession, 
   deletePropertyFromSession 
 } from '@/lib/session-store-persistent'
+import { getCurrentUser } from '@/lib/auth-helper'
+import { PropertyStoreAdapter } from '@/lib/storage/property-store-adapter'
 
 /**
  * GET /api/properties/[id]
@@ -15,35 +17,65 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionId = await getSessionId()
-    const session = getSession(sessionId)
-    
     // Await params in Next.js 15
     const { id } = await params
     
-    console.log(`GET /api/properties/${id} - Session: ${sessionId?.substring(0, 8)}...`)
-    console.log(`Session has ${session.properties.length} properties`)
-    console.log(`Looking for property ID: ${id}`)
+    // Check if user is authenticated
+    const user = await getCurrentUser()
     
-    const property = session.properties.find(p => p.id === id)
-    
-    if (!property) {
-      console.log(`Property ${id} not found in session`)
-      console.log('Available property IDs:', session.properties.map(p => p.id))
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Property not found' 
-        },
-        { status: 404 }
-      )
+    if (user) {
+      // Authenticated user - get from database
+      console.log(`GET /api/properties/${id} - User: ${user.email}`)
+      
+      const properties = await PropertyStoreAdapter.getAllForUser(user.id)
+      const property = properties.find(p => p.id === id)
+      
+      if (!property) {
+        console.log(`Property ${id} not found for user ${user.email}`)
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Property not found',
+            property: null
+          },
+          { status: 404 }
+        )
+      }
+      
+      console.log(`Found property: ${property.name} for user ${user.email}`)
+      return NextResponse.json({
+        success: true,
+        property
+      })
+    } else {
+      // Unauthenticated - get from session
+      const sessionId = await getSessionId()
+      const session = getSession(sessionId)
+      
+      console.log(`GET /api/properties/${id} - Session: ${sessionId?.substring(0, 8)}...`)
+      console.log(`Session has ${session.properties.length} properties`)
+      console.log(`Looking for property ID: ${id}`)
+      
+      const property = session.properties.find(p => p.id === id)
+      
+      if (!property) {
+        console.log(`Property ${id} not found in session`)
+        console.log('Available property IDs:', session.properties.map(p => p.id))
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Property not found' 
+          },
+          { status: 404 }
+        )
+      }
+      
+      console.log(`Found property: ${property.name}`)
+      return NextResponse.json({
+        success: true,
+        property
+      })
     }
-    
-    console.log(`Found property: ${property.name}`)
-    return NextResponse.json({
-      success: true,
-      property
-    })
   } catch (error) {
     console.error('Error fetching property:', error)
     return NextResponse.json(
@@ -65,28 +97,64 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionId = await getSessionId()
-    const updates = await request.json()
-    
     // Await params in Next.js 15
     const { id } = await params
+    const updates = await request.json()
     
-    const updatedProperty = updatePropertyInSession(sessionId, id, updates)
+    // Check if user is authenticated
+    const user = await getCurrentUser()
     
-    if (!updatedProperty) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Property not found' 
-        },
-        { status: 404 }
-      )
+    if (user) {
+      // Authenticated user - update in database
+      console.log(`PATCH /api/properties/${id} - User: ${user.email}`)
+      console.log('Updates:', updates)
+      
+      const properties = await PropertyStoreAdapter.getAllForUser(user.id)
+      const property = properties.find(p => p.id === id)
+      
+      if (!property) {
+        return NextResponse.json(
+          { success: false, error: 'Property not found' },
+          { status: 404 }
+        )
+      }
+      
+      // Apply updates
+      const updatedProperty = {
+        ...property,
+        ...updates,
+        updatedAt: new Date()
+      }
+      
+      // Save the updated property
+      await PropertyStoreAdapter.saveForUser(updatedProperty, user.id)
+      
+      console.log(`Updated property ${property.name} for user ${user.email}`)
+      
+      return NextResponse.json({
+        success: true,
+        property: updatedProperty
+      })
+    } else {
+      // Unauthenticated - update in session
+      const sessionId = await getSessionId()
+      const updatedProperty = updatePropertyInSession(sessionId, id, updates)
+      
+      if (!updatedProperty) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Property not found' 
+          },
+          { status: 404 }
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+        property: updatedProperty
+      })
     }
-    
-    return NextResponse.json({
-      success: true,
-      property: updatedProperty
-    })
   } catch (error) {
     console.error('Error updating property:', error)
     return NextResponse.json(

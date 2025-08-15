@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { GoStudioMLogo } from '@/components/GoStudioMLogo'
+import { AuthHeader } from '@/components/AuthHeader'
 import { type Property } from '@/lib/storage/property-store'
 import PropertyStoreAPI from '@/lib/storage/property-store-api'
 import { DataMigration } from '@/lib/storage/migrations'
@@ -32,7 +33,8 @@ import {
   AlertCircle,
   XCircle,
   MoreVertical,
-  Filter
+  Filter,
+  ArrowRight
 } from 'lucide-react'
 
 interface PropertiesTableProps {
@@ -72,20 +74,24 @@ function PropertiesTable({
 
     switch (sortColumn) {
       case 'name':
-        aVal = a.standardName.toLowerCase()
-        bVal = b.standardName.toLowerCase()
+        aVal = (a.standardName || a.name || '').toLowerCase()
+        bVal = (b.standardName || b.name || '').toLowerCase()
         break
       case 'revenue':
-        aVal = a.metrics?.revenue.value || 0
-        bVal = b.metrics?.revenue.value || 0
+        aVal = typeof a.metrics?.revenue?.value === 'number' 
+          ? a.metrics.revenue.value 
+          : a.metrics?.revenue?.value?.value || 0
+        bVal = typeof b.metrics?.revenue?.value === 'number' 
+          ? b.metrics.revenue.value 
+          : b.metrics?.revenue?.value?.value || 0
         break
       case 'completeness':
-        aVal = a.dataCompleteness
-        bVal = b.dataCompleteness
+        aVal = a.dataCompleteness || 0
+        bVal = b.dataCompleteness || 0
         break
       case 'updated':
-        aVal = a.updatedAt.getTime()
-        bVal = b.updatedAt.getTime()
+        aVal = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+        bVal = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
         break
     }
 
@@ -245,16 +251,20 @@ function PropertiesTable({
                   className="text-blue-600 hover:underline font-medium text-left"
                   onClick={() => onPropertyClick(property)}
                 >
-                  {property.standardName}
+                  {property.standardName || property.name || 'Unnamed Property'}
                 </button>
               </td>
               <td className="px-4 py-3">
                 {getDataSourceIcons(property)}
               </td>
               <td className="px-4 py-3">
-                {property.metrics?.revenue.value ? (
+                {property.metrics?.revenue?.value ? (
                   <span className="font-medium">
-                    {formatCurrency(property.metrics.revenue.value)}
+                    {formatCurrency(
+                      typeof property.metrics.revenue.value === 'number' 
+                        ? property.metrics.revenue.value 
+                        : property.metrics.revenue.value?.value || 0
+                    )}
                   </span>
                 ) : (
                   <span className="text-gray-400">N/A</span>
@@ -373,19 +383,106 @@ export default function PropertiesPage() {
   const [filterComplete, setFilterComplete] = useState<'all' | 'complete' | 'incomplete'>('all')
   const [syncing, setSyncing] = useState(false)
   const [csvDateRange, setCsvDateRange] = useState<{ start: Date | null, end: Date | null }>({ start: null, end: null })
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isSessionData, setIsSessionData] = useState(false)
 
   useEffect(() => {
-    loadProperties()
-    // Disabled auto-migration to prevent duplicate data
-    // DataMigration.runAutoMigration().then(() => {
-    //   loadProperties() // Reload after migration
-    // })
+    checkAuthAndLoadData()
+  }, [])
+  
+  // Re-check auth when returning from login
+  useEffect(() => {
+    const handleFocus = () => {
+      checkAuthAndLoadData()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  const loadProperties = async () => {
+  const checkAuthAndLoadData = async () => {
+    console.log('🔍 checkAuthAndLoadData called')
     setLoading(true)
+    
+    // Check if user is authenticated
+    try {
+      console.log('📡 Checking authentication status...')
+      const authResponse = await fetch('/api/auth/check', {
+        credentials: 'same-origin'
+      })
+      const authData = await authResponse.json()
+      console.log('✅ Auth check result:', authData)
+      setIsAuthenticated(authData.authenticated)
+      
+      if (authData.authenticated) {
+        console.log('🔐 User is authenticated')
+        
+        // First, check if we already have properties in the database
+        console.log('📚 Checking existing properties in database...')
+        const existingProperties = await PropertyStoreAPI.getAll()
+        console.log('📊 Existing properties in DB:', existingProperties.length)
+        
+        // If authenticated and we have session data, check if we need to save it
+        const sessionData = sessionStorage.getItem('processedData')
+        console.log('📦 Session data exists?', !!sessionData)
+        
+        if (sessionData && existingProperties.length === 0) {
+          // Only save session data if no properties exist in DB
+          const data = JSON.parse(sessionData)
+          console.log('💾 No existing properties found, saving session data to database', {
+            propertyCount: data.properties?.length,
+            totalRevenue: data.totalRevenue
+          })
+          const saveResponse = await fetch('/api/properties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+          })
+          
+          if (saveResponse.ok) {
+            console.log('Session data saved to database successfully')
+            // Clear session storage after saving
+            sessionStorage.removeItem('processedData')
+            // Clear the session data flag
+            setIsSessionData(false)
+          } else {
+            console.error('Failed to save session data to database')
+          }
+        } else if (sessionData && existingProperties.length > 0) {
+          console.log('⚠️ Properties already exist in database, clearing session data to avoid duplicates')
+          sessionStorage.removeItem('processedData')
+        }
+        
+        // Always load from database for authenticated users
+        console.log('📚 Loading properties from database...')
+        await loadPropertiesFromDB()
+      } else {
+        console.log('🚫 User is NOT authenticated')
+        // Check for session data from upload
+        const sessionData = sessionStorage.getItem('processedData')
+        console.log('📦 Session data exists?', !!sessionData)
+        if (sessionData) {
+          console.log('📋 Loading properties from session storage')
+          await loadPropertiesFromSession(sessionData)
+        } else {
+          // No data, show empty state
+          setProperties([])
+          setLoading(false)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error)
+      setLoading(false)
+    }
+  }
+  
+  const loadPropertiesFromDB = async () => {
+    console.log('🗄️ loadPropertiesFromDB called')
     const allProperties = await PropertyStoreAPI.getAll()
+    console.log('📊 Properties loaded from DB:', allProperties.length)
     setProperties(allProperties)
+    setIsSessionData(false) // Explicitly set to false when loading from DB
+    console.log('🏷️ isSessionData set to:', false)
     
     // Extract CSV date range from the first property with CSV data
     const propertyWithCSV = allProperties.find(p => p.dataSources?.csv?.dateRange)
@@ -398,8 +495,103 @@ export default function PropertiesPage() {
     
     setLoading(false)
   }
+  
+  const loadPropertiesFromSession = async (sessionDataStr: string) => {
+    console.log('💼 loadPropertiesFromSession called')
+    try {
+      const data = JSON.parse(sessionDataStr)
+      console.log('📝 Session data parsed:', {
+        propertyCount: data.properties?.length,
+        hasCSV: !!data.csv,
+        hasPDF: !!data.pdf
+      })
+      
+      // Transform session data to Property format
+      const sessionProperties = data.properties.map((prop: any) => ({
+        id: prop.id || Math.random().toString(36).substr(2, 9),
+        name: prop.name || prop.standardName || prop.pdfName || 'Unnamed Property',
+        standardName: prop.standardName || prop.name || prop.pdfName || 'Unnamed Property',
+        airbnbUrl: prop.airbnbUrl || '',
+        metrics: {
+          // Use the property-specific revenue, not the total
+          revenue: { value: prop.revenue || prop.totalRevenue || prop.netEarnings || 0 },
+          health: (() => {
+            // Calculate health score based on multiple factors
+            const revenue = prop.revenue || prop.totalRevenue || prop.netEarnings || 0
+            const occupancy = prop.occupancyRate || (prop.nightsBooked ? (prop.nightsBooked / 365) * 100 : 0)
+            const hasData = revenue > 0 || prop.nightsBooked > 0
+            
+            if (!hasData) return 0
+            
+            // Weight factors: revenue (30%), occupancy (40%), data quality (30%)
+            let score = 0
+            
+            // Revenue component (0-30 points)
+            if (revenue >= 100000) score += 30
+            else if (revenue >= 50000) score += 20
+            else if (revenue >= 25000) score += 10
+            else if (revenue > 0) score += 5
+            
+            // Occupancy component (0-40 points)
+            if (occupancy >= 80) score += 40
+            else if (occupancy >= 60) score += 30
+            else if (occupancy >= 40) score += 20
+            else if (occupancy > 0) score += 10
+            
+            // Data quality component (0-30 points)
+            if (prop.hasAccurateMetrics) score += 30
+            else if (prop.nightsBooked > 0) score += 15
+            
+            return Math.min(100, score)
+          })(),
+          occupancy: { value: prop.occupancyRate || (prop.nightsBooked ? (prop.nightsBooked / 365) * 100 : 0) },
+          pricing: { value: prop.avgNightlyRate || 0 }
+        },
+        dataSources: {
+          pdf: !!data.pdf,
+          csv: data.csv ? {
+            dateRange: data.csv.dateRange,
+            propertyMetrics: data.csv.propertyMetrics
+          } : null,
+          scraped: false
+        },
+        dataCompleteness: data.csv ? 100 : (data.pdf ? 50 : 0),
+        updatedAt: new Date(),
+        createdAt: new Date()
+      }))
+      
+      setProperties(sessionProperties)
+      setIsSessionData(true)
+      console.log('🏷️ isSessionData set to:', true)
+      console.log('📊 Session properties loaded:', sessionProperties.length)
+      
+      // Extract CSV date range
+      if (data.csv?.dateRange) {
+        setCsvDateRange({
+          start: new Date(data.csv.dateRange.start),
+          end: new Date(data.csv.dateRange.end)
+        })
+      }
+      
+      setLoading(false)
+    } catch (error) {
+      console.error('Error loading session data:', error)
+      setProperties([])
+      setLoading(false)
+    }
+  }
+  
+  const loadProperties = async () => {
+    if (isAuthenticated) {
+      await loadPropertiesFromDB()
+    } else {
+      await checkAuthAndLoadData()
+    }
+  }
 
   const handlePropertyClick = (property: Property) => {
+    // Store the current property in sessionStorage for the detail page
+    sessionStorage.setItem(`property-${property.id}`, JSON.stringify(property))
     router.push(`/property/${property.id}`)
   }
 
@@ -516,15 +708,21 @@ export default function PropertiesPage() {
     incomplete: properties.filter(p => p.dataCompleteness < 100).length,
     withUrls: properties.filter(p => p.airbnbUrl).length,
     synced: properties.filter(p => p.dataSources.scraped).length,
-    totalRevenue: properties.reduce((sum, p) => sum + (p.metrics?.revenue?.value || 0), 0),
+    totalRevenue: properties.reduce((sum, p) => {
+      const value = p.metrics?.revenue?.value
+      if (typeof value === 'number') return sum + value
+      if (value && typeof value === 'object' && 'value' in value) return sum + (value.value || 0)
+      return sum
+    }, 0),
     totalNights: properties.reduce((sum, p) => {
       // Try to get nights from CSV metrics
       if (p.dataSources?.csv?.propertyMetrics && p.dataSources.csv.propertyMetrics.length > 0) {
-        // We now store only this property's metrics
-        const thisPropertyMetrics = p.dataSources.csv.propertyMetrics[0]
-        if (thisPropertyMetrics?.totalNights) {
-          return sum + thisPropertyMetrics.totalNights
-        }
+        // Sum all nights from all propertyMetrics entries
+        const propertyNights = p.dataSources.csv.propertyMetrics.reduce(
+          (nights, metric) => nights + (metric.totalNights || 0), 
+          0
+        )
+        return sum + propertyNights
       }
       return sum
     }, 0)
@@ -543,47 +741,80 @@ export default function PropertiesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AuthHeader />
+      
+      {/* Header */}
+      {/* Login Prompt for Session Data */}
+      {!isAuthenticated && isSessionData && (
+        <div className="bg-yellow-50 border-b border-yellow-200">
+          <div className="max-w-7xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-yellow-600" />
+                <p className="text-sm text-yellow-800">
+                  <span className="font-semibold">Your data is ready!</span> Login to save your properties permanently and access advanced features.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => router.push('/login?from=/properties')}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Login to Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <GoStudioMLogo width={240} height={72} />
-              <div className="border-l pl-4 ml-2">
-                <h1 className="text-xl font-semibold text-gray-900">Properties Dashboard</h1>
-                <p className="text-sm text-gray-500">
-                  {csvDateRange.start && csvDateRange.end ? (
-                    <>
-                      Data from {new Date(csvDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to {new Date(csvDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </>
-                  ) : (
-                    'Manage all your properties in one place'
-                  )}
-                </p>
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Properties Dashboard</h1>
+              <p className="text-sm text-gray-500">
+                {csvDateRange.start && csvDateRange.end ? (
+                  <>
+                    Data from {new Date(csvDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to {new Date(csvDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </>
+                ) : isSessionData ? (
+                  'Preview mode - Login to save'
+                ) : (
+                  'Manage all your properties in one place'
+                )}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => router.push('/')}
+                onClick={() => {
+                  // Mark that we're appending data
+                  sessionStorage.setItem('appendMode', 'true')
+                  router.push('/')
+                }}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Property
+                <Upload className="w-4 h-4 mr-2" />
+                Upload More Data
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleExportAll}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export All
-              </Button>
-              <Button
-                onClick={handleSyncAll}
-                disabled={syncing || stats.withUrls === 0}
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                Sync All
-              </Button>
+              {isAuthenticated && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportAll}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export All
+                  </Button>
+                  <Button
+                    onClick={handleSyncAll}
+                    disabled={syncing || stats.withUrls === 0}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    Sync All
+                  </Button>
+                </>
+              )}
               <Button
                 variant="destructive"
                 onClick={handleClearAll}
@@ -617,7 +848,7 @@ export default function PropertiesPage() {
               <Badge className="bg-green-100 text-green-800">
                 {csvDateRange.start && csvDateRange.end && (
                   <>
-                    {Math.ceil((new Date(csvDateRange.end).getTime() - new Date(csvDateRange.start).getTime()) / (1000 * 60 * 60 * 24 * 365))} years of data
+                    {((new Date(csvDateRange.end).getTime() - new Date(csvDateRange.start).getTime()) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1)} years of data
                   </>
                 )}
               </Badge>
@@ -706,12 +937,15 @@ export default function PropertiesPage() {
         {filteredProperties.length > 0 ? (
           <PropertiesTable
             properties={filteredProperties}
-            onPropertyClick={handlePropertyClick}
-            onPropertyEdit={handlePropertyEdit}
-            onPropertyDelete={handlePropertyDelete}
-            onAddUrl={handleAddUrl}
-            onSync={handleSync}
-            onUploadData={handleUploadData}
+            onPropertyClick={isAuthenticated ? handlePropertyClick : () => {
+              alert('Please login to view detailed property analytics')
+              router.push('/login?from=/properties')
+            }}
+            onPropertyEdit={isAuthenticated ? handlePropertyEdit : () => {}}
+            onPropertyDelete={isAuthenticated ? handlePropertyDelete : () => {}}
+            onAddUrl={isAuthenticated ? handleAddUrl : () => {}}
+            onSync={isAuthenticated ? handleSync : () => {}}
+            onUploadData={isAuthenticated ? handleUploadData : () => {}}
           />
         ) : (
           <Card>

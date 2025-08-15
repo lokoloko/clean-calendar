@@ -23,8 +23,9 @@ export async function POST(request: NextRequest) {
         timestamp: Date.now()
       })).toString('base64')
 
-      // Set auth cookie
-      cookies().set('auth-token', authToken, {
+      // Set auth cookie (await cookies in Next.js 15)
+      const cookieStore = await cookies()
+      cookieStore.set('auth-token', authToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

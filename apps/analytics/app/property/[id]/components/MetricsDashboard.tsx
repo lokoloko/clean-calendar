@@ -5,6 +5,7 @@ import { Property, PropertyMetrics } from '@/lib/storage/property-store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { formatCurrency } from '@/lib/utils'
 import { calculatePeriodMetrics, getPeriodLabel, getPeriodDescription, type TimePeriod } from '@/lib/utils/period-metrics'
 import { 
@@ -16,7 +17,9 @@ import {
   Home,
   Activity,
   Minus,
-  Clock
+  Clock,
+  AlertCircle,
+  Info
 } from 'lucide-react'
 
 interface MetricsDashboardProps {
@@ -92,8 +95,25 @@ export default function MetricsDashboard({
   
   const periods: TimePeriod[] = ['last12months', 'yearToDate', 'allTime']
   
+  // Calculate data quality indicators
+  const hasCSVData = property.dataSources?.csv?.propertyMetrics && property.dataSources.csv.propertyMetrics.length > 0
+  const dateRange = property.dataSources?.csv?.dateRange
+  const daySpan = dateRange ? Math.ceil((new Date(dateRange.end) - new Date(dateRange.start)) / (1000 * 60 * 60 * 24)) : 0
+  const yearSpan = daySpan / 365.25
+  
   return (
     <div className="space-y-4">
+      {/* Data Quality Alert if needed */}
+      {hasCSVData && yearSpan > 1.5 && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm">
+            <strong>Data spans {yearSpan.toFixed(1)} years</strong> ({dateRange?.start && new Date(dateRange.start).toLocaleDateString()} to {dateRange?.end && new Date(dateRange.end).toLocaleDateString()}).
+            Occupancy rates are calculated based on the actual date range, not annual averages.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Period Selector */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -129,13 +149,13 @@ export default function MetricsDashboard({
                 {getDataSourceBadge(metrics?.revenue?.source, metrics?.revenue?.confidence)}
               </div>
               <p className="text-2xl font-bold">
-                {metrics?.revenue?.value ? formatCurrency(metrics.revenue.value) : '$0.00'}
+                {metrics?.revenue?.value ? formatCurrency(typeof metrics.revenue.value === 'number' ? metrics.revenue.value : metrics.revenue.value.value || 0) : '$0.00'}
               </p>
               {metrics?.revenue && (
                 <div className="flex items-center gap-1">
-                  {getTrendIcon(metrics.revenue.value, 40000)}
-                  <span className={`text-xs ${metrics.revenue.value > 40000 ? 'text-green-600' : 'text-red-600'}`}>
-                    {calculateYoYChange(metrics.revenue.value).toFixed(1)}% YoY
+                  {getTrendIcon(typeof metrics.revenue.value === 'number' ? metrics.revenue.value : metrics.revenue.value.value || 0, 40000)}
+                  <span className={`text-xs ${(typeof metrics.revenue.value === 'number' ? metrics.revenue.value : metrics.revenue.value.value || 0) > 40000 ? 'text-green-600' : 'text-red-600'}`}>
+                    {calculateYoYChange(typeof metrics.revenue.value === 'number' ? metrics.revenue.value : metrics.revenue.value.value || 0).toFixed(1)}% YoY
                   </span>
                 </div>
               )}
@@ -157,13 +177,14 @@ export default function MetricsDashboard({
                 {getDataSourceBadge(metrics?.occupancy?.source, metrics?.occupancy?.confidence)}
               </div>
               <p className="text-2xl font-bold">
-                {metrics?.occupancy?.value ? `${metrics.occupancy.value.toFixed(1)}%` : '0.0%'}
+                {metrics?.occupancy?.value ? `${(typeof metrics.occupancy.value === 'number' ? metrics.occupancy.value : metrics.occupancy.value.value || 0).toFixed(1)}%` : '0.0%'}
               </p>
-              {property.dataSources.pdf && (
+              {(property.dataSources.csv?.propertyMetrics?.[0]?.totalNights || property.dataSources.pdf?.data?.totalNightsBooked) ? (
                 <p className="text-xs text-gray-600">
-                  {property.dataSources.pdf.data.totalNightsBooked || 0} nights
+                  {property.dataSources.csv?.propertyMetrics?.[0]?.totalNights || property.dataSources.pdf?.data?.totalNightsBooked || 0} nights
+                  {daySpan > 0 && ` / ${daySpan} days`}
                 </p>
-              )}
+              ) : null}
             </div>
             <div className="p-2 bg-blue-100 rounded-lg">
               <Calendar className="w-5 h-5 text-blue-600" />
@@ -182,7 +203,7 @@ export default function MetricsDashboard({
                 {getDataSourceBadge(metrics?.pricing?.source, metrics?.pricing?.confidence)}
               </div>
               <p className="text-2xl font-bold">
-                {metrics?.pricing?.value ? `$${metrics.pricing.value.toFixed(0)}/night` : '$0/night'}
+                {metrics?.pricing?.value ? `$${(typeof metrics.pricing.value === 'number' ? metrics.pricing.value : metrics.pricing.value.value || 0).toFixed(0)}/night` : '$0/night'}
               </p>
               {property.dataSources?.scraped?.data?.price?.nightly && property.dataSources.scraped.data.price.nightly > 0 ? (
                 <p className="text-xs text-gray-600">

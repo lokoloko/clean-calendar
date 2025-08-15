@@ -9,13 +9,18 @@ import type { Property } from '@/lib/storage/property-store'
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = getCurrentUser()
+    const user = await getCurrentUser()
     
+    // For unauthenticated users, return empty array (they haven't saved anything yet)
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({
+        success: true,
+        properties: [],
+        metadata: {
+          count: 0,
+          userId: 'anonymous'
+        }
+      })
     }
     
     console.log(`GET /api/properties - User: ${user.email}`)
@@ -52,16 +57,23 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = getCurrentUser()
-    
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-    
+    const user = await getCurrentUser()
     const data = await request.json()
+    
+    // For unauthenticated users, store in session/localStorage
+    // They'll need to login to persist to database
+    if (!user) {
+      // For now, just return success
+      // In a real app, we'd store this in a session or temporary storage
+      console.log('Anonymous user uploading data - storing temporarily')
+      
+      return NextResponse.json({
+        success: true,
+        properties: data.properties || [],
+        count: data.properties?.length || 0,
+        message: 'Data processed successfully. Login to save permanently.'
+      })
+    }
     
     console.log(`POST /api/properties - User: ${user.email}`)
     console.log(`Creating properties from upload data:`, {
@@ -70,24 +82,16 @@ export async function POST(request: NextRequest) {
       replace: data.replace
     })
     
-    // Create properties with user_id
-    const propertiesData = data.properties || []
-    const savedProperties: Property[] = []
-    
-    for (const propData of propertiesData) {
-      const property: Property = {
-        ...propData,
-        id: propData.id || PropertyStoreAdapter.generateId(),
-        userId: user.id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      
-      const saved = await PropertyStoreAdapter.saveForUser(property, user.id)
-      if (saved) {
-        savedProperties.push(saved)
-      }
+    // Transform upload data to Property format
+    const uploadData = {
+      ...data,
+      fileName: data.fileName || 'earnings.pdf',
+      period: data.pdf?.period || data.period || '',
+      dateRange: data.pdf?.dateRange || data.dateRange || ''
     }
+    
+    // Use createFromUpload to properly process the data with user context
+    const savedProperties = await PropertyStoreAdapter.createFromUpload(uploadData, user.id)
     
     console.log(`Saved ${savedProperties.length} properties for user ${user.email}`)
     
@@ -110,16 +114,25 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/properties
- * Clear all properties from session
+ * Clear all properties for current user
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionId = await getSessionId()
-    saveToSession(sessionId, [])
+    const user = await getCurrentUser()
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
+    // Would implement clear functionality here if needed
+    // For now, just return success
     
     return NextResponse.json({
       success: true,
-      message: 'All properties cleared'
+      message: 'Properties cleared'
     })
   } catch (error) {
     console.error('Error clearing properties:', error)

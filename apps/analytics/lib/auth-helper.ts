@@ -1,5 +1,4 @@
-import { cookies } from 'next/headers'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 
 export interface AuthUser {
   id: string
@@ -11,11 +10,12 @@ export interface AuthUser {
  * Get the current authenticated user from the auth token
  * For use in server components and API routes
  */
-export function getCurrentUser(): AuthUser | null {
+export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     // Try to get from headers first (set by middleware for API routes)
-    const userId = headers().get('x-user-id')
-    const userEmail = headers().get('x-user-email')
+    const headersList = await headers()
+    const userId = headersList.get('x-user-id')
+    const userEmail = headersList.get('x-user-email')
     
     if (userId && userEmail) {
       return {
@@ -26,7 +26,8 @@ export function getCurrentUser(): AuthUser | null {
     }
 
     // Fallback to cookie
-    const authToken = cookies().get('auth-token')?.value
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get('auth-token')?.value
     
     if (!authToken) {
       return null
@@ -56,6 +57,6 @@ export function getCurrentUser(): AuthUser | null {
 /**
  * Check if user is authenticated
  */
-export function isAuthenticated(): boolean {
-  return getCurrentUser() !== null
+export async function isAuthenticated(): Promise<boolean> {
+  return (await getCurrentUser()) !== null
 }

@@ -3,8 +3,9 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear the auth cookie
-    cookies().delete('auth-token')
+    // Clear the auth cookie (await cookies in Next.js 15)
+    const cookieStore = await cookies()
+    cookieStore.delete('auth-token')
 
     return NextResponse.json({
       success: true,

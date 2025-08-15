@@ -8,6 +8,7 @@ import { CheckCircle, AlertCircle, ArrowRight, Info, Loader2, TrendingUp, AlertT
 import { useRouter } from 'next/navigation'
 
 interface PropertyMapping {
+  id?: string
   pdfName: string
   csvName?: string
   standardName: string
@@ -78,6 +79,7 @@ export default function MappingPage() {
       
       // Create property mappings from PDF data - preserve all data
       const mappings: PropertyMapping[] = parsed.properties.map((prop: any, index: number) => ({
+        id: prop.id || `prop-${index}-${Date.now()}`, // Ensure unique ID
         pdfName: prop.name,
         csvName: PROPERTY_MAPPINGS[prop.name] || '',
         standardName: prop.name,
@@ -136,10 +138,12 @@ export default function MappingPage() {
   }
 
   const handleAnalyze = async () => {
+    console.log('🚀 handleAnalyze called')
     setAnalyzing(true)
     
     // Get selected properties
     const selectedProperties = properties.filter(p => p.selected)
+    console.log('✅ Selected properties:', selectedProperties.length)
     
     // Get upload data from sessionStorage
     const uploadData = sessionStorage.getItem('uploadData')
@@ -147,10 +151,18 @@ export default function MappingPage() {
     
     // Save to PropertyStore via API
     try {
+      // Check if we're in append mode
+      const isAppendMode = parsed.isAppend || sessionStorage.getItem('appendMode') === 'true'
+      console.log('📝 Append mode:', isAppendMode)
+      
       // Prepare data for API
       const dashboardData = {
         ...parsed,
-        properties: selectedProperties,
+        properties: selectedProperties.map(p => ({
+          ...p,
+          // Don't generate IDs here - let the backend generate proper UUIDs
+          id: undefined
+        })),
         totalRevenue: selectedProperties.reduce((sum, p) => sum + p.revenue, 0),
         activeProperties: selectedProperties.filter(p => p.status === 'active').length,
         inactiveProperties: selectedProperties.filter(p => p.status === 'inactive').length,
@@ -158,7 +170,7 @@ export default function MappingPage() {
         totalNights: selectedProperties.reduce((sum, p) => sum + p.nightsBooked, 0),
         dataSource,
         csv: parsed.csv || null,
-        replace: true // Replace all existing properties
+        replace: !isAppendMode // Only replace if NOT in append mode
       }
       
       // Send to API to create properties
@@ -171,7 +183,15 @@ export default function MappingPage() {
       
       if (response.ok) {
         const result = await response.json()
-        console.log(`Saved ${result.count} properties to session`)
+        console.log(`💾 Saved ${result.count} properties to API`)
+        
+        // Store the processed data for the properties page
+        console.log('📦 Storing processedData in sessionStorage:', {
+          propertyCount: dashboardData.properties.length,
+          totalRevenue: dashboardData.totalRevenue
+        })
+        sessionStorage.setItem('processedData', JSON.stringify(dashboardData))
+        console.log('✅ processedData saved to sessionStorage')
         
         // Update properties with URLs if needed
         for (let i = 0; i < result.properties.length; i++) {
@@ -185,9 +205,10 @@ export default function MappingPage() {
           }
         }
         
-        // Clear sessionStorage since we've saved to server
+        // Clear upload data since we've processed it
         sessionStorage.removeItem('uploadData')
         sessionStorage.removeItem('propertyMappings')
+        sessionStorage.removeItem('appendMode') // Clear append mode flag
       } else {
         console.error('Failed to save properties to API')
         alert('Failed to save properties. Please try again.')
@@ -247,6 +268,7 @@ export default function MappingPage() {
     }
     
     // Navigate directly to properties
+    console.log('🚧 Navigating to /properties page')
     router.push('/properties')
   }
 
@@ -302,6 +324,32 @@ export default function MappingPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
+        {/* Step Indicator */}
+        <div className="flex justify-center mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                ✓
+              </div>
+              <span className="ml-2 text-sm text-gray-500">Upload</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                2
+              </div>
+              <span className="ml-2 text-sm font-medium text-gray-900">Select Properties</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gray-300 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                3
+              </div>
+              <span className="ml-2 text-sm text-gray-500">View Analysis</span>
+            </div>
+          </div>
+        </div>
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Select Properties for Analysis</h1>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">

@@ -17,11 +17,25 @@ export default function UploadPage() {
   const [showInstructions, setShowInstructions] = useState(false)
   const [propertyUrls, setPropertyUrls] = useState<string[]>([])
   const [hasExistingData, setHasExistingData] = useState(false)
+  const [isAppendMode, setIsAppendMode] = useState(false)
+  const [existingProperties, setExistingProperties] = useState<any[]>([])
   
-  // Check if user has existing session data
+  // Check if user has existing session data and if we're in append mode
   useEffect(() => {
     async function checkExistingData() {
       try {
+        // Check if we're in append mode
+        const appendMode = sessionStorage.getItem('appendMode')
+        if (appendMode === 'true') {
+          setIsAppendMode(true)
+          // Get existing properties from session
+          const processedData = sessionStorage.getItem('processedData')
+          if (processedData) {
+            const data = JSON.parse(processedData)
+            setExistingProperties(data.properties || [])
+          }
+        }
+        
         const response = await fetch('/api/properties', {
           credentials: 'same-origin'
         })
@@ -62,8 +76,18 @@ export default function UploadPage() {
       
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'same-origin'
       })
+      
+      console.log('Upload response status:', response.status)
+      
+      if (!response.ok && response.status !== 401) {
+        console.error('Upload failed with status:', response.status)
+        const errorData = await response.json()
+        alert(`Upload failed: ${errorData.error || 'Unknown error'}`)
+        return
+      }
       
       const result = await response.json()
       
@@ -76,52 +100,34 @@ export default function UploadPage() {
           csv: result.data.csv || null
         }
         
-        // Skip mapping and save directly to session
-        const properties = result.data.properties || []
-        const dataSource = result.data.dataSource || 'pdf-only'
+        // Check if we're appending to existing data
+        let finalProperties = result.data.properties || []
+        if (isAppendMode && existingProperties.length > 0) {
+          // Merge with existing properties (avoiding duplicates by name)
+          const existingNames = new Set(existingProperties.map((p: any) => p.name))
+          const newProperties = finalProperties.filter((p: any) => !existingNames.has(p.name))
+          finalProperties = [...existingProperties, ...newProperties]
+          
+          // Clear append mode
+          sessionStorage.removeItem('appendMode')
+        }
         
-        // Prepare data for API (similar to what mapping page does)
-        const dashboardData = {
+        // Store upload data in sessionStorage for mapping page
+        const uploadData = {
           ...dataWithUrls,
-          properties: properties.map((prop: any, index: number) => ({
-            ...prop,
-            selected: true,
-            mapped: true,
-            status: prop.netEarnings > 0 ? 'active' : 'inactive',
-            airbnbUrl: propertyUrls[index] || ''
-          })),
-          totalRevenue: properties.reduce((sum: number, p: any) => sum + (p.netEarnings || 0), 0),
-          activeProperties: properties.filter((p: any) => p.netEarnings > 0).length,
-          inactiveProperties: properties.filter((p: any) => p.netEarnings === 0).length,
-          totalProperties: properties.length,
-          totalNights: properties.reduce((sum: number, p: any) => sum + (p.nightsBooked || 0), 0),
-          dataSource,
-          replace: true,
-          // Include CSV data properly
-          csv: result.data.csv || null
+          properties: finalProperties,
+          dataSource: result.data.dataSource || 'pdf-only',
+          csv: result.data.csv || null,
+          pdf: result.data.pdf || null,
+          propertyUrls: propertyUrls.filter(url => url && url.includes('airbnb.com/rooms/')),
+          isAppend: isAppendMode
         }
         
-        // Save properties to session
-        const saveResponse = await fetch('/api/properties', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify(dashboardData)
-        })
+        // Store for mapping page
+        sessionStorage.setItem('uploadData', JSON.stringify(uploadData))
         
-        if (saveResponse.ok) {
-          const saveResult = await saveResponse.json()
-          console.log(`Saved ${saveResult.count} properties to session`)
-          
-          // Clear sessionStorage since we've saved to server
-          sessionStorage.removeItem('uploadData')
-          
-          // Navigate directly to properties
-          router.push('/properties')
-        } else {
-          console.error('Failed to save properties')
-          alert('Failed to save properties. Please try again.')
-        }
+        // Navigate to mapping page where users can select properties
+        router.push('/mapping')
       } else {
         console.error('Upload failed:', result.error)
         alert(`Upload failed: ${result.error}\n\nPlease check the console for more details.`)
@@ -137,16 +143,51 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-5xl mx-auto p-6 pt-6">
+        {/* Step Indicator */}
+        <div className="flex justify-center mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                1
+              </div>
+              <span className="ml-2 text-sm font-medium text-gray-900">Upload</span>
+            </div>
+            <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gray-300 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                2
+              </div>
+              <span className="ml-2 text-sm text-gray-500">Select Properties</span>
+            </div>
+            <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gray-300 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                3
+              </div>
+              <span className="ml-2 text-sm text-gray-500">View Analysis</span>
+            </div>
+          </div>
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-6">
-          <GoStudioMLogo className="mb-3" />
+          <div className="flex justify-center mb-4">
+            <GoStudioMLogo width={240} height={72} />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Smart Analytics
           </h1>
           <p className="text-lg text-gray-600">
             AI-powered insights for your Airbnb portfolio
           </p>
-          {hasExistingData && (
+          {isAppendMode && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
+              <p className="text-sm text-blue-700">
+                Adding to {existingProperties.length} existing properties
+              </p>
+            </div>
+          )}
+          {hasExistingData && !isAppendMode && (
             <Button 
               variant="outline" 
               className="mt-4"
